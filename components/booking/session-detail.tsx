@@ -10,6 +10,7 @@ import {
   categoryRelated,
   ObjectRack,
 } from "@/components/brand/graphics"
+import { ClubMap } from "@/components/clubs/club-map"
 import { Menu } from "@/components/graphical"
 import {
   Calendar,
@@ -436,6 +437,13 @@ export function SessionDetail({
           </div>
         ) : null}
         <div className="flex flex-col gap-2 rounded-md bg-muted p-3">
+          <ClubMap
+            now={now}
+            only={club.slug}
+            interactive={false}
+            ratio="16/7"
+            className="mb-1"
+          />
           <p className="text-label">{club.name}</p>
           <p className="text-caption text-muted-foreground">{club.address}</p>
           <div className="flex flex-wrap items-center gap-3">

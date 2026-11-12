@@ -36,8 +36,14 @@ const ROWS: { label: string; v: (p: PlanId) => React.ReactNode }[] = [
     v: (p) => (p === "trailhead" ? "Home club only" : "All 5 clubs"),
   },
   {
-    label: "Classes and pools",
-    v: (p) => (p === "trailhead" ? "At your home club" : "At every club"),
+    label: "Group classes",
+    v: (p) =>
+      p === "trailhead" ? "Every class at your club" : "Every class at all 5",
+  },
+  {
+    label: "Pools",
+    v: (p) =>
+      p === "trailhead" ? "At your club, if it has one" : "All 3 pools",
   },
   { label: "Booking window", v: (p) => `${PLANS[p].window} days` },
   {
@@ -45,13 +51,13 @@ const ROWS: { label: string; v: (p: PlanId) => React.ReactNode }[] = [
     v: (p) => p !== "trailhead",
   },
   { label: "Guest passes", v: (p) => `${PLANS[p].guestPasses} per month` },
-  { label: "Recovery suite", v: (p) => p === "summit" },
+  { label: "Recovery suite or lounge", v: (p) => p === "summit" },
   { label: "Towel service", v: (p) => p === "summit" },
   {
     label: "PT intro session",
     v: (p) => (p === "summit" ? "1 per quarter" : false),
   },
-  { label: "Kids club for children", v: () => true },
+  { label: "Kids club (child add-on, 3 clubs)", v: () => true },
 ]
 
 export default function ChangePlan() {

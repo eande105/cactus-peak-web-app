@@ -4,9 +4,6 @@ import {
   clubObjects,
   coachObjects,
   GymObject,
-  generalObjects,
-  ObjectRack,
-  type RackLayout,
   type Ratio,
 } from "@/components/brand/graphics"
 import type { CategoryId } from "@/lib/types"
@@ -19,55 +16,37 @@ import { cn } from "@/lib/utils"
 const isClubId = (slug: string): slug is ClubId => slug in clubObjects
 
 /**
- * The club's graphic. Full: a Rack around the club's lead object (orbit by default; pass `layout`, for example
- * "spotlight" for a wide header), with its Set and the general objects. Simple: the lead object on a muted
- * tile, for pickers and thumbnails below 120 px.
+ * The club's graphic for pickers and thumbnails: its lead object on a muted tile. Club lists and the club
+ * header show the club's Set beside the name instead. The app shows no Rack for a club.
  */
 export function ClubArt({
   slug,
-  ratio = "16/9",
-  detail,
-  layout = "orbit",
+  ratio = "1/1",
   fill,
   className,
   label,
 }: {
   slug: string
   ratio?: Ratio
-  detail?: "full" | "simple"
-  layout?: RackLayout
   fill?: boolean
   className?: string
   label?: string
 }) {
   if (!isClubId(slug)) return null
-  const [lead, ...rest] = clubObjects[slug]
-  if (detail === "simple")
-    return (
-      <span
-        className={cn(
-          "grid place-items-center bg-muted",
-          fill && "absolute inset-0",
-          className
-        )}
-        style={
-          fill ? undefined : { aspectRatio: String(ratio).replace(":", "/") }
-        }
-      >
-        <GymObject id={lead} label={label} className="h-3/4 w-auto" />
-      </span>
-    )
+  const [lead] = clubObjects[slug]
   return (
-    <ObjectRack
-      ratio={ratio}
-      layout={layout}
-      scheme={layout === "spotlight" ? "night" : "sand"}
-      focus={lead}
-      ids={[...rest, ...generalObjects.filter((id) => id !== lead)]}
-      fill={fill}
-      label={label}
-      className={className}
-    />
+    <span
+      className={cn(
+        "grid place-items-center bg-muted",
+        fill && "absolute inset-0",
+        className
+      )}
+      style={
+        fill ? undefined : { aspectRatio: String(ratio).replace(":", "/") }
+      }
+    >
+      <GymObject id={lead} label={label} className="h-3/4 w-auto" />
+    </span>
   )
 }
 

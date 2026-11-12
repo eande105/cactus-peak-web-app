@@ -48,6 +48,9 @@
 /* Graphical runtime stylesheet, imported once. It sits in the base layer so Tailwind utilities still win over
    its zero-specificity reset and component defaults. */
 @import "../components/graphical/styles.css" layer(base);
+/* MapLibre's marker and control CSS (components/map/brand-map.tsx). In the components layer, so utilities and the
+   brand map rules at the end of this file override it by layer order. */
+@import "maplibre-gl/dist/maplibre-gl.css" layer(components);
 
 @custom-variant dark (&:is(.dark *));
 
@@ -575,5 +578,24 @@ html {
     background-image: none;
     color: var(--background);
     font-weight: var(--weight-ui-heavy);
+  }
+}
+
+/* Brand map chrome (components/map/brand-map.tsx). MapLibre ships its attribution and gesture hint in fixed white
+   and black. These rules sit after MapLibre's CSS in the same layer, so they win and follow the theme. */
+@layer components {
+  .brand-map .maplibregl-ctrl-attrib {
+    @apply bg-card/85 text-muted-foreground;
+  }
+  .brand-map .maplibregl-ctrl-attrib a {
+    @apply text-muted-foreground;
+  }
+  .brand-map .maplibregl-ctrl-attrib-button {
+    @variant dark {
+      @apply invert;
+    }
+  }
+  .brand-map .maplibregl-cooperative-gesture-screen {
+    @apply bg-night/70 text-body;
   }
 }

@@ -39,7 +39,7 @@ export function PopularTimesChart({
   const range = (xs: { h: number }[]) => {
     const a = xs[0].h,
       b = xs.at(-1)!.h + 1
-    const ap = (h: number) => (h < 12 ? "a.m." : "p.m.")
+    const ap = (h: number) => (h < 12 ? "am" : "pm")
     return `${bare(a)}${ap(a) !== ap(b) ? ` ${ap(a)}` : ""} to ${bare(b)} ${ap(b)}`
   }
   const days = [1, 2, 3, 4, 5, 6, 0]
@@ -151,7 +151,7 @@ export function PopularTimesChart({
       <figcaption className="text-caption">
         <span className="font-semibold">Busiest</span> {range(peak)}{" "}
         <span className="font-semibold">Quietest</span>{" "}
-        {quiet.length ? range(quiet.slice(0, 2)) : "after 8 p.m."}{" "}
+        {quiet.length ? range(quiet.slice(0, 2)) : "after 8 pm"}{" "}
         <span className="text-muted-foreground">Typical for {DOW[dow]}.</span>
       </figcaption>
     </figure>

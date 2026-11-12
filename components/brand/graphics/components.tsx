@@ -1,23 +1,16 @@
 import type { CSSProperties } from "react"
 import { cn } from "@/lib/utils"
-import { buildSpaceArt, type SpaceArtId, spaceArt } from "./art"
-import {
-  type BrandGraphicId,
-  brandGraphics,
-  buildBrandGraphic,
-  type ContainerShape,
-  containerShapes,
-} from "./bespoke"
+import { categoryArt } from "./category-art"
 import {
   type CropOptions,
   crop,
+  markTile,
   type RackLayout,
   rack,
   row,
   tile,
 } from "./compose"
 import { parseRatio } from "./engine"
-import { buildCoachMark, type CoachMarkId, coachMarks } from "./marks"
 import {
   type CategoryId,
   type ClubId,
@@ -27,237 +20,12 @@ import {
   type ObjectId,
   objects,
 } from "./objects"
-import { PAPER_CSS, paintCss, rampStyle } from "./paint"
 import { OBJECT_CSS, objPaintCss, type Scheme, schemeStyle } from "./scheme"
 import { elementsToSvg } from "./serialize"
-import {
-  buildClassGraphic,
-  buildSpaceGraphic,
-  type ClassGraphicId,
-  classGraphics,
-  HAIR_CSS,
-  type SpaceGraphicId,
-  spaceGraphics,
-} from "./sets"
-import type { Drawing, ObjPaint, Tone } from "./types"
+import type { Drawing, ObjPaint } from "./types"
 
 /** "16/9", "4:3" or a number (width ÷ height). */
 export type Ratio = string | number
-
-type Shared = {
-  /** Override the default tone. */
-  tone?: Tone
-  /** Accessible name. Without it the graphic is decorative and hidden from assistive tech. */
-  label?: string
-  /** "simple" drops fine detail for small tiles and thumbnails. */
-  detail?: "full" | "simple"
-  /** Fill a positioned parent (absolute, inset 0) instead of setting its own aspect ratio. */
-  fill?: boolean
-  className?: string
-  style?: CSSProperties
-}
-
-/**
- * Render a drawing. The drawing is composed for one ratio; if the box differs a little, `slice`
- * crops the edges and never stretches. Colours come from CSS variables, so the graphic follows the theme.
- */
-function Svg({
-  drawing,
-  tone,
-  label,
-  fill,
-  className,
-  style,
-}: { drawing: Drawing; tone: Tone } & Pick<
-  Shared,
-  "label" | "fill" | "className" | "style"
->) {
-  const html = `<style>${PAPER_CSS}</style>${elementsToSvg(drawing.els, (p) => paintCss(p, tone), "style")}`
-  const a11y = label
-    ? { role: "img", "aria-label": label }
-    : { "aria-hidden": true as const, focusable: false as const }
-  return (
-    <svg
-      viewBox={`0 0 ${Math.round(drawing.w * 100) / 100} ${drawing.h}`}
-      preserveAspectRatio="xMidYMid slice"
-      className={cn(
-        "cpg",
-        fill ? "absolute inset-0 size-full" : "block h-auto w-full",
-        className
-      )}
-      style={{
-        ...(rampStyle(tone) as CSSProperties),
-        ...(fill ? {} : { aspectRatio: `${drawing.w} / ${drawing.h}` }),
-        ...style,
-      }}
-      {...a11y}
-      // biome-ignore lint/security/noDangerouslySetInnerHtml: markup is serialized from the in-repo drawing data, never from user input
-      dangerouslySetInnerHTML={{ __html: html }}
-    />
-  )
-}
-
-/**
- * Render a line graphic. The SVG sits in an inline-size container so the hair stroke width
- * (HAIR_CSS, in cqi) follows the rendered width. Strokes are non-scaling, so the viewBox does not thicken them.
- * The wrapper takes the accessible name, the class names and the sizing.
- */
-function LineSvg({
-  drawing,
-  tone,
-  label,
-  fill,
-  className,
-  style,
-}: { drawing: Drawing; tone: Tone } & Pick<
-  Shared,
-  "label" | "fill" | "className" | "style"
->) {
-  const html = `<style>${PAPER_CSS}</style>${elementsToSvg(drawing.els, (p) => paintCss(p, tone), "style")}`
-  const a11y = label
-    ? { role: "img", "aria-label": label }
-    : { "aria-hidden": true as const }
-  const box: CSSProperties = {
-    ...(rampStyle(tone, true) as CSSProperties),
-    ...({ "--g-sw": HAIR_CSS } as CSSProperties),
-    containerType: "inline-size",
-    ...(fill ? {} : { aspectRatio: `${drawing.w} / ${drawing.h}` }),
-    ...style,
-  }
-  return (
-    <span
-      className={cn(
-        "cpg overflow-hidden",
-        fill ? "absolute inset-0" : "relative block w-full",
-        className
-      )}
-      style={box}
-      {...a11y}
-    >
-      <svg
-        viewBox={`0 0 ${Math.round(drawing.w * 100) / 100} ${drawing.h}`}
-        preserveAspectRatio="xMidYMid slice"
-        className="absolute inset-0 size-full"
-        aria-hidden="true"
-        focusable="false"
-        // biome-ignore lint/security/noDangerouslySetInnerHtml: markup is serialized from the in-repo drawing data, never from user input
-        dangerouslySetInnerHTML={{ __html: html }}
-      />
-    </span>
-  )
-}
-
-/** Image graphic for a gym space or amenity (club spaces section, app cards). Default ratio 4:3. */
-export function SpaceGraphic({
-  id,
-  ratio = "4/3",
-  tone,
-  detail,
-  ...rest
-}: Shared & { id: SpaceGraphicId; ratio?: Ratio }) {
-  return (
-    <LineSvg
-      drawing={buildSpaceGraphic(id, ratio, detail === "simple")}
-      tone={tone ?? spaceGraphics[id].tone}
-      {...rest}
-    />
-  )
-}
-
-/** Image graphic for a class category (carousel slides, class cards). Default ratio 4:3, tone from the category. */
-export function ClassGraphic({
-  id,
-  ratio = "4/3",
-  tone,
-  detail,
-  ...rest
-}: Shared & { id: ClassGraphicId; ratio?: Ratio }) {
-  return (
-    <LineSvg
-      drawing={buildClassGraphic(id, ratio, detail === "simple")}
-      tone={tone ?? classGraphics[id].tone}
-      {...rest}
-    />
-  )
-}
-
-/** Scene art for a club space or exterior, for photo slots at any ratio. Default ratio 16:9. */
-export function SpaceArt({
-  id,
-  ratio = "16/9",
-  tone,
-  detail,
-  ...rest
-}: Shared & { id: SpaceArtId; ratio?: Ratio }) {
-  return (
-    <LineSvg
-      drawing={buildSpaceArt(id, ratio, detail === "simple")}
-      tone={tone ?? spaceArt[id].tone}
-      {...rest}
-    />
-  )
-}
-
-/** Decorative composition for a section. Pass a container `shape`, or any `ratio`. */
-export function BrandGraphic({
-  id,
-  shape = "band",
-  ratio,
-  tone,
-  detail,
-  ...rest
-}: Shared & { id: BrandGraphicId; shape?: ContainerShape; ratio?: Ratio }) {
-  const r =
-    ratio !== undefined ? parseRatio(ratio) : containerShapes[shape].ratio
-  const simple = detail
-    ? detail === "simple"
-    : shape === "tile" && ratio === undefined
-  return (
-    <Svg
-      drawing={buildBrandGraphic(id, r, simple)}
-      tone={tone ?? brandGraphics[id].tone}
-      {...rest}
-    />
-  )
-}
-
-/**
- * A coach's profile mark, cropped to a circle by default. `size` sets width and height in px;
- * leave it out and set the size with className instead.
- */
-export function CoachMark({
-  slug,
-  size,
-  shape = "circle",
-  tone,
-  label,
-  className,
-  style,
-}: Omit<Shared, "detail" | "fill"> & {
-  slug: CoachMarkId
-  size?: number
-  shape?: "circle" | "square"
-}) {
-  return (
-    <span
-      className={cn(
-        "relative block shrink-0 overflow-hidden",
-        shape === "circle" ? "rounded-full" : "rounded-sm",
-        className
-      )}
-      style={{ ...(size ? { width: size, height: size } : {}), ...style }}
-    >
-      <LineSvg
-        drawing={buildCoachMark(slug)}
-        tone={tone ?? coachMarks[slug].tone}
-        label={label}
-        fill
-      />
-    </span>
-  )
-}
-
-// ---------- Gym objects (VISUAL-IDENTITY.md) ----------
 
 type ObjShared = {
   /** Accessible name. Without it the graphic is decorative and hidden from assistive tech. */
@@ -315,6 +83,93 @@ export function GymObject({
   return <ObjSvg drawing={tile(id, cut)} scheme={scheme} {...rest} />
 }
 
+/**
+ * The Rib Peak brand mark in an object's place: the focal point of a section graphic (a lit disc or badge).
+ * It takes the scheme's body tone, so it reads as Sand on a Copper or Night disc.
+ */
+export function BrandMark({
+  scheme = "sand",
+  ...rest
+}: ObjShared & { scheme?: Scheme }) {
+  return <ObjSvg drawing={markTile()} scheme={scheme} {...rest} />
+}
+
+/**
+ * The bare Tiles of `ids` as SVG symbols, drawn once for a composition that repeats objects hundreds of times.
+ * Place it once in the page and draw each copy with `ObjectUse`. The symbols take their colours from the scheme of
+ * each copy, because custom properties inherit into a `<use>`.
+ */
+export function ObjectDefs({
+  ids,
+  prefix,
+}: {
+  ids: readonly ObjectId[]
+  prefix: string
+}) {
+  const html = `<style>${OBJECT_CSS}</style>${[...new Set(ids)]
+    .map(
+      (id) =>
+        `<symbol id="${prefix}-${id}" viewBox="0 0 100 100">${elementsToSvg(tile(id).els, objPaintCss, "style")}</symbol>`
+    )
+    .join("")}`
+  return (
+    <svg
+      aria-hidden="true"
+      focusable="false"
+      className="absolute size-0 overflow-hidden"
+      // biome-ignore lint/security/noDangerouslySetInnerHtml: markup is serialized from the in-repo drawing data, never from user input
+      dangerouslySetInnerHTML={{ __html: html }}
+    />
+  )
+}
+
+/** One copy of a symbol from `ObjectDefs`, in a scheme. Decorative. */
+export function ObjectUse({
+  id,
+  prefix,
+  scheme = "sand",
+  className,
+  style,
+}: {
+  id: ObjectId
+  prefix: string
+  scheme?: Scheme
+  className?: string
+  style?: CSSProperties
+}) {
+  return (
+    <svg
+      aria-hidden="true"
+      focusable="false"
+      viewBox="0 0 100 100"
+      className={cn("cpo block", className)}
+      style={{ ...(schemeStyle(scheme) as CSSProperties), ...style }}
+    >
+      <use href={`#${prefix}-${id}`} />
+    </svg>
+  )
+}
+
+/**
+ * The hero graphic of a class-type page: a composition drawn from how the category's classes run (a load for
+ * strength, a climb profile for cycle, a circuit, a breath, lanes, a court, a wind-down, a ladder). Pass the
+ * frame's ratio. Night by default.
+ */
+export function CategoryArt({
+  category,
+  ratio = "16/10",
+  scheme = "night",
+  ...rest
+}: ObjShared & { category: CategoryId; ratio?: Ratio; scheme?: Scheme }) {
+  return (
+    <ObjSvg
+      drawing={categoryArt(category, parseRatio(ratio))}
+      scheme={scheme}
+      {...rest}
+    />
+  )
+}
+
 /** The Tile for a class category: the category's object in the category colour. */
 export function CategoryTile({
   category,
@@ -333,7 +188,7 @@ export function CategoryTile({
 /**
  * The Rack: a grid of object tiles for an image slot without a photo. Pass the container's ratio.
  * `layout` picks the arrangement (see RackLayout in compose.ts): `wall` (default) and `stagger` fill
- * the frame; `cluster`, `arc`, `orbit`, `spotlight`, `hub` and `climb` centre on a lit `focus` tile; `frame`
+ * the frame; `cluster`, `arc`, `orbit`, `spotlight`, `hub`, `climb` and `ascent` centre on a lit `focus` tile; `frame`
  * keeps the middle clear for a heading; `fade` is a grid that fades out. `seed` keeps it stable.
  */
 export function ObjectRack({

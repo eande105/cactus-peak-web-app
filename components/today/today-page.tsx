@@ -56,7 +56,7 @@ import { cn } from "@/lib/utils"
 
 const plural = (n: number, w: string) => `${n} ${n === 1 ? w : `${w}s`}`
 
-// "in 14 minutes", "in 2 h 10 min", "tomorrow 4:30 p.m.", "Thursday 6:00 a.m."
+// "in 14 minutes", "in 2 h 10 min", "tomorrow 4:30 pm", "Thursday 6:00 am"
 function whenText(start: number, now: number) {
   if (start - now >= 6 * HOUR)
     return `${Math.round((dayStart(start) - dayStart(now)) / DAY) === 0 ? "today" : Math.round((dayStart(start) - dayStart(now)) / DAY) === 1 ? "tomorrow" : fmtDay(start).split(",")[0]} at ${fmtTime(start)}`

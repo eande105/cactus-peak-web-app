@@ -124,7 +124,7 @@ function Inner() {
   const rows = Array.from({ length: n }, (_, i) => ({
     id: i + 1,
     label: `Court ${i + 1}`,
-    sub: `${SPORTS[sport]}${club.slug === "mesa-red-mountain" ? ", outdoor" : ", indoor"}`,
+    sub: `${SPORTS[sport]}${club.slug === "power-mckellips" ? ", outdoor" : ", indoor"}`,
   }))
   const slots = gridSlots(date, "court").filter((x) => x + 30 * MIN > now)
   const opens = opensAt(date + 9 * HOUR, 3)
@@ -499,7 +499,7 @@ function Inner() {
         <EmptyState
           object="paddle"
           title={`${fmtDay(date)} courts open ${fmtDay(opens)} at ${fmtTime(opens)}`}
-          body="Courts open 3 days ahead at 6:00 a.m. We can remind you."
+          body="Courts open 3 days ahead at 6:00 am. We can remind you."
           action={
             <Button
               onClick={() => {
@@ -524,13 +524,13 @@ function Inner() {
               >
                 Try the next day
               </Button>
-              {club.slug !== "mesa-dobson" ? (
+              {club.slug !== "dobson-southern" ? (
                 <Button
                   size="sm"
                   variant="outline"
-                  onClick={() => setParam({ club: "mesa-dobson" })}
+                  onClick={() => setParam({ club: "dobson-southern" })}
                 >
-                  Mesa – Dobson
+                  Dobson & Southern
                 </Button>
               ) : null}
             </>

@@ -272,9 +272,7 @@ function Inner({ slug }: { slug: string }) {
                     aria-label="Selected"
                   />
                 </p>
-                <p className="text-caption text-success">
-                  Available 6 a.m.–6 p.m.
-                </p>
+                <p className="text-caption text-success">Available 6 am–6 pm</p>
               </div>
             </div>
             <p className="text-body-strong">45-minute session</p>

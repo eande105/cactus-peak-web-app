@@ -14,16 +14,16 @@ import {
 import { seedState } from "./fixture"
 
 describe("time copy", () => {
-  it("formats times with a.m. and p.m.", () => {
-    expect(fmtTime(atTime(fromKey("2026-10-27"), "06:00"))).toBe("6:00 a.m.")
-    expect(fmtTime(atTime(fromKey("2026-10-27"), "12:00"))).toBe("12:00 p.m.")
+  it("formats times with am and pm", () => {
+    expect(fmtTime(atTime(fromKey("2026-10-27"), "06:00"))).toBe("6:00 am")
+    expect(fmtTime(atTime(fromKey("2026-10-27"), "12:00"))).toBe("12:00 pm")
   })
   it("endSentence never doubles the full stop", () => {
-    expect(endSentence("Free to cancel until 4:00 a.m.")).toBe(
-      "Free to cancel until 4:00 a.m."
+    expect(endSentence("Free to cancel until 4:00 am")).toBe(
+      "Free to cancel until 4:00 am."
     )
-    expect(endSentence("Free to cancel until 4:00 a.m..")).toBe(
-      "Free to cancel until 4:00 a.m."
+    expect(endSentence("Free to cancel until 4:00 am..")).toBe(
+      "Free to cancel until 4:00 am."
     )
     expect(endSentence("Booked")).toBe("Booked.")
   })
@@ -79,6 +79,6 @@ describe("billing date", () => {
     expect(previewUpgrade(s, hh, "summit", DEMO_START).today).toBe(25.81)
   })
   it("busyness hint has no double stop", () => {
-    expect(busyHint("gilbert-val-vista", DEMO_START)).not.toContain("..")
+    expect(busyHint("val-vista-warner", DEMO_START)).not.toContain("..")
   })
 })

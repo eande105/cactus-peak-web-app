@@ -80,7 +80,7 @@ describe("spots left with other households", () => {
   it("other households' bookings and waitlists count once", () => {
     const s = household("h1")
     const se = sessionsForDay(
-      "gilbert-val-vista",
+      "val-vista-warner",
       DEMO_START + 2 * 86_400_000
     )[0]
     const left = sessionLeft(s, se)

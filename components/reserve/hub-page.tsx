@@ -35,9 +35,9 @@ export default function ReserveHub() {
   const { s, me, hh, now, club: viewing } = useApp()
   const c = CLUB_BY_SLUG[viewing]
   const hasCourts = c.courts.length > 0
-  const courtClub = hasCourts ? c : CLUB_BY_SLUG["mesa-red-mountain"]
-  const poolClub = c.pool ? c : CLUB_BY_SLUG["mesa-dobson"]
-  const kidsClub = c.kidsClub ? c : CLUB_BY_SLUG["gilbert-val-vista"]
+  const courtClub = hasCourts ? c : CLUB_BY_SLUG["power-mckellips"]
+  const poolClub = c.pool ? c : CLUB_BY_SLUG["dobson-southern"]
+  const kidsClub = c.kidsClub ? c : CLUB_BY_SLUG["val-vista-warner"]
   const today = dayStart(now)
   const cDay = addDays(today, now < today + 6 * HOUR ? 2 : 3)
   const sport = courtClub.courts[0].sport
@@ -118,7 +118,7 @@ export default function ReserveHub() {
       href: "/reserve/kids-club",
       cta: "Book kids club",
       scene: "kids" as const,
-      rule: "2-hour blocks · Mon–Sat 8:00 a.m.–12:00 p.m. and 4:00–8:00 p.m. · Ages 6 months–12 years",
+      rule: "2-hour blocks · Mon–Sat 8:00 am–12:00 pm and 4:00–8:00 pm · Ages 6 months–12 years",
       locked: null,
       none: !c.kidsClub
         ? `Not at ${c.name}. ${kidsClub.name} has a kids club.`

@@ -1,4 +1,4 @@
-import type { Paint, Tone } from "./types"
+import type { Tone } from "./types"
 
 /** The palette variable for each tone. Same mapping as the photo slots in components/brand/atoms.tsx. */
 export const toneVar: Record<Tone, string> = {
@@ -14,7 +14,7 @@ export const toneVar: Record<Tone, string> = {
   amber: "--cat-conditioning",
 }
 
-/** The tone of each class category, so class graphics match the category colour used on badges. */
+/** The tone of each class category, so a category Tile matches the category colour on badges. */
 export const categoryTone = {
   strength: "copper",
   cycle: "pine",
@@ -25,64 +25,8 @@ export const categoryTone = {
   recovery: "plum",
   youth: "rose",
 } as const satisfies Record<string, Tone>
-export const tones = Object.keys(toneVar) as Tone[]
 
-/**
- * `--g-p` is the paper colour: a light surface in both themes (--neutral-1 in light, --neutral-10 in dark),
- * so cut-outs, lit windows and highlights stay light on dark fields. PAPER_CSS sets it per theme.
- */
-export const PAPER_CSS =
-  ".cpg{--g-p:var(--neutral-1);--g-mp:32%;--g-night:var(--night)}.dark .cpg{--g-p:var(--neutral-10);--g-mp:56%;--g-night:color-mix(in oklab, var(--night) 45%, var(--neutral-10))}"
-
-/**
- * Each tone is a two-ended ramp: a base surface and an accent. f0 … f5 mix the accent into the base.
- * Normal tones run from the card surface (--neutral-1) to the tone. Night runs from Saguaro Night to paper, so a night piece is a dark block with light shapes, like the site's night bands.
- * In dark mode the variables flip, so the ramp flips with them and contrast holds.
- */
-export const RAMP: Record<"f0" | "f1" | "f2" | "f3" | "f4" | "f5", number> = {
-  f0: 10,
-  f1: 25,
-  f2: 38,
-  f3: 56,
-  f4: 76,
-  f5: 100,
-}
-
-export function rampEnds(
-  tone: Tone,
-  line = false
-): { base: string; accent: string } {
-  // In the line style, night draws in Saguaro Night itself (lightened in dark mode) on the light field.
-  if (tone === "night" && line)
-    return { base: "--neutral-1", accent: "--g-night" }
-  return tone === "night"
-    ? { base: "--night", accent: "--g-p" }
-    : { base: "--neutral-1", accent: toneVar[tone] }
-}
-
-/** A paint as CSS. The SVG root sets --g-a (accent) and --g-b (base); see rampStyle. */
-export function paintCss(p: Paint, tone: Tone): string {
-  if (p === "none") return "none"
-  if (p === "paper") return "var(--g-p)"
-  if (p === "tint")
-    return "color-mix(in oklab, var(--g-a) 10%, var(--neutral-3))"
-  // The mid tint is stronger in dark mode (--g-mp), so field, fill and line stay three clear steps.
-  if (p === "mid")
-    return "color-mix(in oklab, var(--g-a) var(--g-mp, 32%), var(--neutral-3))"
-  if (p === "ink")
-    return tone === "night"
-      ? "var(--g-a)"
-      : "color-mix(in oklab, var(--g-a) 74%, var(--neutral-10))"
-  return `color-mix(in oklab, var(--g-a) ${RAMP[p]}%, var(--g-b))`
-}
-
-/** Custom properties for the root of a drawing in a given tone. */
-export function rampStyle(tone: Tone, line = false): Record<string, string> {
-  const { base, accent } = rampEnds(tone, line)
-  return { "--g-a": `var(${accent})`, "--g-b": `var(${base})` }
-}
-
-// ---------- Hex resolution (export script and native apps) ----------
+// ---------- Hex resolution (export script, scheme.ts) ----------
 
 const lin = (c: number) =>
   c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4
@@ -132,23 +76,4 @@ export function mixHex(a: string, b: string, pct: number): string {
     x[1] * t + y[1] * (1 - t),
     x[2] * t + y[2] * (1 - t),
   ])
-}
-/** Resolve a paint to hex with a token table for one colour mode (variable name → hex). */
-export function paintHex(
-  p: Paint,
-  tone: Tone,
-  tokens: Record<string, string>,
-  line = false
-): string {
-  if (p === "none") return "none"
-  const { base, accent } = rampEnds(tone, line)
-  const A = tokens[accent],
-    B = tokens[base]
-  if (p === "paper") return tokens["--g-p"]
-  if (p === "tint") return mixHex(A, tokens["--neutral-3"], 10)
-  if (p === "mid")
-    return mixHex(A, tokens["--neutral-3"], Number(tokens["--g-mp"] ?? 32))
-  if (p === "ink")
-    return tone === "night" ? A : mixHex(A, tokens["--neutral-10"], 74)
-  return mixHex(A, B, RAMP[p])
 }

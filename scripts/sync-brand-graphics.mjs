@@ -7,7 +7,13 @@
  *
  * The marketing site module is the source of truth (see components/brand/graphics/SYNC.md).
  */
-import { copyFileSync, existsSync, readdirSync, readFileSync } from "node:fs"
+import {
+  copyFileSync,
+  existsSync,
+  readdirSync,
+  readFileSync,
+  rmSync,
+} from "node:fs"
 import { dirname, join, resolve } from "node:path"
 import { fileURLToPath } from "node:url"
 
@@ -36,5 +42,7 @@ console.log(
     ? `copied ${stale.length} file(s): ${stale.join(", ")}`
     : "already in sync"
 )
+// The copy is never edited here, so a file the source no longer has is removed.
+for (const f of extra) rmSync(join(dst, f))
 if (extra.length)
-  console.log(`not in the source (remove by hand): ${extra.join(", ")}`)
+  console.log(`removed ${extra.length} file(s): ${extra.join(", ")}`)

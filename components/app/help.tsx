@@ -73,7 +73,7 @@ export default function Help() {
       ) : (
         <EmptyState
           title={`No answers for "${q}".`}
-          body="Message the front desk. We're staffed 6:00 a.m.–8:00 p.m."
+          body="Message the front desk. We're staffed 6:00 am–8:00 pm."
           action={
             <Button
               onClick={() =>
@@ -119,7 +119,7 @@ export default function Help() {
         <div className="flex flex-col gap-3">
           <SectionTitle>Message the front desk</SectionTitle>
           <p className="text-caption text-muted-foreground">
-            Staffed 6:00 a.m.–8:00 p.m. We answer within the hour.
+            Staffed 6:00 am–8:00 pm. We answer within the hour.
           </p>
           <label htmlFor="fd" className="sr-only">
             Your message

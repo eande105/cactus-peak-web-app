@@ -376,7 +376,7 @@ export function busyHint(slug: string, now: number) {
   const p = parts(now)
   const arr = typicalFor(slug, p.dow)
   const idx = Math.max(0, p.h - 4)
-  const ap = (h: number) => (h < 12 ? "a.m." : "p.m.")
+  const ap = (h: number) => (h < 12 ? "am" : "pm")
   const bare = (h: number) => `${h % 12 || 12}`
   let start = -1
   for (let i = idx; i < arr.length; i++)
@@ -486,7 +486,7 @@ export function baseCourtBlocks(
   dayMs: number
 ): Block[] {
   if (
-    slug === "mesa-red-mountain" &&
+    slug === "power-mckellips" &&
     sport === "pickleball" &&
     dateKey(dayMs) === "2026-10-31"
   )
@@ -579,7 +579,7 @@ export function laneSwimmers(
   const dk = dateKey(start)
   let base: number
   if (
-    slug === "mesa-dobson" &&
+    slug === "dobson-southern" &&
     dk === "2026-10-28" &&
     Math.round((start - dayStart(start)) / MIN) === 360
   )
@@ -620,7 +620,7 @@ export function kidsLeft(
   const dk = dateKey(dayMs)
   const cap = 16
   let booked: number
-  if (slug === "gilbert-val-vista" && dk === "2026-10-31")
+  if (slug === "val-vista-warner" && dk === "2026-10-31")
     booked =
       { "08:00": 10, "10:00": 13, "16:00": 15, "18:00": 8 }[block.from] ?? 6
   else

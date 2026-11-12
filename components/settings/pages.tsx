@@ -407,7 +407,7 @@ export function NotificationSettings() {
             mark("q")
           }}
         >
-          Quiet hours 9:00 p.m. – 5:00 a.m.
+          Quiet hours 9:00 pm – 5:00 am
         </SwitchRow>
         <p className="text-detail text-muted-foreground">
           Held-spot alerts still come through.

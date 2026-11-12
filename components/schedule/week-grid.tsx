@@ -83,7 +83,7 @@ export function WeekGrid({
               role="rowheader"
               className="py-2 pr-2 text-right num text-caption text-muted-foreground"
             >
-              {h % 12 || 12} {h < 12 ? "a.m." : "p.m."}
+              {h % 12 || 12} {h < 12 ? "am" : "pm"}
               {h === nowHour ? (
                 <span className="font-bold block text-detail text-foreground">
                   Now {fmtTime(now, false)}

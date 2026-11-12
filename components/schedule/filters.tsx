@@ -45,10 +45,10 @@ function Group({
 }
 
 const BANDS: { value: TimeBand; label: string; sr: string }[] = [
-  { value: "early", label: "Early", sr: "Early, 4:30 to 7 a.m." },
-  { value: "morning", label: "Morning", sr: "Morning, 7 a.m. to noon" },
-  { value: "midday", label: "Midday", sr: "Midday, noon to 4 p.m." },
-  { value: "evening", label: "Evening", sr: "Evening, 4 to 10 p.m." },
+  { value: "early", label: "Early", sr: "Early, 4:30 to 7 am" },
+  { value: "morning", label: "Morning", sr: "Morning, 7 am to noon" },
+  { value: "midday", label: "Midday", sr: "Midday, noon to 4 pm" },
+  { value: "evening", label: "Evening", sr: "Evening, 4 to 10 pm" },
 ]
 
 export function ScheduleFilters({

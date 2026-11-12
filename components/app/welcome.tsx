@@ -139,7 +139,6 @@ function Inner() {
                       <ClubArt
                         slug={c.slug}
                         ratio="4/3"
-                        detail="simple"
                         className="rounded-sm"
                       />
                       <span>

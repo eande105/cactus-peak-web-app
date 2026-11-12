@@ -50,7 +50,7 @@ export interface Club {
   parking: string
   lat: number
   lng: number
-  typical: number[] // levels 1-5 for 4 a.m. through 9 p.m. (18 values), weekdays
+  typical: number[] // levels 1-5 for 4 am through 9 pm (18 values), weekdays
   weekend: number[]
   studios: string[]
 }
