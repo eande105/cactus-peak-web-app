@@ -3,7 +3,7 @@ export const OFFSET = -7 * 3600_000
 export const MIN = 60_000
 export const HOUR = 3600_000
 export const DAY = 86_400_000
-// The demo starts on Tuesday, Oct 27, 2026 at 5:40 a.m. Arizona time.
+// The demo starts on Tuesday, Oct 27, 2026 at 5:40 am Arizona time.
 export const DEMO_START = Date.UTC(2026, 9, 27, 12, 40)
 
 const MONTHS = [
@@ -70,7 +70,7 @@ export function minutesOfDay(ms: number) {
 export function fmtTime(ms: number, withSuffix = true) {
   const { h, min } = parts(ms)
   const h12 = h % 12 === 0 ? 12 : h % 12
-  return `${h12}:${String(min).padStart(2, "0")}${withSuffix ? (h < 12 ? " a.m." : " p.m.") : ""}`
+  return `${h12}:${String(min).padStart(2, "0")}${withSuffix ? (h < 12 ? " am" : " pm") : ""}`
 }
 export function fmtRange(a: number, b: number) {
   const pa = parts(a)
@@ -129,7 +129,8 @@ export function monthLabel(ms: number) {
 export function fmtMoney(n: number, cents = true) {
   return `$${n.toLocaleString("en-US", { minimumFractionDigits: cents ? 2 : 0, maximumFractionDigits: cents ? 2 : 0 })}`
 }
-// A sentence that ends in a time ("9:30 a.m.") already carries its full stop. This never adds a second one.
+// Ends a sentence with one full stop. Times ("9:30 am") carry no stop of their own, so a sentence that ends in one
+// gets it here; a doubled stop collapses to one.
 export function endSentence(s: string) {
   const t = s.trimEnd().replace(/\.{2,}$/, ".")
   return /[.!?]$/.test(t) ? t : `${t}.`
@@ -140,5 +141,5 @@ export function fmtDelta(n: number, cents = false) {
   return n < 0 ? `−${abs}` : `+${abs}`
 }
 export function hourLabel(h: number) {
-  return `${h % 12 === 0 ? 12 : h % 12}${h < 12 ? " a.m." : " p.m."}`
+  return `${h % 12 === 0 ? 12 : h % 12}${h < 12 ? " am" : " pm"}`
 }

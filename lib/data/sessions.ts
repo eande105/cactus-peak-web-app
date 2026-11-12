@@ -11,24 +11,24 @@ export function hash(str: string) {
   return ((h >>> 0) % 100000) / 100000
 }
 
-// Story sessions: the numbers in the written spec (Val Vista, Oct 27 to Nov 1).
+// Story sessions: the numbers in the written spec (Val Vista & Warner, Oct 27 to Nov 1).
 const STORY: Record<string, { booked: number; waitlist?: number }> = {
-  "gilbert-val-vista|2026-10-27|05:30|rrs": { booked: 8 },
-  "gilbert-val-vista|2026-10-27|06:00|cc": { booked: 15 },
-  "gilbert-val-vista|2026-10-27|07:00|cc": { booked: 9 },
-  "gilbert-val-vista|2026-10-27|09:00|af": { booked: 7 },
-  "gilbert-val-vista|2026-10-27|09:30|dfy": { booked: 6 },
-  "gilbert-val-vista|2026-10-27|12:00|sbh": { booked: 19, waitlist: 3 },
-  "gilbert-val-vista|2026-10-27|16:30|dfy": { booked: 8 },
-  "gilbert-val-vista|2026-10-27|16:30|ts": { booked: 7 },
-  "gilbert-val-vista|2026-10-27|17:30|m30": { booked: 6 },
-  "gilbert-val-vista|2026-10-28|06:00|cc": { booked: 12 },
-  "gilbert-val-vista|2026-10-29|06:00|rrs": { booked: 14, waitlist: 3 },
-  "gilbert-val-vista|2026-10-30|12:00|dfy": { booked: 12 },
-  "gilbert-val-vista|2026-10-31|08:00|sbh": { booked: 16 },
-  "gilbert-val-vista|2026-10-31|08:00|cc": { booked: 17 },
-  "gilbert-val-vista|2026-11-01|09:00|m30": { booked: 9 },
-  "mesa-dobson|2026-10-31|08:00|e60": { booked: 15 },
+  "val-vista-warner|2026-10-27|05:30|rrs": { booked: 8 },
+  "val-vista-warner|2026-10-27|06:00|cc": { booked: 15 },
+  "val-vista-warner|2026-10-27|07:00|cc": { booked: 9 },
+  "val-vista-warner|2026-10-27|09:00|af": { booked: 7 },
+  "val-vista-warner|2026-10-27|09:30|dfy": { booked: 6 },
+  "val-vista-warner|2026-10-27|12:00|sbh": { booked: 19, waitlist: 3 },
+  "val-vista-warner|2026-10-27|16:30|dfy": { booked: 8 },
+  "val-vista-warner|2026-10-27|16:30|ts": { booked: 7 },
+  "val-vista-warner|2026-10-27|17:30|m30": { booked: 6 },
+  "val-vista-warner|2026-10-28|06:00|cc": { booked: 12 },
+  "val-vista-warner|2026-10-29|06:00|rrs": { booked: 14, waitlist: 3 },
+  "val-vista-warner|2026-10-30|12:00|dfy": { booked: 12 },
+  "val-vista-warner|2026-10-31|08:00|sbh": { booked: 16 },
+  "val-vista-warner|2026-10-31|08:00|cc": { booked: 17 },
+  "val-vista-warner|2026-11-01|09:00|m30": { booked: 9 },
+  "dobson-southern|2026-10-31|08:00|e60": { booked: 15 },
 }
 
 const cache = new Map<string, Session[]>()

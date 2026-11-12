@@ -2,10 +2,10 @@
 import Link from "next/link"
 import { useEffect, useMemo, useState } from "react"
 import { useApp } from "@/components/app/use-app"
+import { type ClubId, ClubSet, clubObjects } from "@/components/brand/graphics"
 import { ClubMap } from "@/components/clubs/club-map"
 import { Toggle } from "@/components/graphical"
 import { Lock, MapPin, Search } from "@/components/icons"
-import { ArtFrame, ClubArt } from "@/components/kit/brand-art"
 import { BusynessMeter } from "@/components/kit/ribs"
 import {
   EmptyState,
@@ -24,6 +24,8 @@ import { clubOpen, liveBusyness } from "@/lib/engine"
 import { fmtTime } from "@/lib/time"
 import { miles, setCoords, useCoords, useOffline } from "@/lib/ui-state"
 import { cn } from "@/lib/utils"
+
+const isClubId = (slug: string): slug is ClubId => slug in clubObjects
 
 const AMEN = [
   { id: "pool", label: "Pool" },
@@ -101,31 +103,11 @@ export default function ClubsPage() {
         onMouseEnter={() => setHover(c.slug)}
         onMouseLeave={() => setHover(null)}
         className={cn(
-          "grid gap-4 py-5 sm:grid-cols-[minmax(0,25%)_1fr]",
+          // Text first: the name, the club's Set and the facts. A Rack per club only repeated one picture.
+          "grid gap-4 py-5",
           on && "bg-muted/60"
         )}
       >
-        <ArtFrame
-          className="aspect-[4/3] rounded-md max-sm:aspect-[16/9]"
-          art={
-            <>
-              <ClubArt
-                slug={c.slug}
-                ratio="4/3"
-                layout="spotlight"
-                fill
-                className="max-sm:hidden"
-              />
-              <ClubArt
-                slug={c.slug}
-                ratio="16/9"
-                layout="spotlight"
-                fill
-                className="sm:hidden"
-              />
-            </>
-          }
-        />
         <div className="flex min-w-0 flex-col gap-1.5">
           <div className="flex flex-wrap items-center gap-2">
             <h3 className="font-heading text-h3 display-stretch">
@@ -136,6 +118,9 @@ export default function ClubsPage() {
                 {c.name}
               </Link>
             </h3>
+            {isClubId(c.slug) ? (
+              <ClubSet club={c.slug} className="h-6 w-auto" />
+            ) : null}
             {c.slug === me.homeClub ? (
               <StatusPill tone="neutral">Home</StatusPill>
             ) : null}

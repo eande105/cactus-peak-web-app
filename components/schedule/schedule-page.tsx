@@ -427,7 +427,7 @@ function Inner() {
             <EmptyState
               object="schedule"
               title={`No classes on ${fmtDayLong(date).split(",")[0]}`}
-              body={`Try the next day. ${viewing.name} opens ${parts(date).dow === 0 || parts(date).dow === 6 ? "6:00" : "4:30"} a.m.`}
+              body={`Try the next day. ${viewing.name} opens ${parts(date).dow === 0 || parts(date).dow === 6 ? "6:00" : "4:30"} am`}
               action={
                 <Button
                   onClick={() => setParam("date", dateKey(addDays(date, 1)))}

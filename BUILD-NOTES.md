@@ -255,3 +255,21 @@ Lucide is replaced by Nucleo Pro (`ui` family, outline, 18 px) everywhere outsid
 - `components/ui/` wrappers that import Lucide directly (for example the accordion chevron) are unchanged on purpose.
 - The guides and skills (`GUI.md`, `gui/assets.md`, `gui/base-ui.md`, the theme file, the Graphical skills, the
   shadcn icon rule, `AGENTS.md`) carry the Nucleo override.
+
+## Retired graphics removed (2026-11-04)
+
+The marketing site deleted the retired graphics (scenes, line graphics, coach marks and bespoke graphics). The sync
+removed `art.ts`, `bespoke.ts`, `lines.ts`, `marks.ts`, `sets.ts` and `references.md` from the synced copy. The web
+app did not use them.
+
+- `lib/data/club-spaces.ts` uses `SpaceId` in place of `SpaceGraphicId`. Its private space type is now `SpaceKind`.
+- `scripts/sync-brand-graphics.mjs` now removes files that the source no longer has. Before, it listed them only.
+- The lit centre of a centred Rack (fade, cluster, orbit, spotlight, hub) now shows the Rib Peak mark, not an
+  object. The focus object moves to the tiles around it. This changes the session detail spotlight.
+
+### Clubs without a picture (2026-11-04)
+
+The app shows no Rack for a club. The Clubs list rows are text first, with the club's Set after the name. The club
+detail header is the name, the line, the Set, the address and the actions on the page, not on a Rack.
+`ClubArt` now draws only the lead object on a muted tile, for the club switcher and the welcome club picker.
+Checked in the browser at 1440 px in dark mode: Clubs and Dobson & Southern.

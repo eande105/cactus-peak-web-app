@@ -260,7 +260,7 @@ export function SessionAction({
             addRemind(se.id)
             toast({
               title: "We'll remind you",
-              description: `A push at 5:55 a.m. on ${fmtDay(st.opens ?? now)}.`,
+              description: `A push at 5:55 am on ${fmtDay(st.opens ?? now)}.`,
             })
           } else if (st.link?.action === "resume") router.push("/membership")
           else if (st.link?.action === "update-card") openDialog("card")

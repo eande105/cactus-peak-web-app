@@ -1,4 +1,4 @@
-import type { SpaceGraphicId } from "@/components/brand/graphics"
+import type { SpaceId } from "@/components/brand/graphics"
 import type { Club } from "@/lib/types"
 
 /**
@@ -9,7 +9,7 @@ import type { Club } from "@/lib/types"
  */
 export type ClubSpace = {
   id: string
-  graphic: SpaceGraphicId
+  graphic: SpaceId
   name: string
   /** One line. */
   line: string
@@ -18,11 +18,11 @@ export type ClubSpace = {
 }
 
 /** An amenity that applies to the whole club. */
-export type ClubAmenity = { id: string; graphic: SpaceGraphicId; name: string }
+export type ClubAmenity = { id: string; graphic: SpaceId; name: string }
 
 export type ClubSpaces = { primary: ClubSpace[]; amenities: ClubAmenity[] }
 
-type SpaceId =
+type SpaceKind =
   | "pool"
   | "courts"
   | "recovery"
@@ -32,11 +32,18 @@ type SpaceId =
   | "deck"
 
 /** The order of the large spaces for each club. The first four become primary spaces. The rest become amenities. */
-const ORDER: Record<string, SpaceId[]> = {
-  "mesa-dobson": ["pool", "courts", "recovery", "strength", "studios", "kids"],
-  "mesa-red-mountain": ["pool", "courts", "strength", "studios", "kids"],
-  "mesa-downtown": ["strength", "studios", "recovery"],
-  "gilbert-val-vista": [
+const ORDER: Record<string, SpaceKind[]> = {
+  "dobson-southern": [
+    "pool",
+    "courts",
+    "recovery",
+    "strength",
+    "studios",
+    "kids",
+  ],
+  "power-mckellips": ["pool", "courts", "strength", "studios", "kids"],
+  "main-center": ["strength", "studios", "recovery"],
+  "val-vista-warner": [
     "pool",
     "kids",
     "courts",
@@ -44,7 +51,7 @@ const ORDER: Record<string, SpaceId[]> = {
     "studios",
     "recovery",
   ],
-  "gilbert-heritage": ["strength", "studios", "recovery", "deck"],
+  "gilbert-page": ["strength", "studios", "recovery", "deck"],
 }
 
 const plural = (n: number, one: string, many = `${one}s`) =>
@@ -75,7 +82,7 @@ function facts(c: Club) {
   }
 }
 
-function build(id: SpaceId, c: Club): ClubSpace | null {
+function build(id: SpaceKind, c: Club): ClubSpace | null {
   const s = c.slug
   const f = facts(c)
   switch (id) {
@@ -85,24 +92,24 @@ function build(id: SpaceId, c: Club): ClubSpace | null {
         id,
         graphic: "lap-pool",
         name:
-          s === "gilbert-val-vista"
+          s === "val-vista-warner"
             ? "Pool and splash pad"
-            : s === "mesa-dobson"
+            : s === "dobson-southern"
               ? "Pools"
               : "Pool",
         line:
-          s === "mesa-red-mountain"
+          s === "power-mckellips"
             ? "A 25-m outdoor pool under shade sails."
-            : s === "mesa-dobson"
+            : s === "dobson-southern"
               ? "A 25-yd lap pool and a warm-water pool."
               : "A 25-yd lap pool, a splash pad and swim school.",
         amenities: [
           `${f.lanes} lap lanes`,
-          ...(s === "mesa-dobson" ? ["Warm-water pool, 90 to 92°F"] : []),
-          ...(s === "gilbert-val-vista"
+          ...(s === "dobson-southern" ? ["Warm-water pool, 90 to 92°F"] : []),
+          ...(s === "val-vista-warner"
             ? ["Splash pad", "Swim school, levels 1–5"]
             : []),
-          ...(s === "mesa-red-mountain" ? ["Shade sails", "Aqua Fit"] : []),
+          ...(s === "power-mckellips" ? ["Shade sails", "Aqua Fit"] : []),
           "Lane reservations",
           "Warm showers",
         ],
@@ -133,14 +140,14 @@ function build(id: SpaceId, c: Club): ClubSpace | null {
         id,
         graphic: "recovery",
         name:
-          s === "mesa-dobson" || s === "gilbert-val-vista"
+          s === "dobson-southern" || s === "val-vista-warner"
             ? "Recovery suite"
             : "Recovery lounge",
         line: "A Summit benefit.",
         amenities: [
           "Sauna",
           "Compression",
-          s === "mesa-dobson" || s === "gilbert-val-vista"
+          s === "dobson-southern" || s === "val-vista-warner"
             ? "Cold plunge"
             : "Stretch area",
         ],
@@ -156,8 +163,8 @@ function build(id: SpaceId, c: Club): ClubSpace | null {
         amenities: [
           "Racks",
           "Cardio",
-          ...(s === "gilbert-heritage" ? ["Olympic lifting platforms"] : []),
-          ...(s === "mesa-red-mountain" ? ["Turf lane"] : []),
+          ...(s === "gilbert-page" ? ["Olympic lifting platforms"] : []),
+          ...(s === "power-mckellips" ? ["Turf lane"] : []),
         ],
       }
     case "studios":
@@ -183,7 +190,7 @@ function build(id: SpaceId, c: Club): ClubSpace | null {
         ],
       }
     case "deck":
-      if (s !== "gilbert-heritage") return null
+      if (s !== "gilbert-page") return null
       return {
         id,
         graphic: "deck",
@@ -206,7 +213,7 @@ export function clubSpaces(club: Club): ClubSpaces {
     graphic: r.graphic,
     name: r.id === "studios" ? "Studios and cycle" : r.name,
   }))
-  if (club.slug === "mesa-red-mountain")
+  if (club.slug === "power-mckellips")
     amenities.unshift({ id: "deck", graphic: "deck", name: "Cardio deck" })
   if (club.pool)
     amenities.push({
@@ -214,7 +221,7 @@ export function clubSpaces(club: Club): ClubSpaces {
       graphic: "lockers",
       name: "Changing rooms",
     })
-  if (club.slug === "mesa-dobson")
+  if (club.slug === "dobson-southern")
     amenities.push({ id: "cafe", graphic: "lounge", name: "Café" })
   return { primary, amenities }
 }

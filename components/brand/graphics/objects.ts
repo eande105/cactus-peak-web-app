@@ -1,5 +1,4 @@
 import { nucleoArt } from "./nucleo-art"
-import type { SpaceGraphicId } from "./sets"
 import type { El, ObjPaint } from "./types"
 
 /*
@@ -43,9 +42,15 @@ const meta = {
   "gym-bag": { label: "Gym bag", means: "Membership, guest passes" },
   playground: { label: "Play structure", means: "Kids club" },
   key: { label: "Key", means: "Lockers, member access" },
+  location: { label: "Location pin", means: "Which clubs a plan covers" },
   schedule: { label: "Schedule", means: "Class schedule, booking" },
   "heart-watch": { label: "Heart-rate watch", means: "Progress, visits" },
   sun: { label: "Sun", means: "Outdoor pool, rooftop, early hours" },
+  pass: { label: "Pass", means: "Day pass, first visit, check-in" },
+  calendar: { label: "Calendar", means: "Month to month, monthly" },
+  clipboard: { label: "Clipboard", means: "Applications, sign-up forms" },
+  envelope: { label: "Envelope", means: "Messages, the newsletter" },
+  lift: { label: "Lift", means: "Step-free access" },
 } as const satisfies Record<keyof typeof nucleoArt, Meta>
 
 export type ObjectId = keyof typeof nucleoArt
@@ -73,11 +78,11 @@ export type CategoryId = keyof typeof categoryObject
 
 /** Each club's Set: three objects taken from what is real there (supabase/seed.sql). */
 export const clubObjects = {
-  "mesa-dobson": ["pool", "paddle", "spa-stones"],
-  "mesa-red-mountain": ["stopwatch", "tennis-ball", "sneaker"],
-  "mesa-downtown": ["dumbbell", "spin-bike", "water-bottle"],
-  "gilbert-val-vista": ["pool", "basketball", "playground"],
-  "gilbert-heritage": ["barbell", "squat-rack", "mat"],
+  "dobson-southern": ["pool", "paddle", "spa-stones"],
+  "power-mckellips": ["stopwatch", "tennis-ball", "sneaker"],
+  "main-center": ["dumbbell", "spin-bike", "water-bottle"],
+  "val-vista-warner": ["pool", "basketball", "playground"],
+  "gilbert-page": ["barbell", "squat-rack", "mat"],
 } as const satisfies Record<string, readonly [ObjectId, ObjectId, ObjectId]>
 export type ClubId = keyof typeof clubObjects
 
@@ -99,7 +104,7 @@ export type PlanId = keyof typeof planObjects
 
 /**
  * Each club space: its lead object and the objects around it in a hub (what the space includes).
- * Keyed by the retiring SpaceGraphicId, so club-spaces data can move over without a data change.
+ * The keys are the space ids that lib/club-spaces.ts stores. Do not rename them.
  */
 export const spaceObjects = {
   "strength-floor": {
@@ -233,9 +238,46 @@ export const spaceObjects = {
     around: ["water-bottle", "towel", "key", "gym-bag", "schedule", "sun"],
   },
 } as const satisfies Record<
-  SpaceGraphicId,
+  string,
   { lead: ObjectId; around: readonly ObjectId[] }
 >
+export type SpaceId = keyof typeof spaceObjects
+
+/**
+ * One object for each class, keyed by class slug, for the class icons on the classes page. Each object pictures
+ * what the class does (VISUAL-IDENTITY.md, section 6). The classes of one type never share an object, so a row of
+ * a type's icons reads as that many different classes. A class without an entry falls back to its type's object.
+ */
+export const classObjects: Record<string, ObjectId> = {
+  "rib-rack-strength": "squat-rack",
+  "barbell-basics": "plate",
+  "kettlebell-flow": "kettlebell",
+  "olympic-lifting-club": "barbell",
+  "climb-cycle": "spin-bike",
+  "rhythm-ride": "heart-watch",
+  "endurance-60": "stopwatch",
+  "switchback-hiit": "jump-rope",
+  "canal-run-club": "sneaker",
+  bootcamp: "punching-bag",
+  "desert-flow-yoga": "mat",
+  "mat-pilates": "medicine-ball",
+  "mobility-30": "resistance-band",
+  breathwork: "spa-stones",
+  "lap-swim": "pool",
+  "aqua-fit": "wave",
+  "swim-school": "whistle",
+  "masters-swim": "stopwatch",
+  "pickleball-open-play": "paddle",
+  "pickleball-clinic": "whistle",
+  "tennis-drills": "tennis-ball",
+  "hoops-run": "basketball",
+  "stretch-and-release": "resistance-band",
+  "sauna-plunge": "towel",
+  compression: "spa-stones",
+  "kids-club": "playground",
+  "teen-strength": "dumbbell",
+  "junior-pickleball": "paddle",
+}
 
 /** Objects that belong with each class category, for Racks on class and category pages. */
 export const categoryRelated = {

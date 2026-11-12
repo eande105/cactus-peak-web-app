@@ -104,7 +104,6 @@ export function ClubList({
                       <ClubArt
                         slug={c.slug}
                         ratio={1}
-                        detail="simple"
                         className="size-10 shrink-0 rounded-sm"
                       />
                       <span className="min-w-0 flex-1">

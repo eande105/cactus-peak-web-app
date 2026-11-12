@@ -11,7 +11,7 @@ import type { Drawing, El, ObjPaint } from "./types"
 type D = Drawing<ObjPaint>
 type E = El<ObjPaint>
 
-const r2 = (v: number) => Math.round(v * 100) / 100
+export const r2 = (v: number) => Math.round(v * 100) / 100
 
 /** One object placed at x, y with a side of `size` units. */
 export const placeObject = (
@@ -26,6 +26,30 @@ export const placeObject = (
   s: r2(size / 100),
   ch: [...objects[id].els],
 })
+
+// The Rib Peak symbol (public/brand/cpa-symbol-color.svg), on its 256-unit box.
+const MARK_PATH =
+  "M12.53,230L12.53,222L42,170.96L42,230ZM58,230L58,143.24L88,91.28L88,230ZM104,230L104,63.57L128,22L152,63.57L152,230ZM168,230L168,91.28L198,143.24L198,230ZM214,230L214,170.96L243.47,222L243.47,230Z"
+
+/**
+ * The brand mark centred on cx, cy in a box of `size` units, in the field colour, for the lit centre
+ * tile of a centred layout. Its ink sits low in the 256 box (22 to 230), so it is nudged up to sit
+ * optically centred.
+ */
+const placeMark = (cx: number, cy: number, size: number): E => ({
+  k: "g",
+  x: r2(cx - size / 2),
+  y: r2(cy - size / 2 - size * 0.02),
+  s: r2(size / 256),
+  ch: [{ k: "path", d: MARK_PATH, fill: "field" }],
+})
+
+/**
+ * The objects of a centred layout. Its lit centre holds the brand mark, so the focus object joins the
+ * tiles around it instead of being lost.
+ */
+const around = (o: RackOptions): readonly ObjectId[] =>
+  o.focus && !o.ids.includes(o.focus) ? [o.focus, ...o.ids] : o.ids
 
 /** Small seeded generator, so a Rack is the same on every render and in every export. */
 function rng(seed: number) {
@@ -50,6 +74,7 @@ export type RackLayout =
   | "stagger"
   | "frame"
   | "climb"
+  | "ascent"
 
 export type RackOptions = {
   /** Objects to use, in no order. The Rack uses each once before it repeats any. */
@@ -63,9 +88,14 @@ export type RackOptions = {
    * orbit: rings around a lit centre. spotlight: one row that grows toward a lit centre.
    * hub: a lit centre with spokes to six tiles. stagger: offset rows. frame: tiles around the
    * edges, with the middle left clear for copy. climb: tiles that step up to a lit summit.
+   * ascent: vertical lists side by side, each half a tile higher, stepping up to a lit tile.
    */
   layout?: RackLayout
-  /** The object in the lit tile (a club's lead object). Default: the first id. */
+  /**
+   * The object in the lit tile (a club's lead object). Default: the first id. Centred layouts (fade,
+   * cluster, orbit, spotlight, hub) put the brand mark in their lit centre, so there the focus object
+   * joins the tiles around it.
+   */
   focus?: ObjectId
   /** Tile shape. Default: disc for orbit, spotlight, hub and frame; square for the others. */
   shape?: "square" | "disc"
@@ -105,9 +135,10 @@ export function rack(ratio: number, o: RackOptions): D {
     oy = (H - (rowsN * step - gap)) / 2
   const rand = rng(o.seed ?? 1)
   let pool: ObjectId[] = []
+  const ids = cluster ? around(o) : o.ids
   const next = (): ObjectId => {
     if (!pool.length) {
-      pool = [...o.ids]
+      pool = [...ids]
       for (let i = pool.length - 1; i > 0; i--) {
         const j = Math.floor(rand() * (i + 1))
         ;[pool[i], pool[j]] = [pool[j], pool[i]]
@@ -147,8 +178,11 @@ export function rack(ratio: number, o: RackOptions): D {
       const x = ox + i * step,
         y = oy + j * step
       const on = lit.has(`${i},${j}`)
-      const id = on && cluster ? (o.focus ?? o.ids[0]) : next()
-      const obj = placeObject(id, x + pad, y + pad, icon)
+      // The lit centre of a fade holds the brand mark; a wall's lit tiles keep their objects.
+      const mark = on && cluster
+      const obj = mark
+        ? placeMark(x + cell / 2, y + cell / 2, icon * 1.1)
+        : placeObject(next(), x + pad, y + pad, icon)
       const tileEls: E[] = [
         {
           k: "rect",
@@ -159,7 +193,7 @@ export function rack(ratio: number, o: RackOptions): D {
           rx,
           fill: on ? "accent" : "block",
         },
-        on ? onAccent(obj) : obj,
+        on && !mark ? onAccent(obj) : obj,
       ]
       if (!cluster) {
         els.push(...tileEls)
@@ -197,10 +231,16 @@ function picker(ids: readonly ObjectId[], seed: number) {
   return { next, rand }
 }
 
-type TileOpts = { lit?: boolean; opacity?: number; disc?: boolean }
+export type TileOpts = {
+  lit?: boolean
+  opacity?: number
+  disc?: boolean
+  /** Draw the brand mark instead of the object (the lit centre of a centred layout). */
+  mark?: boolean
+}
 
 /** One tile centred on cx, cy: a block (or the accent when lit) with the object at 56 % of the tile. */
-function tileAt(
+export function tileAt(
   id: ObjectId,
   cx: number,
   cy: number,
@@ -226,8 +266,14 @@ function tileAt(
         rx: r2(size * 0.16),
         fill: t.lit ? "accent" : "block",
       }
-  const obj = placeObject(id, cx - icon / 2, cy - icon / 2, icon)
-  const ch = [box, t.lit ? onAccent(obj) : obj]
+  const ch = t.mark
+    ? [box, placeMark(cx, cy, size * 0.62)]
+    : [
+        box,
+        t.lit
+          ? onAccent(placeObject(id, cx - icon / 2, cy - icon / 2, icon))
+          : placeObject(id, cx - icon / 2, cy - icon / 2, icon),
+      ]
   return t.opacity !== undefined && t.opacity < 1
     ? { k: "g", opacity: r2(t.opacity), ch }
     : { k: "g", ch }
@@ -243,7 +289,7 @@ const ring = (cx: number, cy: number, r: number, sw: number): E => ({
   sw: r2(sw),
 })
 
-const field = (W: number, H: number): E => ({
+export const field = (W: number, H: number): E => ({
   k: "rect",
   x: 0,
   y: 0,
@@ -255,9 +301,10 @@ const field = (W: number, H: number): E => ({
 type Free = (W: number, H: number, o: RackOptions) => D
 
 const freeLayouts: Record<Exclude<RackLayout, "wall" | "fade">, Free> = {
+  ascent: (W, H, o) => ascent(W, H, o),
   /** Three tile sizes packed around a large lit tile (OpenPhone). The outer ring fades and crops. */
   cluster(W, H, o) {
-    const { next } = picker(o.ids, o.seed ?? 1)
+    const { next } = picker(around(o), o.seed ?? 1)
     const disc = o.shape === "disc"
     // Tall frames crop the outer ring at the sides, so the centre stays large.
     const u = Math.min(H * 0.17, W / 7)
@@ -292,7 +339,7 @@ const freeLayouts: Record<Exclude<RackLayout, "wall" | "fade">, Free> = {
         })
       )
     }
-    els.push(tileAt(o.focus ?? o.ids[0], cx, cy, 2.2 * u, { lit: true, disc }))
+    els.push(tileAt(o.ids[0], cx, cy, 2.2 * u, { lit: true, disc, mark: true }))
     return { w: W, h: H, els }
   },
 
@@ -334,7 +381,7 @@ const freeLayouts: Record<Exclude<RackLayout, "wall" | "fade">, Free> = {
 
   /** A lit centre with tiles on three rings, six at 60° on the middle ring (Linear, Perplexity Health). */
   orbit(W, H, o) {
-    const { next } = picker(o.ids, o.seed ?? 1)
+    const { next } = picker(around(o), o.seed ?? 1)
     const disc = o.shape !== "square"
     const m = Math.min(W, H),
       cx = W / 2,
@@ -364,13 +411,15 @@ const freeLayouts: Record<Exclude<RackLayout, "wall" | "fade">, Free> = {
           )
         )
       }
-    els.push(tileAt(o.focus ?? o.ids[0], cx, cy, 0.26 * m, { lit: true, disc }))
+    els.push(
+      tileAt(o.ids[0], cx, cy, 0.26 * m, { lit: true, disc, mark: true })
+    )
     return { w: W, h: H, els }
   },
 
   /** One row that grows toward a lit centre inside two halo rings (Linear integrations). */
   spotlight(W, H, o) {
-    const { next } = picker(o.ids, o.seed ?? 1)
+    const { next } = picker(around(o), o.seed ?? 1)
     const disc = o.shape !== "square"
     const cx = W / 2,
       cy = H / 2,
@@ -396,13 +445,13 @@ const freeLayouts: Record<Exclude<RackLayout, "wall" | "fade">, Free> = {
         prev = s
       }
     }
-    els.push(tileAt(o.focus ?? o.ids[0], cx, cy, s0, { lit: true, disc }))
+    els.push(tileAt(o.ids[0], cx, cy, s0, { lit: true, disc, mark: true }))
     return { w: W, h: H, els }
   },
 
   /** A lit centre with spokes at 60° to six tiles (Apollo). Wide frames stretch the spokes. */
   hub(W, H, o) {
-    const { next } = picker(o.ids, o.seed ?? 1)
+    const { next } = picker(around(o), o.seed ?? 1)
     const disc = o.shape !== "square"
     const cx = W / 2,
       cy = H / 2
@@ -426,7 +475,7 @@ const freeLayouts: Record<Exclude<RackLayout, "wall" | "fade">, Free> = {
       })
     for (const [x, y] of sats)
       els.push(tileAt(next(), x, y, 0.17 * H, { disc }))
-    els.push(tileAt(o.focus ?? o.ids[0], cx, cy, 0.3 * H, { lit: true, disc }))
+    els.push(tileAt(o.ids[0], cx, cy, 0.3 * H, { lit: true, disc, mark: true }))
     return { w: W, h: H, els }
   },
 
@@ -543,6 +592,42 @@ const freeLayouts: Record<Exclude<RackLayout, "wall" | "fade">, Free> = {
   },
 }
 
+/**
+ * Ascent: the abstract form of the climb. Vertical lists of tiles stand side by side, and each list starts
+ * half a tile higher than the one before it, so neighbours alternate between two rows and the tops step up
+ * to a lit tile at the upper right. The lists run off the lower edge, and the early ones are faint, so the
+ * upper left stays clear for copy.
+ */
+function ascent(W: number, H: number, o: RackOptions): D {
+  const { next } = picker(o.ids, o.seed ?? 1)
+  const disc = o.shape === "disc"
+  const n = Math.max(4, Math.min(7, Math.round(W / (0.21 * H))))
+  // One tile size. Narrow frames shrink it so all the lists fit 84 % of the width, clear of both edges.
+  const s = Math.min(0.17 * H, (0.84 * W) / (n * 1.2 - 0.2)),
+    step = 1.2 * s
+  const ox = (W - (n * step - 0.2 * s)) / 2 + s / 2
+  // The last list's top tile sits at 22 % height; each list to its left starts half a step lower.
+  const lastTop = 0.22 * H
+  const els: E[] = [field(W, H)]
+  for (let i = 0; i < n; i++) {
+    const x = ox + i * step,
+      top = lastTop + ((n - 1 - i) * step) / 2
+    const colOpacity = 0.35 + (0.65 * i) / (n - 1)
+    for (let j = 0, y = top; y - s / 2 < H; j++, y += step) {
+      const lit = i === n - 1 && j === 0
+      els.push(
+        tileAt(lit ? (o.focus ?? o.ids[0]) : next(), x, y, s, {
+          disc,
+          lit,
+          // Lower tiles in a list fade, so each list reads from its top.
+          opacity: lit ? 1 : colOpacity * Math.max(0.35, 1 - 0.2 * j),
+        })
+      )
+    }
+  }
+  return { w: W, h: H, els }
+}
+
 /** The Row: one object for each item, in cells with quarter-cell gaps. The Set is a Row of three. */
 export function row(ids: readonly ObjectId[]): D {
   const gap = 25
@@ -572,6 +657,27 @@ export function crop(id: ObjectId, ratio: number, o: CropOptions = {}): D {
     els: [
       { k: "rect", x: 0, y: 0, w: W, h: H, fill: "field" },
       placeObject(id, W * (o.x ?? 0.45), H * (o.y ?? 0.3), size),
+    ],
+  }
+}
+
+/**
+ * The brand mark alone, on the same 100-unit square as a Tile, in the body tone. It takes the place of an
+ * object in a lit focal disc, so the focal point of a section graphic is the brand, not one activity.
+ */
+export function markTile(): D {
+  return {
+    w: 100,
+    h: 100,
+    els: [
+      {
+        k: "g",
+        x: 4,
+        // The ink sits low in the 256 box (22 to 230), so y 4 puts it just above the centre.
+        y: 4,
+        s: r2(92 / 256),
+        ch: [{ k: "path", d: MARK_PATH, fill: "a" }],
+      },
     ],
   }
 }

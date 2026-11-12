@@ -54,7 +54,7 @@ Reviewed on port 3211 against `DESIGN-DIRECTION.md`, the web-app specs 01 to 05 
   4. Floor at 12 px (`text-detail`), and use 14 px for anything a member must read (spots left, coach). Remove 11 px (`text-tab` outside the tab bar).
 
 ### S5. Toasts carry state the page must show (89 `toast(` calls)
-- Where: `components/booking/cancel-dialog.tsx:52,55` ("Cancelled: Climb Cycle"), `components/today/today-page.tsx:111,112,189`, `components/bookings/bookings-page.tsx:62-64`, `components/app/notices.tsx:25,31,59,85`, `components/settings/pages.tsx` (11), `components/clubs/*` ("Viewing Gilbert – Val Vista"), `components/schedule/schedule-page.tsx:122`.
+- Where: `components/booking/cancel-dialog.tsx:52,55` ("Cancelled: Climb Cycle"), `components/today/today-page.tsx:111,112,189`, `components/bookings/bookings-page.tsx:62-64`, `components/app/notices.tsx:25,31,59,85`, `components/settings/pages.tsx` (11), `components/clubs/*` ("Viewing Val Vista & Warner"), `components/schedule/schedule-page.tsx:122`.
 - Why: toasts vanish after 5 s; a cancelled class leaves nothing to point at, and a toast covered the "Card expires" item on Today. Several are noise ("Agenda refreshed", "Viewing X", "Saved").
 - Fix:
   1. Keep toasts only for Undo of a reversible action (book, cancel on time, change plan). Anchor them bottom-left on desktop, above the CTA bar on phones.
@@ -177,7 +177,7 @@ Reviewed on port 3211 against `DESIGN-DIRECTION.md`, the web-app specs 01 to 05 
 
 ### Clubs
 - **C-1 Clubs list** is strong (distinct art per club, own line, 'Set as my club'). Fix: mobile shows search, a location row, a sort control and five chips before the first club (about 560 px). Collapse to one row: search + "Filters (0)" button. Show the club list first and the map below on phones.
-- **C-2 Map**: the schematic map has labels "Dobson", "Downtown" with busyness ribs; fine, but pins are unlabeled for keyboard focus order. Make each pin a button (`aria-label="Mesa – Dobson, Light, 2 of 5"`) in the same tab order as the list, and add "Skip map".
+- **C-2 Map**: the schematic map has labels "Dobson", "Downtown" with busyness ribs; fine, but pins are unlabeled for keyboard focus order. Make each pin a button (`aria-label="Dobson & Southern, Light, 2 of 5"`) in the same tab order as the list, and add "Skip map".
 - **C-3 Club detail**: tab strip (Now, Today's classes, Hours, ...) is anchor navigation; make it a sticky 44 px scroll-spy bar on phones. Popular times bars are all the same dark green; shade the current hour bar (copper outline already) and use two tones for "busy" (>=4) vs the rest, matching the five-rib level.
 
 ### Training

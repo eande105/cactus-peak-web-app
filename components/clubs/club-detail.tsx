@@ -4,11 +4,17 @@ import { notFound } from "next/navigation"
 import { useEffect, useState } from "react"
 import { useApp } from "@/components/app/use-app"
 import { CompactClass } from "@/components/booking/class-row"
-import { GymObject, spaceObjects } from "@/components/brand/graphics"
+import {
+  type ClubId,
+  ClubSet,
+  clubObjects,
+  GymObject,
+  spaceObjects,
+} from "@/components/brand/graphics"
 import { ClubMap } from "@/components/clubs/club-map"
 import { PopularTimesChart } from "@/components/clubs/popular-times"
 import { Copy, MapPin, Phone } from "@/components/icons"
-import { ArtFrame, ClubArt, CoachArt } from "@/components/kit/brand-art"
+import { CoachArt } from "@/components/kit/brand-art"
 import { BusynessMeter } from "@/components/kit/ribs"
 import { LoadingBlock, PageHeader, SectionTitle } from "@/components/kit/ui"
 import { Button } from "@/components/ui/button"
@@ -39,6 +45,8 @@ import {
 import { toast } from "@/lib/toast"
 import { useOffline } from "@/lib/ui-state"
 import { cn } from "@/lib/utils"
+
+const isClubId = (slug: string): slug is ClubId => slug in clubObjects
 
 const SECTIONS = [
   ["now", "Now"],
@@ -128,13 +136,13 @@ export default function ClubDetail({ slug }: { slug: string }) {
     }
   }
   const hoursRows = [
-    ["Mon–Fri", "4:30 a.m.–10:00 p.m.", p.dow >= 1 && p.dow <= 5],
-    ["Sat–Sun", "6:00 a.m.–8:00 p.m.", p.dow === 0 || p.dow === 6],
-    ["Staffed hours", "6:00 a.m.–8:00 p.m.", false],
+    ["Mon–Fri", "4:30 am–10:00 pm", p.dow >= 1 && p.dow <= 5],
+    ["Sat–Sun", "6:00 am–8:00 pm", p.dow === 0 || p.dow === 6],
+    ["Staffed hours", "6:00 am–8:00 pm", false],
     [
       "Kids club",
       club.kidsClub
-        ? "Mon–Sat 8:00 a.m.–12:00 p.m. and 4:00–8:00 p.m."
+        ? "Mon–Sat 8:00 am–12:00 pm and 4:00–8:00 pm"
         : "No kids club at this club",
       false,
     ],
@@ -152,85 +160,67 @@ export default function ClubDetail({ slug }: { slug: string }) {
         title={club.name}
         className="sr-only"
       />
-      <header className="relative">
-        <ArtFrame
-          className="aspect-[16/6] rounded-lg max-md:aspect-[4/3]"
-          art={
-            <>
-              <ClubArt
-                slug={club.slug}
-                ratio="16/6"
-                layout="spotlight"
-                fill
-                className="max-md:hidden"
+      {/* The club's name and facts on the page, with its Set. A Rack picture adds nothing a member needs here. */}
+      <header>
+        <div className="flex flex-wrap items-end justify-between gap-4">
+          <div className="flex min-w-0 flex-col gap-1">
+            <h1
+              id="page-title"
+              tabIndex={-1}
+              className="font-heading text-h2 display-stretch outline-none md:text-h1"
+            >
+              {club.name}
+            </h1>
+            <p className="max-w-[48ch]">{club.personality}</p>
+            {isClubId(club.slug) ? (
+              <ClubSet
+                club={club.slug}
+                className="mt-1 h-8 w-auto self-start"
               />
-              <ClubArt
-                slug={club.slug}
-                ratio="4/3"
-                layout="spotlight"
-                fill
-                className="md:hidden"
-              />
-            </>
-          }
-        >
-          <div className="absolute inset-x-0 bottom-0 flex flex-wrap items-end justify-between gap-4 bg-photo-band p-4 text-on-night md:p-6">
-            <div className="flex min-w-0 flex-col gap-1">
-              <h1
-                id="page-title"
-                tabIndex={-1}
-                className="font-heading text-h2 display-stretch outline-none md:text-h1"
-              >
-                {club.name}
-              </h1>
-              <p className="max-w-[48ch]">{club.personality}</p>
-              <p className="num text-caption text-on-night/90">
-                {club.address} ·{" "}
-                {o.open
-                  ? `Open now · closes ${fmtTime(o.closeAt)}`
-                  : `Closed now · opens ${fmtTime(o.openAt)}`}
-              </p>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {isViewing ? (
-                <span className="inline-flex min-h-11 items-center rounded-md border border-on-night/50 px-4 text-label">
-                  Viewing this club
-                </span>
-              ) : (
-                <Button
-                  className="!bg-dawn !text-night hover:!bg-on-night"
-                  onClick={() => {
-                    setPrefs(me.id, { viewingClub: slug })
-                  }}
-                >
-                  Set as my club
-                </Button>
-              )}
-              <Button
-                variant="outline"
-                className="!border-on-night/60 !text-on-night hover:!bg-on-night/10"
-                render={
-                  <a
-                    href={`https://maps.google.com/?q=${encodeURIComponent(club.address)}`}
-                    target="_blank"
-                    rel="noreferrer"
-                  />
-                }
-              >
-                <MapPin aria-hidden="true" data-icon="inline-start" />
-                Directions
-              </Button>
-              <Button
-                variant="outline"
-                className="!border-on-night/60 !text-on-night hover:!bg-on-night/10"
-                render={<a href={`tel:${club.phone.replace(/\D/g, "")}`} />}
-              >
-                <Phone aria-hidden="true" data-icon="inline-start" />
-                Call
-              </Button>
-            </div>
+            ) : null}
+            <p className="num text-caption text-muted-foreground">
+              {club.address} ·{" "}
+              {o.open
+                ? `Open now · closes ${fmtTime(o.closeAt)}`
+                : `Closed now · opens ${fmtTime(o.openAt)}`}
+            </p>
           </div>
-        </ArtFrame>
+          <div className="flex flex-wrap gap-2">
+            {isViewing ? (
+              <span className="inline-flex min-h-11 items-center rounded-md border border-border px-4 text-label">
+                Viewing this club
+              </span>
+            ) : (
+              <Button
+                onClick={() => {
+                  setPrefs(me.id, { viewingClub: slug })
+                }}
+              >
+                Set as my club
+              </Button>
+            )}
+            <Button
+              variant="outline"
+              render={
+                <a
+                  href={`https://maps.google.com/?q=${encodeURIComponent(club.address)}`}
+                  target="_blank"
+                  rel="noreferrer"
+                />
+              }
+            >
+              <MapPin aria-hidden="true" data-icon="inline-start" />
+              Directions
+            </Button>
+            <Button
+              variant="outline"
+              render={<a href={`tel:${club.phone.replace(/\D/g, "")}`} />}
+            >
+              <Phone aria-hidden="true" data-icon="inline-start" />
+              Call
+            </Button>
+          </div>
+        </div>
       </header>
       <nav
         aria-label="On this page"
@@ -452,8 +442,8 @@ export default function ClubDetail({ slug }: { slug: string }) {
           {club.kidsClub ? (
             <div className="mt-3 flex flex-col items-start gap-3">
               <p className="text-body">
-                Ages 6 months to 12 years. Mon–Sat 8:00 a.m.–12:00 p.m. and
-                4:00–8:00 p.m. Parents check in at the club and stay in the
+                Ages 6 months to 12 years. Mon–Sat 8:00 am–12:00 pm and
+                4:00–8:00 pm. Parents check in at the club and stay in the
                 building.
               </p>
               <ul className="w-full rule-rows">

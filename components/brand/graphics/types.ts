@@ -20,41 +20,22 @@ export type Tone =
   | "pine"
   | "amber"
 
-/**
- * A paint is a role, not a colour. The renderer turns it into CSS variables (React) or hex (export script).
- * f0 … f5: the tone ramp from the field (f0, faint) to the full tone (f5).
- * paper: a light surface in both themes (cut-outs, highlights). ink: deeper than f5, for small accents.
- * tint: a very light wash of the tone over the page sand (very dark in dark mode), the line graphics' field.
- * mid: 32 % of the tone over the page sand, the surface fill of the line graphics (duotone).
- */
-export type Paint =
-  | "f0"
-  | "f1"
-  | "f2"
-  | "f3"
-  | "f4"
-  | "f5"
-  | "paper"
-  | "ink"
-  | "tint"
-  | "mid"
-  | "none"
-
-/** `hair`: a line-graphic stroke. Its width follows the rendered size, not the viewBox (see sets.ts, HAIR). */
+/** Fields that every shape shares. */
 type Common<P extends string> = {
   fill?: P
   stroke?: P
   sw?: number
   cap?: "round" | "butt"
   join?: "round" | "miter"
+  /** A stroke dash pattern in viewBox units, as SVG writes it ("2 3"). */
+  dash?: string
   opacity?: number
-  hair?: boolean
 }
 /**
  * Intermediate representation for every drawing. Coordinates are in viewBox units.
- * `P` is the paint vocabulary: `Paint` (tone ramp) for the line and bespoke sets, `ObjPaint` for the gym objects.
+ * `P` is the paint vocabulary. The gym objects use `ObjPaint`.
  */
-export type El<P extends string = Paint> =
+export type El<P extends string = ObjPaint> =
   | (Common<P> & {
       k: "rect"
       x: number
@@ -85,12 +66,10 @@ export type El<P extends string = Paint> =
     }
 
 /** A finished drawing: a viewBox size plus the elements, back to front. */
-/** `line`: drawn in the line style (tint field, strong outlines, mid fills); night then uses a readable line colour. */
-export type Drawing<P extends string = Paint> = {
+export type Drawing<P extends string = ObjPaint> = {
   w: number
   h: number
   els: El<P>[]
-  line?: boolean
 }
 
 /**
