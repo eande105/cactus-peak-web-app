@@ -32,6 +32,7 @@ export function AppPage({
   tabs,
   back,
   width = "default",
+  fill,
   children,
   className,
 }: {
@@ -42,6 +43,8 @@ export function AppPage({
   tabs?: ReactNode
   back?: { href: string; label: string }
   width?: "narrow" | "default" | "wide"
+  /** On a wide screen, the page takes the full height of the sheet, so one section can grow into the space left. */
+  fill?: boolean
   children: ReactNode
   className?: string
 }) {
@@ -52,6 +55,7 @@ export function AppPage({
       className={cn(
         "flex w-full flex-col",
         width === "narrow" && "max-w-[720px]",
+        fill && "xl:flex-1",
         className
       )}
     >
@@ -82,7 +86,9 @@ export function AppPage({
         </div>
         {tabs}
       </header>
-      <div className="gap-m md:gap-l flex flex-col">{children}</div>
+      <div className={cn("gap-m md:gap-l flex flex-col", fill && "xl:flex-1")}>
+        {children}
+      </div>
     </div>
   )
 }

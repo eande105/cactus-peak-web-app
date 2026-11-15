@@ -91,7 +91,7 @@ export function ClassFeature({
         )}
       >
         <ArtFrame
-          className="h-28 @xl:h-auto @xl:min-h-40"
+          className="h-20 @md:h-28 @xl:h-auto @xl:min-h-40"
           art={
             <ObjectCrop
               id={categoryObject[b.category]}

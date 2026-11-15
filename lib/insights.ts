@@ -1,5 +1,5 @@
 import type { AppState } from "@/lib/data/state"
-import { DAY } from "@/lib/time"
+import { DAY, dayStart, minutesOfDay, parts } from "@/lib/time"
 import type { CategoryId, Visit } from "@/lib/types"
 
 // Read-only numbers for Home: how a member used the clubs in a period. Pages read these; nothing here writes.
@@ -16,23 +16,6 @@ export function visitsBetween(
   )
 }
 
-/** Classes the member came to in [from, to): attended class bookings, not open use of a space. */
-export function classesAttended(
-  s: AppState,
-  memberId: string,
-  from: number,
-  to: number
-): number {
-  return s.bookings.filter(
-    (b) =>
-      b.memberId === memberId &&
-      b.kind === "class" &&
-      b.status === "attended" &&
-      b.start >= from &&
-      b.start < to
-  ).length
-}
-
 /** Visits by category, most first. Visits without a category are left out. */
 export function visitMix(visits: Visit[]): { id: CategoryId; n: number }[] {
   const n = new Map<CategoryId, number>()
@@ -41,20 +24,6 @@ export function visitMix(visits: Visit[]): { id: CategoryId; n: number }[] {
   return [...n.entries()]
     .map(([id, count]) => ({ id, n: count }))
     .sort((a, b) => b.n - a.n)
-}
-
-/** Visits by club, most first, with the time of the last visit to each. */
-export function clubVisits(
-  visits: Visit[]
-): { slug: string; n: number; last: number }[] {
-  const by = new Map<string, { n: number; last: number }>()
-  for (const v of visits) {
-    const c = by.get(v.clubSlug) ?? { n: 0, last: 0 }
-    by.set(v.clubSlug, { n: c.n + 1, last: Math.max(c.last, v.at) })
-  }
-  return [...by.entries()]
-    .map(([slug, c]) => ({ slug, ...c }))
-    .sort((a, b) => b.n - a.n || b.last - a.last)
 }
 
 const MILESTONES = [10, 25, 50, 100, 150, 200, 250, 300, 400, 500, 750, 1000]
@@ -69,10 +38,51 @@ export function nextMilestone(lifetime: number): { from: number; to: number } {
   return { from: i ? MILESTONES[i - 1] : 0, to: MILESTONES[i] }
 }
 
-/** The two 30-day windows that end now: the last 30 days and the 30 days before them. */
-export function thirtyDayWindows(now: number) {
-  return {
-    current: { from: now - 30 * DAY, to: now },
-    previous: { from: now - 60 * DAY, to: now - 30 * DAY },
+/** The weekday a member comes most regularly, from the full weeks before today. */
+export type Rhythm = {
+  /** Weeks looked at. */
+  weeks: number
+  /** For each weekday, Sun to Sat: the weeks with a visit on it. */
+  byDow: number[]
+  /** The most regular weekday. */
+  dow: number
+  /** The weeks with a visit on `dow`. */
+  hits: number
+  /** The usual start on `dow`, in minutes after midnight, to the nearest 15. */
+  minute: number
+}
+
+/**
+ * Counts weeks, not visits, so two visits on one Tuesday do not make Tuesday look more regular than it is.
+ * Null when there is no habit to name: fewer than four visits, or no weekday the member came on in two weeks.
+ */
+export function visitRhythm(
+  s: AppState,
+  memberId: string,
+  now: number,
+  weeks = 8
+): Rhythm | null {
+  const to = dayStart(now)
+  const from = to - weeks * 7 * DAY
+  const visits = visitsBetween(s, memberId, from, to)
+  const seen = Array.from({ length: 7 }, () => new Set<number>())
+  const mins: number[][] = Array.from({ length: 7 }, () => [])
+  for (const v of visits) {
+    const d = parts(v.at).dow
+    seen[d].add(Math.floor((v.at - from) / (7 * DAY)))
+    mins[d].push(minutesOfDay(v.at))
   }
+  const byDow = seen.map((x) => x.size)
+  let dow = 0
+  for (let i = 1; i < 7; i++)
+    if (
+      byDow[i] > byDow[dow] ||
+      (byDow[i] === byDow[dow] && mins[i].length > mins[dow].length)
+    )
+      dow = i
+  const hits = byDow[dow]
+  if (visits.length < 4 || hits < 2) return null
+  const sorted = [...mins[dow]].sort((a, b) => a - b)
+  const median = sorted[Math.floor(sorted.length / 2)]
+  return { weeks, byDow, dow, hits, minute: Math.round(median / 15) * 15 }
 }
