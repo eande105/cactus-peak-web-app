@@ -2,36 +2,19 @@
 import Link from "next/link"
 import type { ReactNode } from "react"
 import { useApp } from "@/components/app/use-app"
-import { CategoryTile } from "@/components/brand/graphics"
 import {
   ArrowRight,
   ChevronRight,
   type IconComponent,
 } from "@/components/icons"
-import { Card, CardFooterLink, Facts, Rows } from "@/components/kit/app"
+import { Card, CardFooterLink, Rows } from "@/components/kit/app"
 import { VisitStrip } from "@/components/kit/progress"
 import { RibMeter } from "@/components/kit/ribs"
-import { PersonAvatar, StatusPill } from "@/components/kit/ui"
+import { PersonAvatar } from "@/components/kit/ui"
 import { Button } from "@/components/ui/button"
-import { CLUB_BY_SLUG, PLANS } from "@/lib/data/catalog"
-import {
-  guestPassesLeft,
-  householdMembers,
-  householdMonthly,
-  nextBillingDate,
-  ptCreditsLeft,
-  weekStart,
-} from "@/lib/engine"
-import { clubVisits, nextMilestone, visitsBetween } from "@/lib/insights"
-import {
-  DAY,
-  dateKey,
-  fmtDay,
-  fmtDayShort,
-  fmtDowTime,
-  fmtMoney,
-} from "@/lib/time"
-import type { CategoryId } from "@/lib/types"
+import { householdMembers, weekStart } from "@/lib/engine"
+import { nextMilestone, visitsBetween } from "@/lib/insights"
+import { DAY, dateKey, fmtDowTime } from "@/lib/time"
 import { cn } from "@/lib/utils"
 
 export const plural = (n: number, w: string) =>
@@ -39,7 +22,9 @@ export const plural = (n: number, w: string) =>
 
 /**
  * One prompt at the top of Home: the callout with its icon on the same line, and the action under it. The whole card
- * is the link. `night` is the brand's one dark block on the screen.
+ * is the link. `night` is the brand's one dark block on the screen. In the half-width tiles of a narrow screen the
+ * callout is smaller and the action keeps only its arrow (its words stay for screen readers), so four prompts take
+ * two short rows.
  */
 export function QuickCard({
   href,
@@ -58,13 +43,13 @@ export function QuickCard({
     <Link
       href={href}
       className={cn(
-        "group gap-s p-m flex h-full min-w-0 flex-col justify-between corner-m text-body-m sm:text-body-s",
+        "group gap-xs p-s @lg:gap-s @lg:p-m flex h-full min-w-0 flex-col justify-between corner-m text-body-m sm:text-body-s",
         night
           ? "bg-night text-night-foreground hover:bg-night/90"
           : "raised hover:bg-muted/40"
       )}
     >
-      <span className="gap-xs flex min-w-0 items-start text-body-l">
+      <span className="gap-xs flex min-w-0 items-start text-body-m @lg:text-body-l">
         <span className="flex h-lh shrink-0 items-center">
           <Icon
             aria-hidden="true"
@@ -81,7 +66,7 @@ export function QuickCard({
           night ? "" : "text-link"
         )}
       >
-        {action}
+        <span className="@max-lg:sr-only">{action}</span>
         <ArrowRight
           aria-hidden="true"
           className="size-4 shrink-0 transition-transform group-hover:translate-x-0.5 motion-reduce:transition-none"
@@ -146,103 +131,62 @@ export function StreakCard() {
       }
       footer={<CardFooterLink href="/progress">Progress</CardFooterLink>}
     >
-      <div className="gap-m flex flex-col text-body-m sm:text-body-s">
-        <div className="gap-x-m gap-y-s flex flex-wrap items-end justify-between">
-          <div className="gap-s flex items-baseline">
-            <p className="tabular font-display-wide text-body-xl font-heavy">
-              {plural(stats.streakWeeks, "week")}
-            </p>
-            <p className="tabular text-muted-foreground">
-              Best {stats.longest}
-            </p>
-          </div>
-          <VisitStrip
-            weekStart={wk}
-            visits={new Set(week.map((v) => dateKey(v.at)))}
-            planned={planned}
-            today={now}
-            goal={target}
-          />
-        </div>
-        <div className="gap-s pt-s flex items-center justify-between rule-t">
-          <div className="min-w-0">
-            <p className="font-medium">{ms.to} visits</p>
-            <p className="tabular text-muted-foreground">
-              {lifetime} so far · {ms.to - lifetime} to go
-            </p>
-          </div>
-          <RibMeter
-            value={Math.round(((lifetime - ms.from) / (ms.to - ms.from)) * 5)}
-            size="sm"
-            tone="brand"
-            label={`Progress to ${ms.to} visits`}
-            valueText={`${lifetime} of ${ms.to}`}
-          />
-        </div>
-        {left ? (
-          <Button
-            size="sm"
-            variant="outline"
-            className="w-fit"
-            render={<Link href="/schedule" />}
-          >
-            Book a class
-          </Button>
-        ) : null}
-      </div>
-    </Card>
-  )
-}
-
-/** The clubs the member used in the last 60 days, most visits first. Each row opens the club. */
-export function ClubsCard() {
-  const { s, me, now } = useApp()
-  const clubs = clubVisits(visitsBetween(s, me.id, now - 60 * DAY, now))
-  return (
-    <Card
-      display
-      title="Where you train"
-      description="Last 60 days"
-      flush
-      footer={<CardFooterLink href="/clubs">All clubs</CardFooterLink>}
-    >
-      {clubs.length ? (
-        <Rows className="rule-t" label="Clubs you visited">
-          {clubs.map((c) => (
-            <li key={c.slug}>
-              <Link
-                href={`/clubs/${c.slug}`}
-                className="gap-s px-m py-xs flex min-h-14 items-center text-body-m hover:bg-muted/40 sm:text-body-s"
-              >
-                <span className="min-w-0 flex-1">
-                  <span className="gap-xs flex items-center">
-                    <span className="truncate font-medium">
-                      {CLUB_BY_SLUG[c.slug]?.name ?? c.slug}
-                    </span>
-                    {c.slug === me.homeClub ? (
-                      <StatusPill className="shrink-0">Home</StatusPill>
-                    ) : null}
-                  </span>
-                  <span className="tabular block truncate text-muted-foreground">
-                    Last visit {fmtDayShort(c.last)}
-                  </span>
+      {/* Two short rows, each read left to right, so the card stays low. Row one: the streak in the large value type
+          with its label under it, and this week's days at the right. Past a rule, row two: the next milestone in the
+          class row's type with its meter, and the one action at the right. Wide, the rows sit side by side. */}
+      <div className="@container text-body-m sm:text-body-s">
+        <div className="grid @xl:grid-cols-[auto_minmax(0,1fr)]">
+          <dl className="gap-m pb-m @xl:pr-m flex flex-wrap items-end justify-between @xl:pb-0">
+            <div className="flex min-w-0 flex-col-reverse">
+              <dt className="tabular truncate text-muted-foreground">
+                In a row · best {stats.longest}
+              </dt>
+              <dd className="font-display-wide tabular text-display-s font-heavy">
+                {plural(stats.streakWeeks, "week")}
+              </dd>
+            </div>
+            <dd>
+              <VisitStrip
+                weekStart={wk}
+                visits={new Set(week.map((v) => dateKey(v.at)))}
+                planned={planned}
+                today={now}
+                goal={target}
+              />
+            </dd>
+          </dl>
+          <div className="gap-x-m gap-y-s pt-m @xl:pl-m flex min-w-0 flex-wrap items-center justify-between rule-t @xl:pt-0 @xl:rule-l @xl:rule-t-0">
+            <div className="min-w-0">
+              <p className="gap-s flex items-center">
+                <span className="font-display-wide text-body-l font-heavy">
+                  {ms.to} visits
                 </span>
-                <span className="tabular shrink-0 font-medium">
-                  {plural(c.n, "visit")}
-                </span>
-                <ChevronRight
-                  className="size-4 shrink-0 text-muted-foreground"
-                  aria-hidden="true"
+                <RibMeter
+                  value={Math.round(
+                    ((lifetime - ms.from) / (ms.to - ms.from)) * 5
+                  )}
+                  size="sm"
+                  tone="brand"
+                  label={`Progress to ${ms.to} visits`}
+                  valueText={`${lifetime} of ${ms.to}`}
                 />
-              </Link>
-            </li>
-          ))}
-        </Rows>
-      ) : (
-        <p className="px-m pb-m pt-xs text-body-m text-muted-foreground sm:text-body-s">
-          No visits in the last 60 days.
-        </p>
-      )}
+              </p>
+              <p className="tabular text-muted-foreground">
+                {lifetime} so far · {ms.to - lifetime} to go
+              </p>
+            </div>
+            {left ? (
+              <Button
+                size="sm"
+                variant="outline"
+                render={<Link href="/schedule" />}
+              >
+                Book a class
+              </Button>
+            ) : null}
+          </div>
+        </div>
+      </div>
     </Card>
   )
 }
@@ -316,59 +260,6 @@ export function HouseholdCard() {
           )
         })}
       </Rows>
-    </Card>
-  )
-}
-
-/** The plan and what is left on it: the next charge, guest passes and coach sessions, with a way to use each. */
-export function MembershipCard() {
-  const { s, me, hh, now } = useApp()
-  const primary = me.role === "primary"
-  const passes = guestPassesLeft(s, hh.id, now)
-  const credits = ptCreditsLeft(hh)
-  const items = [
-    ...(primary
-      ? [
-          {
-            label: "Next charge",
-            value: `${fmtMoney(householdMonthly(s, hh).total, false)} on ${fmtDay(nextBillingDate(hh, now))}`,
-          },
-        ]
-      : []),
-    {
-      label: "Guest passes",
-      value: `${passes.left} of ${passes.included} left`,
-    },
-    {
-      label: "Coach sessions",
-      value: credits ? `${credits} left` : "None left",
-    },
-  ]
-  return (
-    <Card
-      display
-      title="Membership"
-      description={`${PLANS[hh.plan].name} · ${CLUB_BY_SLUG[me.homeClub].name}`}
-      footer={
-        <div className="gap-xs flex flex-wrap justify-end">
-          <Button
-            size="sm"
-            variant="outline"
-            render={<Link href="/guest-passes/send" />}
-          >
-            Send a guest pass
-          </Button>
-          <Button
-            size="sm"
-            variant="outline"
-            render={<Link href="/training" />}
-          >
-            Book a coach
-          </Button>
-        </div>
-      }
-    >
-      <Facts items={items} className="[&>div:first-child]:pt-zero" />
     </Card>
   )
 }
@@ -458,48 +349,5 @@ export function NeedsCard({ items }: { items: NeedItem[] }) {
         })}
       </ul>
     </section>
-  )
-}
-
-/**
- * One booking shortcut in the Book row, kept brief because the member knows what each one books: the category tile, a
- * one-word name ("Class", "Court"), one short fact from their data ("Mobility 30, 5:30 pm", "6 courts"), and the
- * arrow from the prompts at the top of Home. The whole card is the link.
- */
-export function BookSuggestion({
-  href,
-  category,
-  title,
-  hint,
-}: {
-  href: string
-  category: CategoryId
-  title: string
-  hint?: string
-}) {
-  return (
-    <Link
-      href={href}
-      className="group gap-s p-s flex h-full min-w-0 items-center corner-m raised text-body-m hover:bg-muted/40 sm:text-body-s"
-    >
-      <CategoryTile
-        category={category}
-        className="size-8 shrink-0"
-        aria-hidden="true"
-      />
-      <span className="min-w-0 flex-1">
-        <span className="block truncate font-heavy">{title}</span>
-        {hint ? (
-          <span className="tabular block truncate text-muted-foreground">
-            {hint}
-          </span>
-        ) : null}
-      </span>
-      <ArrowRight
-        aria-hidden="true"
-        // In the half-width cards of a phone the arrow would cut the name short, so it shows from @lg.
-        className="size-4 shrink-0 text-link transition-transform group-hover:translate-x-0.5 motion-reduce:transition-none @max-lg:hidden"
-      />
-    </Link>
   )
 }

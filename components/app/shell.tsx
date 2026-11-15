@@ -90,7 +90,7 @@ function SideLink({ item, count }: { item: PrimaryNavItem; count?: number }) {
         href={item.href}
         aria-current={active ? "page" : undefined}
         className={cn(
-          "gap-s px-s flex h-9 items-center corner-s text-body-s font-medium",
+          "gap-s px-s corner-s flex h-9 items-center text-body-s font-medium",
           active
             ? "bg-card text-foreground hairline"
             : "text-muted-foreground hover:bg-foreground/5 hover:text-foreground"
@@ -163,7 +163,7 @@ function Sidebar() {
             <button
               type="button"
               onClick={() => openDialog("command")}
-              className="gap-s px-s flex h-9 w-full items-center corner-s text-body-s font-medium text-muted-foreground hover:bg-foreground/5 hover:text-foreground"
+              className="gap-s px-s corner-s flex h-9 w-full items-center text-body-s font-medium text-muted-foreground hover:bg-foreground/5 hover:text-foreground"
             >
               <Search className="size-4 shrink-0" aria-hidden="true" />
               <span className="flex-1 text-left">Search</span>
@@ -192,7 +192,7 @@ function AccountNav() {
                 href={n.href}
                 aria-current={active ? "page" : undefined}
                 className={cn(
-                  "px-s flex h-9 items-center corner-s text-body-m font-medium whitespace-nowrap sm:h-8 sm:text-body-s",
+                  "px-s corner-s flex h-9 items-center text-body-m font-medium whitespace-nowrap sm:h-8 sm:text-body-s",
                   active
                     ? "bg-accent text-foreground"
                     : "text-muted-foreground hover:bg-muted hover:text-foreground"
@@ -220,7 +220,7 @@ function InboxLink() {
       href="/inbox"
       aria-label={unread ? `Inbox, ${unread} unread` : "Inbox"}
       aria-current={path.startsWith("/inbox") ? "page" : undefined}
-      className="relative grid size-9 place-items-center corner-s hover:bg-muted"
+      className="corner-s relative grid size-9 place-items-center hover:bg-muted"
     >
       <Bell className="size-4.5" aria-hidden="true" />
       {unread ? (
@@ -282,8 +282,8 @@ function AccountMenu({ wide }: { wide?: boolean }) {
         className={cn(
           "!border-0 !bg-transparent !shadow-none",
           wide
-            ? "!gap-s !px-s !flex !h-12 !w-full !items-center !justify-start corner-s !text-left hover:!bg-foreground/5 data-[popup-open]:!bg-foreground/5"
-            : "!grid !size-9 !place-items-center !p-zero hover:!bg-muted"
+            ? "!gap-s !px-s corner-s !flex !h-12 !w-full !items-center !justify-start !text-left hover:!bg-foreground/5 data-[popup-open]:!bg-foreground/5"
+            : "!p-zero !grid !size-9 !place-items-center hover:!bg-muted"
         )}
       >
         <PersonAvatar
@@ -590,7 +590,7 @@ function Shell({ children }: { children: ReactNode }) {
       <div className="isolate flex min-h-dvh [--bar-h:3.5rem] lg:[--bar-h:0rem]">
         <a
           href="#main"
-          className="px-m py-s fixed top-2 left-2 z-[70] -translate-y-20 corner-s bg-night text-body-s font-heavy text-night-foreground focus:translate-y-0"
+          className="px-m py-s corner-s fixed top-2 left-2 z-[70] -translate-y-20 bg-night text-body-s font-heavy text-night-foreground focus:translate-y-0"
         >
           Skip to main content
         </a>
@@ -601,7 +601,7 @@ function Shell({ children }: { children: ReactNode }) {
           className={cn(
             "flex min-w-0 flex-1 flex-col",
             "bg-sheet",
-            "lg:my-xs lg:mr-xs lg:corner-l lg:hairline lg:ring-foreground/10 lg:shadow-s"
+            "lg:my-xs lg:mr-xs lg:corner-l lg:shadow-s lg:hairline lg:ring-foreground/10"
           )}
         >
           <header className="sticky top-0 z-30 bg-sheet rule-b lg:hidden">
@@ -636,7 +636,8 @@ function Shell({ children }: { children: ReactNode }) {
             tabIndex={-1}
             className={cn(
               FRAME,
-              "py-m lg:py-l flex-1 outline-none max-lg:pb-[calc(var(--space-xxl)*2)]"
+              // A column, so a page that asks to fill the screen (Home) can take the height left.
+              "py-m lg:py-l flex flex-1 flex-col outline-none max-lg:pb-[calc(var(--space-xxl)*2)]"
             )}
           >
             {access.ok ? (

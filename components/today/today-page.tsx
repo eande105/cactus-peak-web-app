@@ -29,13 +29,11 @@ import {
 import { AppPage, Card, CardFooterLink } from "@/components/kit/app"
 import { Collapse } from "@/components/kit/collapse"
 import { StatusPill } from "@/components/kit/ui"
+import { BookCard } from "@/components/today/book-card"
 import { ClassFeature, HeldSpot } from "@/components/today/class-feature"
-import { MixCard } from "@/components/today/mix-card"
+import { OpenDay, useOpenDayPlan } from "@/components/today/open-day"
 import {
-  BookSuggestion,
-  ClubsCard,
   HouseholdCard,
-  MembershipCard,
   type NeedItem,
   NeedsCard,
   Pair,
@@ -53,8 +51,6 @@ import {
   cancelNote,
   clubOpen,
   liveBusyness,
-  overlaps,
-  ptCreditsLeft,
   sessionLeft,
   weekStart,
 } from "@/lib/engine"
@@ -70,7 +66,7 @@ import {
   monthLabel,
   parts,
 } from "@/lib/time"
-import type { Booking, CategoryId } from "@/lib/types"
+import type { Booking } from "@/lib/types"
 import { openDialog, useOffline } from "@/lib/ui-state"
 
 type Item = Booking & { names?: string }
@@ -334,88 +330,7 @@ export default function TodayPage() {
         line: "Needed before kids club check-in",
       })
 
-  const credits = ptCreditsLeft(hh)
-  // The Book row: one shortcut for each kind of booking, with one short fact from the member's data.
-  // A class the member is not already doing today: an interest, with room, at a free time.
-  const doingToday = new Set(
-    s.bookings
-      .filter(
-        (b) =>
-          b.memberId === me.id &&
-          b.sessionId &&
-          dayStart(b.start) === today &&
-          b.status !== "cancelled"
-      )
-      .map((b) => b.title)
-  )
-  const suggested = sessionsForDay(club, today).find(
-    (x) =>
-      x.start > now &&
-      prefs.interests.includes(x.category) &&
-      // Youth classes are for kids and teens, even when a parent lists them.
-      (x.category !== "youth" || me.role === "teen") &&
-      !doingToday.has(x.name) &&
-      !overlaps(s, me.id, x.start, x.end) &&
-      sessionLeft(s, x) > 0
-  )
-  const kids = household.filter((m) => m.role === "child")
-  const courts = c.courts.reduce((n, x) => n + x.count, 0)
-  const quick: {
-    href: string
-    title: string
-    hint?: string
-    category: CategoryId
-  }[] = [
-    {
-      href: suggested ? `/schedule/${suggested.id}` : "/schedule",
-      // A suggested class names itself; its start time is the one fact.
-      title: suggested ? suggested.name : "Class",
-      hint: suggested
-        ? fmtTime(suggested.start)
-        : openToday
-          ? `${openToday} open today`
-          : undefined,
-      category: suggested?.category ?? "conditioning",
-    },
-    ...(me.role !== "teen"
-      ? [
-          {
-            href: "/reserve/courts",
-            title: "Court",
-            hint: courts ? plural(courts, "court") : "At other clubs",
-            category: "court" as const,
-          },
-        ]
-      : []),
-    {
-      href: "/reserve/lanes",
-      title: "Lap lane",
-      hint: c.pool ? plural(c.pool.lanes, "lane") : "At other clubs",
-      category: "aqua",
-    },
-    ...((me.role === "primary" || me.role === "adult") && kids.length
-      ? [
-          {
-            href: "/reserve/kids-club",
-            title: "Kids club",
-            hint: kids.map((k) => k.firstName).join(", "),
-            category: "youth" as const,
-          },
-        ]
-      : []),
-    {
-      href: "/training",
-      title: "Coach",
-      hint:
-        credits > 0
-          ? `${credits} left`
-          : hh.ptIntroLeft > 0
-            ? "First one free"
-            : undefined,
-      category: "strength",
-    },
-  ]
-
+  const idea = useOpenDayPlan()
   // The quick links at the top: the club now, the coming week, the weekly goal and the inbox.
   const weekAhead = s.bookings.filter(
     (b) =>
@@ -432,7 +347,6 @@ export default function TodayPage() {
   const showGoal = me.role !== "child"
   const showHousehold =
     (me.role === "primary" || me.role === "adult") && household.length > 1
-  const showPlan = me.role === "primary" || me.role === "adult"
 
   const nextCard =
     next && !frozen ? (
@@ -502,12 +416,15 @@ export default function TodayPage() {
     <Card
       display
       title="Today"
+      // An empty day says so in the head, under the title, so the body can hold one idea.
       description={
         later.length
           ? later.length < agenda.length
             ? `${later.length} more today`
             : `${plural(later.length, "booking")} today`
-          : undefined
+          : later.length < agenda.length
+            ? "Nothing else on your calendar"
+            : "Nothing on your calendar"
       }
       flush
       // The view filter of the list sits in the card's action slot, as a two-option toggle (shadcn CardAction).
@@ -526,7 +443,12 @@ export default function TodayPage() {
         ) : null
       }
       // The way to the full list is the card's footer (shadcn CardFooter).
-      footer={<CardFooterLink href="/bookings">All bookings</CardFooterLink>}
+      // On an empty day there is no list to see in full, and the idea's Book is the card's one action.
+      footer={
+        later.length ? (
+          <CardFooterLink href="/bookings">All bookings</CardFooterLink>
+        ) : undefined
+      }
     >
       {later.length ? (
         <ListRows label="Today's bookings">
@@ -579,20 +501,16 @@ export default function TodayPage() {
           })}
         </ListRows>
       ) : (
-        <p className="px-m pb-m pt-xs text-body-m text-muted-foreground sm:text-body-s">
-          {later.length < agenda.length
-            ? "Nothing else on the calendar today."
-            : "Nothing on the calendar today."}{" "}
-          <Link href="/schedule" className="font-medium text-link">
-            Find a class
-          </Link>
-        </p>
+        <div className="px-m pb-m pt-xs text-body-m sm:text-body-s">
+          <OpenDay />
+        </div>
       )}
     </Card>
   )
 
   return (
     <AppPage
+      fill
       title={`Hi, ${me.firstName}`}
       meta={
         <p className="text-body-m whitespace-nowrap text-muted-foreground sm:text-body-s">
@@ -602,7 +520,8 @@ export default function TodayPage() {
     >
       {/* Prompts: each card states what is waiting and opens the place to act on it. */}
       <div className="@container">
-        <ul className="gap-s grid grid-cols-1 @lg:grid-cols-2 @3xl:grid-cols-4">
+        {/* Two by two until the row holds four. With three, the last one takes the full row. */}
+        <ul className="gap-xs @lg:gap-s grid grid-cols-2 @3xl:grid-cols-4 @max-3xl:[&>li:last-child:nth-child(odd)]:col-span-2">
           <li className="flex min-w-0 flex-col">
             <QuickCard
               night
@@ -706,32 +625,14 @@ export default function TodayPage() {
         right={needsCard ?? (showGoal ? <StreakCard /> : undefined)}
       />
 
-      <section className="gap-s flex flex-col">
-        <h2 className="font-display-wide text-body-l font-heavy">Book</h2>
-        <div className="@container">
-          <ul className="gap-s grid grid-cols-2 @lg:grid-cols-3 @3xl:auto-cols-fr @3xl:grid-flow-col @3xl:grid-cols-none @max-lg:[&>li:last-child:nth-child(odd)]:col-span-2">
-            {quick.map((q) => (
-              <li key={q.href} className="flex min-w-0 flex-col">
-                <BookSuggestion {...q} />
-              </li>
-            ))}
-          </ul>
-        </div>
-      </section>
+      <BookCard exclude={later.length ? undefined : idea?.session} />
 
       <Pair
         left={todayCard}
         right={needsCard && showGoal ? <StreakCard /> : undefined}
       />
 
-      {showGoal ? <Pair left={<MixCard />} right={<ClubsCard />} /> : null}
-
-      {showHousehold || showPlan ? (
-        <Pair
-          left={showHousehold ? <HouseholdCard /> : <MembershipCard />}
-          right={showHousehold && showPlan ? <MembershipCard /> : undefined}
-        />
-      ) : null}
+      {showHousehold ? <HouseholdCard /> : null}
     </AppPage>
   )
 }
