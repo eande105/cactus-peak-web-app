@@ -1,5 +1,6 @@
 "use client"
 import { useRef } from "react"
+import { SlotCell, SlotChip, type SlotRange } from "@/components/reserve/parts"
 import { fmtTime, parts } from "@/lib/time"
 import { cn } from "@/lib/utils"
 
@@ -24,6 +25,7 @@ export interface GridRow {
 }
 
 // Matrix of resources (rows) by start times (columns). One radiogroup, roving focus, arrow-key movement.
+// It sits directly on the sheet: a sticky first column with the names, small muted time heads, hairline cells.
 export function SlotGrid({
   kind,
   rows,
@@ -35,6 +37,7 @@ export function SlotGrid({
   onHeaderClick,
   label,
   disabled,
+  className,
 }: {
   kind: "court" | "lane"
   rows: GridRow[]
@@ -47,11 +50,12 @@ export function SlotGrid({
   label: string
   disabled?: boolean
   now?: number
+  className?: string
 }) {
   const ref = useRef<HTMLDivElement>(null)
   const am = slots.filter((s) => parts(s).h < 12)
   const pm = slots.filter((s) => parts(s).h >= 12)
-  const cols = `104px repeat(${slots.length}, ${kind === "court" ? 68 : 84}px)`
+  const cols = `104px repeat(${slots.length}, ${kind === "court" ? 56 : 72}px)`
   const move = (e: React.KeyboardEvent) => {
     const el = document.activeElement as HTMLElement
     if (el?.getAttribute("role") !== "radio") return
@@ -86,9 +90,20 @@ export function SlotGrid({
         if (info(rows[r].id, slots[c]).status === "open") return `${r}-${c}`
     return "0-0"
   })()
+  const cellMs = kind === "court" ? 1800000 : 2700000
+  const rangeOf = (row: GridRow, s: number): SlotRange | null => {
+    if (!selected || selected.row !== row.id) return null
+    const end = selected.slot + rangeCells * cellMs
+    if (s < selected.slot || s >= end) return null
+    const first = s === selected.slot
+    const last = s + cellMs >= end
+    return first && last ? "only" : first ? "start" : last ? "end" : "mid"
+  }
+  const head =
+    "tabular grid min-h-9 w-full place-items-center text-body-xs font-medium whitespace-nowrap text-muted-foreground"
   return (
-    <div className="relative">
-      <div className="overflow-x-auto rounded-lg bg-card edge ring-border">
+    <div className={cn("relative", className)}>
+      <div className="overflow-x-auto">
         <div
           ref={ref}
           role="radiogroup"
@@ -97,166 +112,76 @@ export function SlotGrid({
           className="relative grid w-max min-w-full"
           style={{ gridTemplateColumns: cols }}
         >
-          <div className="sticky left-0 z-10 bg-card" />
-          <div
-            style={{ gridColumn: `span ${am.length}` }}
-            className="border-b border-border px-2 py-1 eyebrow text-muted-foreground"
-          >
-            AM
-          </div>
+          <div className="sticky left-0 z-10 bg-sheet" />
+          {am.length ? (
+            <div
+              style={{ gridColumn: `span ${am.length}` }}
+              className="px-xs pt-xs text-body-xs text-muted-foreground"
+            >
+              am
+            </div>
+          ) : null}
           {pm.length ? (
             <div
               style={{ gridColumn: `span ${pm.length}` }}
-              className="border-b border-l border-border px-2 py-1 eyebrow text-muted-foreground"
+              className={cn(
+                "px-xs pt-xs text-body-xs text-muted-foreground",
+                am.length > 0 && "rule-l"
+              )}
             >
-              PM
+              pm
             </div>
           ) : null}
-          <div className="sticky left-0 z-10 border-b border-border bg-card" />
-          {slots.map((s) => (
-            <div key={s} className="border-b border-border">
+          <div className="sticky left-0 z-10 bg-sheet rule-b" />
+          {slots.map((s, c) => (
+            <div
+              key={s}
+              className={cn("rule-b", c === am.length && c > 0 && "rule-l")}
+            >
               {onHeaderClick ? (
                 <button
                   type="button"
                   onClick={() => onHeaderClick(s)}
                   aria-label={`Any lane at ${fmtTime(s)}`}
-                  className="grid min-h-11 w-full place-items-center num text-detail font-semibold hover:bg-muted"
+                  className={cn(head, "hover:bg-muted hover:text-foreground")}
                 >
                   {fmtTime(s, false)}
                 </button>
               ) : (
-                <div className="grid min-h-11 place-items-center num text-detail font-semibold">
-                  {fmtTime(s, false)}
-                </div>
+                <div className={head}>{fmtTime(s, false)}</div>
               )}
             </div>
           ))}
           {rows.map((row, r) => (
             <div key={row.id} className="contents">
-              <div className="sticky left-0 z-10 flex min-h-12 flex-col justify-center border-b border-l-2 border-border border-l-[var(--cat-court)] bg-card px-3 text-label">
-                {row.label}
+              <div className="pr-s py-xxs sticky left-0 z-10 flex min-h-11 flex-col justify-center bg-sheet text-body-s font-medium rule-b">
+                <span className="truncate">{row.label}</span>
                 {row.sub ? (
-                  <span className="text-detail font-normal text-muted-foreground">
+                  <span className="truncate font-regular text-muted-foreground">
                     {row.sub}
                   </span>
                 ) : null}
               </div>
               {slots.map((s, c) => {
-                const i = info(row.id, s)
-                const sel =
-                  selected &&
-                  selected.row === row.id &&
-                  selected.slot <= s &&
-                  s <
-                    selected.slot +
-                      rangeCells * (kind === "court" ? 1800000 : 2700000)
-                const start = selected?.row === row.id && selected.slot === s
-                const free = i.status === "open"
-                const name = `${row.label}, ${fmtTime(s)}, ${i.status === "open" ? (i.swimmers === 1 ? "1 of 2 swimmers" : "available") : i.status === "mine" ? "yours" : i.status === "taken" || i.status === "full" ? "taken" : i.status === "closed" ? "closed" : i.status === "short" ? "not enough time for this length" : i.status === "notOpen" ? i.label : "past"}`
+                const range = rangeOf(row, s)
                 return (
-                  <div
-                    key={s}
-                    className={cn(
-                      "border-b border-border",
-                      c === am.length && "border-l"
-                    )}
-                  >
-                    {/* biome-ignore lint/a11y/useSemanticElements: slot picker with roving tabindex, a native radio input cannot fill the grid cell */}
-                    <button
-                      type="button"
-                      role="radio"
-                      aria-checked={!!start}
-                      aria-label={name}
-                      aria-disabled={!free || disabled || undefined}
-                      data-row={r}
-                      data-col={c}
-                      tabIndex={
+                  <div key={s} className="rule-b rule-l">
+                    <SlotCell
+                      kind={kind}
+                      row={row}
+                      slot={s}
+                      info={info(row.id, s)}
+                      r={r}
+                      c={c}
+                      range={range}
+                      tabbable={
                         selected
-                          ? start
-                            ? 0
-                            : -1
+                          ? range === "start" || range === "only"
                           : firstOpen === `${r}-${c}`
-                            ? 0
-                            : -1
                       }
-                      onClick={() => {
-                        if (free && !disabled) onSelect(row.id, s)
-                      }}
-                      className={cn(
-                        "relative grid size-full min-h-12 place-items-center text-detail transition-colors",
-                        sel
-                          ? "bg-night text-on-night"
-                          : i.status === "mine"
-                            ? "bg-accent"
-                            : i.status === "taken" || i.status === "full"
-                              ? "bg-muted hatch text-muted-foreground"
-                              : i.status === "closed"
-                                ? "bg-muted hatch text-muted-foreground"
-                                : i.status === "past" || i.status === "notOpen"
-                                  ? "bg-muted/40 text-muted-foreground"
-                                  : i.status === "short"
-                                    ? "text-muted-foreground opacity-60"
-                                    : "hover:bg-muted"
-                      )}
-                    >
-                      {sel ? (
-                        start ? (
-                          <span className="num font-semibold">
-                            {kind === "lane" ? (
-                              <span className="flex items-center gap-0.5">
-                                {[0, 1].map((k) => (
-                                  <span
-                                    key={k}
-                                    className={cn(
-                                      "size-2 rounded-full",
-                                      k < (i.swimmers ?? 0) + 1
-                                        ? "bg-on-night"
-                                        : "border border-on-night"
-                                    )}
-                                  />
-                                ))}
-                              </span>
-                            ) : (
-                              "✓"
-                            )}
-                          </span>
-                        ) : null
-                      ) : i.status === "open" ? (
-                        kind === "lane" ? (
-                          <span className="flex flex-col items-center gap-0.5">
-                            <span className="flex gap-0.5">
-                              {[0, 1].map((k) => (
-                                <span
-                                  key={k}
-                                  className={cn(
-                                    "size-2 rounded-full",
-                                    k < (i.swimmers ?? 0)
-                                      ? "bg-foreground"
-                                      : "border border-input"
-                                  )}
-                                />
-                              ))}
-                            </span>
-                            {i.swimmers === 1 ? (
-                              <span className="text-tab leading-none text-muted-foreground">
-                                1 of 2
-                              </span>
-                            ) : null}
-                          </span>
-                        ) : (
-                          <span
-                            aria-hidden="true"
-                            className="size-2 rounded-full bg-success"
-                          />
-                        )
-                      ) : i.status === "mine" ? (
-                        <span className="text-tab font-semibold">Yours</span>
-                      ) : i.status === "taken" || i.status === "full" ? (
-                        <span className="sr-only">Taken</span>
-                      ) : i.status === "closed" ? (
-                        <span className="text-tab">Closed</span>
-                      ) : null}
-                    </button>
+                      disabled={disabled}
+                      onSelect={onSelect}
+                    />
                   </div>
                 )
               })}
@@ -266,16 +191,13 @@ export function SlotGrid({
       </div>
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute inset-y-0 right-0 w-10 rounded-r-lg bg-gradient-to-l from-card to-transparent"
+        className="pointer-events-none absolute inset-y-0 right-0 w-10 bg-gradient-to-l from-card to-transparent"
       />
-      <p className="mt-1 text-detail text-muted-foreground">
-        Scroll sideways for later times.
-      </p>
     </div>
   )
 }
 
-// Below 1024px: one row per start time, resources as 44px chips. No horizontal scroll.
+// Below 1024px: one row for each start time, with the courts or lanes as chips. No horizontal scroll.
 export function SlotList({
   kind,
   rows,
@@ -285,6 +207,7 @@ export function SlotList({
   onSelect,
   label,
   disabled,
+  className,
 }: {
   kind: "court" | "lane"
   rows: GridRow[]
@@ -294,53 +217,35 @@ export function SlotList({
   onSelect: (row: number, slot: number) => void
   label: string
   disabled?: boolean
+  className?: string
 }) {
   return (
     <div
       role="radiogroup"
       aria-label={label}
-      className="flex flex-col rule-rows"
+      className={cn("flex flex-col [&>div+div]:rule-t", className)}
     >
       {slots.map((s) => (
-        <div key={s} className="flex flex-col gap-1.5 py-3 first:pt-0">
-          <p className="num text-label">{fmtTime(s)}</p>
-          <div className="flex flex-wrap gap-2">
-            {rows.map((r) => {
-              const i = info(r.id, s)
-              const on = selected?.row === r.id && selected.slot === s
-              const free = i.status === "open"
-              return (
-                // biome-ignore lint/a11y/useSemanticElements: slot picker with roving tabindex, a native radio input cannot fill the grid cell
-                <button
-                  key={r.id}
-                  type="button"
-                  role="radio"
-                  aria-checked={on}
-                  aria-disabled={!free || disabled || undefined}
-                  aria-label={`${r.label}, ${fmtTime(s)}, ${free ? (i.swimmers === 1 ? "1 of 2 swimmers" : "available") : i.status === "mine" ? "yours" : i.status === "short" ? "not enough time" : i.status}`}
-                  onClick={() => {
-                    if (free && !disabled) onSelect(r.id, s)
-                  }}
-                  className={cn(
-                    "min-h-11 min-w-20 rounded-md px-3 text-caption edge ring-input",
-                    on
-                      ? "bg-night text-on-night"
-                      : free
-                        ? "bg-card hover:bg-muted"
-                        : "bg-muted hatch text-muted-foreground opacity-70"
-                  )}
-                >
-                  <span className="flex flex-col items-center leading-tight">
-                    <span>{r.label}</span>
-                    {kind === "lane" && free && i.swimmers === 1 ? (
-                      <span className="text-detail text-muted-foreground">
-                        1 of 2 swimmers
-                      </span>
-                    ) : null}
-                  </span>
-                </button>
-              )
-            })}
+        <div
+          key={s}
+          className="gap-x-s py-s grid grid-cols-[4.5rem_minmax(0,1fr)] items-start"
+        >
+          <p className="tabular flex min-h-11 items-center text-body-m font-medium whitespace-nowrap text-muted-foreground">
+            {fmtTime(s)}
+          </p>
+          <div className="gap-xs flex flex-wrap">
+            {rows.map((r) => (
+              <SlotChip
+                key={r.id}
+                kind={kind}
+                row={r}
+                slot={s}
+                info={info(r.id, s)}
+                selected={selected?.row === r.id && selected.slot === s}
+                disabled={disabled}
+                onSelect={onSelect}
+              />
+            ))}
           </div>
         </div>
       ))}

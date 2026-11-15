@@ -31,6 +31,9 @@ export const HUGEICONS_STYLES = [
   { value: 'bulk', label: 'Bulk' },
 ] as const;
 
+/** The one style Hugeicons publishes for free; every other style needs a license. */
+export const HUGEICONS_FREE_VARIANT: HugeiconsVariant = 'stroke-rounded';
+
 export function isHugeiconsVariant(value: unknown): value is HugeiconsVariant {
   return typeof value === 'string' && Object.hasOwn(HUGEICONS_VARIANTS, value);
 }

@@ -36,14 +36,14 @@ function ToastList() {
           className="toast-root"
         >
           <Toast.Content>
-            <div className="flex items-start gap-3">
+            <div className="flex items-start gap-s">
               <div className="min-w-0 flex-1">
-                <Toast.Title className="text-label" />
-                <Toast.Description className="text-caption text-muted-foreground" />
+                <Toast.Title className="text-body-s font-heavy" />
+                <Toast.Description className="text-body-s text-muted-foreground" />
               </div>
               <Toast.Close
                 aria-label="Dismiss notification"
-                className="-m-3 grid size-11 shrink-0 place-items-center rounded-md hover:bg-muted"
+                className="-m-s grid size-11 shrink-0 place-items-center corner-s hover:bg-muted"
               >
                 <X className="size-4" aria-hidden="true" />
               </Toast.Close>

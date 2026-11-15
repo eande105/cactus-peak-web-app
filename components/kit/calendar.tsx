@@ -77,8 +77,8 @@ export function MiniCalendar({
         : (cells.find(Boolean) as number)
   return (
     <div className={cn("w-full max-w-[22rem]", className)}>
-      <div className="mb-2 flex items-center justify-between">
-        <p className="text-label" aria-live="polite">
+      <div className="mb-xs flex items-center justify-between">
+        <p className="text-body-s font-heavy" aria-live="polite">
           {monthLabel(first)}
         </p>
         <div className="flex">
@@ -105,7 +105,7 @@ export function MiniCalendar({
         ref={grid}
         role="grid"
         aria-label={`${label}, ${monthLabel(first)}`}
-        className="grid grid-cols-7 gap-y-1"
+        className="grid grid-cols-7 gap-y-xxs"
       >
         {DOW.map((d) => (
           // biome-ignore lint/a11y/useSemanticElements: date grid on CSS grid with roving-tabindex buttons, a native table would change the layout
@@ -113,7 +113,7 @@ export function MiniCalendar({
           <div
             key={d}
             role="columnheader"
-            className="pb-1 text-center text-detail text-muted-foreground"
+            className="pb-xxs text-center text-body-xs text-muted-foreground"
           >
             {d.slice(0, 2)}
           </div>
@@ -173,13 +173,15 @@ export function MiniCalendar({
                     }
                   }}
                   className={cn(
-                    "relative grid size-11 place-items-center rounded-full num text-body",
+                    "tabular relative grid size-11 place-items-center corner-full text-body-m",
                     sel
-                      ? "bg-night text-on-night"
+                      ? "bg-night text-night-foreground"
                       : reason
                         ? "text-muted-foreground opacity-60"
                         : "hover:bg-muted",
-                    isToday && !sel && "font-bold ring-2 ring-input ring-inset",
+                    isToday &&
+                      !sel &&
+                      "font-heavy ring-2 ring-input ring-inset",
                     rings?.has(key) && !sel && "ring-2 ring-primary ring-inset"
                   )}
                 >
@@ -188,8 +190,8 @@ export function MiniCalendar({
                     <span
                       aria-hidden="true"
                       className={cn(
-                        "absolute bottom-1 size-2 rounded-full",
-                        sel ? "bg-on-night" : "bg-primary"
+                        "absolute bottom-1 size-2 corner-full",
+                        sel ? "bg-night-foreground" : "bg-primary"
                       )}
                     />
                   ) : null}

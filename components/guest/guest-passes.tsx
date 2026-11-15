@@ -4,6 +4,15 @@ import { useEffect, useState } from "react"
 import { useApp } from "@/components/app/use-app"
 import { Menu } from "@/components/graphical"
 import { MoreHorizontal } from "@/components/icons"
+import {
+  AppPage,
+  Card,
+  Facts,
+  Row,
+  Rows,
+  Stat,
+  Stats,
+} from "@/components/kit/app"
 import { Confirm, Modal } from "@/components/kit/overlays"
 import {
   Banner,
@@ -11,8 +20,6 @@ import {
   EmptyState,
   FormField,
   LoadingBlock,
-  PageHeader,
-  SectionTitle,
   SelectBox,
   StatusPill,
 } from "@/components/kit/ui"
@@ -101,6 +108,7 @@ function SendDialog({
   const link = `https://my.cactuspeakathletic.example/g/${name.toLowerCase().replace(/\W+/g, "") || "guest"}`
   return (
     <Modal
+      wide
       open={open}
       onOpenChange={(o) => {
         onOpenChange(o)
@@ -114,11 +122,11 @@ function SendDialog({
       }
     >
       {done ? (
-        <div className="flex flex-col gap-4">
+        <div className="gap-m flex flex-col">
           <StatusPill tone="success" className="w-fit">
             Sent
           </StatusPill>
-          <div className="flex gap-2">
+          <div className="gap-s flex">
             <Input
               readOnly
               aria-label="Guest pass link"
@@ -136,7 +144,7 @@ function SendDialog({
             </Button>
           </div>
           {done.paid ? (
-            <p className="text-caption text-muted-foreground">
+            <p className="text-body-m text-muted-foreground sm:text-body-s">
               Charged {fmtMoney(20 * done.paid)} to {hh.card.brand} ending{" "}
               {hh.card.last4}.
             </p>
@@ -144,7 +152,7 @@ function SendDialog({
           <div className="flex justify-between">
             <button
               type="button"
-              className="text-link min-h-11 text-label underline"
+              className="min-h-11 text-body-m font-medium text-link underline sm:text-body-s"
               onClick={() => {
                 reset()
               }}
@@ -163,7 +171,7 @@ function SendDialog({
         </div>
       ) : (
         <form
-          className="flex flex-col gap-3"
+          className="gap-m flex flex-col"
           onSubmit={(e) => {
             e.preventDefault()
             void submit()
@@ -173,7 +181,7 @@ function SendDialog({
           {err.form ? (
             <p
               role="alert"
-              className="rounded-md bg-danger-subtle px-3 py-2 text-caption font-semibold"
+              className="px-m py-s corner-s bg-danger-subtle text-body-m font-heavy sm:text-body-s"
             >
               {err.form}
             </p>
@@ -202,7 +210,7 @@ function SendDialog({
               />
             )}
           </FormField>
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="gap-m grid sm:grid-cols-2">
             <SelectBox
               label="Club"
               value={clubSlug}
@@ -228,7 +236,7 @@ function SendDialog({
             My guest is 16 or 17
           </CheckRow>
           {teen ? (
-            <p className="text-caption text-muted-foreground">
+            <p className="text-body-m text-muted-foreground sm:text-body-s">
               A parent or guardian signs a waiver.
             </p>
           ) : null}
@@ -252,12 +260,34 @@ function SendDialog({
               />
             )}
           </FormField>
-          <p className="rounded-md bg-muted px-3 py-2 text-caption">
-            {buying
-              ? `Costs $20 per guest. Charged to ${hh.card.brand} ending ${hh.card.last4}.`
-              : `Uses 1 of ${PLANS[hh.plan].guestPasses} included passes.`}
-          </p>
-          <div className="flex justify-end gap-2 pt-1">
+          <Facts
+            className="px-m corner-s bg-muted"
+            items={
+              buying
+                ? [
+                    {
+                      label: "Cost",
+                      value: (
+                        <span className="tabular">
+                          {fmtMoney(20 * (left <= 0 ? count : 1), false)}
+                        </span>
+                      ),
+                      hint: "$20 per guest",
+                    },
+                    {
+                      label: "Charged to",
+                      value: `${hh.card.brand} ending ${hh.card.last4}`,
+                    },
+                  ]
+                : [
+                    {
+                      label: "Cost",
+                      value: `1 of ${PLANS[hh.plan].guestPasses} included passes`,
+                    },
+                  ]
+            }
+          />
+          <div className="gap-s pt-xs flex justify-end">
             <Button
               type="button"
               variant="outline"
@@ -277,6 +307,82 @@ function SendDialog({
   )
 }
 
+const STATUS: Record<
+  GuestPass["status"],
+  { label: string; tone: "success" | "info" | "warning" }
+> = {
+  sent: { label: "Sent", tone: "info" },
+  opened: { label: "Opened", tone: "info" },
+  used: { label: "Used", tone: "success" },
+  cancelled: { label: "Cancelled", tone: "warning" },
+  expired: { label: "Expired", tone: "warning" },
+}
+
+const RULES = [
+  "One visit, one club",
+  "Guests are 18 or older (16 and 17 with a parent)",
+  "Valid 14 days",
+  "Guests sign a waiver on their phone",
+  "Unused passes don't roll over",
+]
+
+/** The row menu of a pass the guest has not used yet: resend, edit contact, copy link, cancel. */
+function PassMenu({
+  pass: g,
+  onEdit,
+  onCancel,
+}: {
+  pass: GuestPass
+  onEdit: () => void
+  onCancel: () => void
+}) {
+  return (
+    <Menu.Root>
+      <Menu.Trigger
+        aria-label={`Actions for ${g.guestName}'s pass`}
+        className="!grid !size-11 !place-items-center !bg-transparent !p-zero hover:!bg-muted md:!size-9"
+      >
+        <MoreHorizontal className="size-4" aria-hidden="true" />
+      </Menu.Trigger>
+      <Menu.Portal>
+        <Menu.Positioner align="end" sideOffset={6}>
+          <Menu.Popup>
+            <Menu.Item
+              onClick={() => {
+                resendGuestPass(g.id)
+                toast({
+                  title: `Pass sent again to ${g.guestName.split(" ")[0]}`,
+                })
+              }}
+            >
+              Resend
+            </Menu.Item>
+            <Menu.Item onClick={onEdit}>Edit contact</Menu.Item>
+            <Menu.Item
+              onClick={() => {
+                void navigator.clipboard?.writeText(
+                  `https://my.cactuspeakathletic.example/g/${g.id}`
+                )
+                toast({ title: "Link copied" })
+              }}
+            >
+              Copy link
+            </Menu.Item>
+            <Menu.Item className="!text-destructive" onClick={onCancel}>
+              Cancel pass
+            </Menu.Item>
+          </Menu.Popup>
+        </Menu.Positioner>
+      </Menu.Portal>
+    </Menu.Root>
+  )
+}
+
+/**
+ * Guest passes: how many are left as one block of numbers, one primary action in the page bar to send a pass, and
+ * each sent pass as a row on the sheet with its status. The rules sit in a quiet well at the end.
+ * A pass the guest has not used yet has a menu: resend, edit contact, copy link, cancel.
+ */
 export default function GuestPasses({ openSend }: { openSend?: boolean }) {
   const { s, me, hh, now } = useApp()
   const router = useRouter()
@@ -300,165 +406,131 @@ export default function GuestPasses({ openSend }: { openSend?: boolean }) {
         : g
     )
     .sort((a, b) => b.sentAt - a.sentAt)
+  const valid = passes.filter(
+    (g) => g.status === "sent" || g.status === "opened"
+  ).length
   const frozen = hh.status === "frozen"
   const trail = hh.plan === "trailhead"
   return (
-    <div className="flex flex-col gap-8">
-      <PageHeader
-        title="Guest passes"
-        description="Bring a friend for one visit."
-        actions={
-          <Button disabled={frozen} onClick={() => setSend(true)}>
-            {trail && left <= 0 ? "Buy a guest pass: $20" : "Send a guest pass"}
-          </Button>
-        }
-      />
+    <AppPage
+      title="Guest passes"
+      actions={
+        <Button disabled={frozen} onClick={() => setSend(true)}>
+          {trail && left <= 0 ? "Buy a guest pass: $20" : "Send a guest pass"}
+        </Button>
+      }
+    >
       {frozen ? (
-        <Banner tone="neutral" title="Guest passes pause while frozen." />
+        <Banner tone="info" title="Guest passes pause while frozen." />
       ) : null}
-      <div className="grid gap-x-12 gap-y-8 lg:grid-cols-2">
-        <section aria-labelledby="bal" className="flex flex-col gap-3">
-          <p id="bal" className="eyebrow text-muted-foreground">
-            This month
-          </p>
-          <p className="font-heading text-display leading-none display-stretch">
-            <span className="num">{left}</span> of{" "}
-            <span className="num">{included}</span> left
-          </p>
-          {included ? null : (
-            <p className="text-body">0 included with {PLANS[hh.plan].name}.</p>
-          )}
-          <p className="text-caption text-muted-foreground">
-            {included
-              ? "Resets on your billing date. Unused passes don't roll over."
-              : "A day pass is $20 per guest."}{" "}
-            {included ? "Need more? A day pass is $20 per guest." : ""}
-          </p>
-        </section>
-        <section aria-labelledby="rl" className="flex flex-col gap-2">
-          <p id="rl" className="eyebrow text-muted-foreground">
-            How it works
-          </p>
-          <ul className="text-body rule-rows">
-            {[
-              "One visit, one club",
-              "Guests are 18 or older (16 and 17 with a parent)",
-              "Valid 14 days",
-              "Guests sign a waiver on their phone",
-            ].map((x) => (
-              <li key={x} className="py-2.5">
-                {x}
-              </li>
-            ))}
-          </ul>
-        </section>
-      </div>
-      <section aria-labelledby="sent">
-        <SectionTitle id="sent">Sent</SectionTitle>
+      <Stats>
+        <Stat
+          label="Passes left this month"
+          value={
+            <>
+              {left}
+              <span className="text-muted-foreground"> of {included}</span>
+            </>
+          }
+          hint={
+            included
+              ? "Resets on your billing date"
+              : `0 included with ${PLANS[hh.plan].name}`
+          }
+        />
+        <Stat label="Day pass" value="$20" hint="For each guest" />
+      </Stats>
+
+      <Card
+        id="sent"
+        tone="bare"
+        title="Sent"
+        description={valid ? `${valid} valid now` : undefined}
+      >
         {passes.length ? (
-          <ul className="mt-2 rule-rows">
-            {passes.map((g) => (
-              <li
-                key={g.id}
-                className="flex flex-wrap items-center gap-x-6 gap-y-1 py-3.5"
-              >
-                <span className="min-w-0 flex-1 basis-48">
-                  <span className="block text-label">{g.guestName}</span>
-                  <span className="block text-caption text-muted-foreground">
-                    {CLUB_BY_SLUG[g.clubSlug].name} ·{" "}
-                    {g.status === "used" && g.usedOn
-                      ? `Used ${fmtDayShort(g.usedOn)}`
-                      : `${fmtDay(g.visitDate)}`}
-                  </span>
-                </span>
-                <span className="num text-caption text-muted-foreground">
-                  Valid until {fmtDayShort(g.validUntil)}
-                </span>
-                <StatusPill
-                  tone={
-                    g.status === "used"
-                      ? "success"
-                      : g.status === "sent" || g.status === "opened"
-                        ? "neutral"
-                        : "warning"
+          <Rows label="Sent guest passes">
+            {passes.map((g) => {
+              const live = g.status === "sent" || g.status === "opened"
+              // Usual states are quiet: the line already says "Valid until" or "Used". Only the others get a pill.
+              const quiet =
+                g.status === "opened"
+                  ? "Opened"
+                  : g.status === "used" && !g.usedOn
+                    ? "Used"
+                    : null
+              const pill = g.status === "cancelled" || g.status === "expired"
+              return (
+                <Row
+                  key={g.id}
+                  title={g.guestName}
+                  line={
+                    <span className="tabular">
+                      {CLUB_BY_SLUG[g.clubSlug].name} ·{" "}
+                      {g.status === "used" && g.usedOn
+                        ? `Used ${fmtDayShort(g.usedOn)}`
+                        : fmtDay(g.visitDate)}
+                      {live
+                        ? ` · Valid until ${fmtDayShort(g.validUntil)}`
+                        : ""}
+                    </span>
                   }
-                >
-                  {g.status === "sent"
-                    ? "Sent"
-                    : g.status === "opened"
-                      ? "Opened"
-                      : g.status === "used"
-                        ? "Used"
-                        : g.status === "cancelled"
-                          ? "Cancelled"
-                          : "Expired"}
-                </StatusPill>
-                {g.status === "sent" || g.status === "opened" ? (
-                  <Menu.Root>
-                    <Menu.Trigger
-                      aria-label={`Actions for ${g.guestName}'s pass`}
-                      className="!grid !size-11 !place-items-center !bg-transparent !p-0 hover:!bg-muted"
-                    >
-                      <MoreHorizontal className="size-5" aria-hidden="true" />
-                    </Menu.Trigger>
-                    <Menu.Portal>
-                      <Menu.Positioner align="end" sideOffset={6}>
-                        <Menu.Popup>
-                          <Menu.Item
-                            onClick={() => {
-                              resendGuestPass(g.id)
-                              toast({
-                                title: `Pass sent again to ${g.guestName.split(" ")[0]}`,
-                              })
-                            }}
-                          >
-                            Resend
-                          </Menu.Item>
-                          <Menu.Item
-                            onClick={() => {
-                              setEdit(g)
-                              setContact(g.contact)
-                            }}
-                          >
-                            Edit contact
-                          </Menu.Item>
-                          <Menu.Item
-                            onClick={() => {
-                              void navigator.clipboard?.writeText(
-                                `https://my.cactuspeakathletic.example/g/${g.id}`
-                              )
-                              toast({ title: "Link copied" })
-                            }}
-                          >
-                            Copy link
-                          </Menu.Item>
-                          <Menu.Item
-                            className="!text-destructive"
-                            onClick={() => setCancel(g)}
-                          >
-                            Cancel pass
-                          </Menu.Item>
-                        </Menu.Popup>
-                      </Menu.Positioner>
-                    </Menu.Portal>
-                  </Menu.Root>
-                ) : (
-                  <span className="size-11" aria-hidden="true" />
-                )}
-              </li>
-            ))}
-          </ul>
+                  end={
+                    <>
+                      {quiet ? (
+                        <span className="text-muted-foreground">{quiet}</span>
+                      ) : null}
+                      {pill ? (
+                        <StatusPill tone={STATUS[g.status].tone}>
+                          {STATUS[g.status].label}
+                        </StatusPill>
+                      ) : null}
+                      {live ? (
+                        <PassMenu
+                          pass={g}
+                          onEdit={() => {
+                            setEdit(g)
+                            setContact(g.contact)
+                          }}
+                          onCancel={() => setCancel(g)}
+                        />
+                      ) : (
+                        <span
+                          className="size-11 md:size-9"
+                          aria-hidden="true"
+                        />
+                      )}
+                    </>
+                  }
+                />
+              )
+            })}
+          </Rows>
         ) : (
           <EmptyState
             object="gym-bag"
             title="No guest passes sent yet."
-            body="Bring a friend this month."
             action={
-              <Button onClick={() => setSend(true)}>Send a guest pass</Button>
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={frozen}
+                onClick={() => setSend(true)}
+              >
+                Send a guest pass
+              </Button>
             }
           />
         )}
-      </section>
+      </Card>
+
+      <Card id="rl" tone="plain" title="Rules">
+        <ul className="gap-xxs flex list-disc flex-col pl-m text-body-m sm:text-body-s">
+          {RULES.map((x) => (
+            <li key={x}>{x}</li>
+          ))}
+        </ul>
+      </Card>
+
       <SendDialog
         open={send}
         onOpenChange={(o) => {
@@ -476,7 +548,7 @@ export default function GuestPasses({ openSend }: { openSend?: boolean }) {
             : undefined
         }
       >
-        <div className="flex flex-col gap-2">
+        <div className="gap-xs flex flex-col">
           <Button className="w-full" onClick={() => setCancel(null)}>
             Keep pass
           </Button>
@@ -510,7 +582,7 @@ export default function GuestPasses({ openSend }: { openSend?: boolean }) {
             />
           )}
         </FormField>
-        <div className="flex justify-end gap-2">
+        <div className="gap-xs pt-xs flex justify-end">
           <Button variant="outline" onClick={() => setEdit(null)}>
             Cancel
           </Button>
@@ -525,6 +597,6 @@ export default function GuestPasses({ openSend }: { openSend?: boolean }) {
           </Button>
         </div>
       </Modal>
-    </div>
+    </AppPage>
   )
 }

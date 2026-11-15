@@ -8,7 +8,7 @@ const TONE: Record<Tone, string> = {
   success: "text-success",
   warning: "text-warning",
   danger: "text-destructive",
-  brand: "text-night dark:text-on-night",
+  brand: "text-night dark:text-night-foreground",
   category: "text-cat",
 }
 const SIZE = {
@@ -109,7 +109,7 @@ export function IntensityRibs({
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-2 text-detail text-muted-foreground",
+        "inline-flex items-center gap-xs text-body-xs text-muted-foreground",
         className
       )}
       title={`Intensity: 1 Easy, 2 Light, 3 Moderate, 4 Hard, 5 All-out`}
@@ -162,7 +162,7 @@ export function BusynessMeter({
   const word = BUSY_WORDS[level]
   if (closed)
     return (
-      <span className={cn("text-detail text-muted-foreground", className)}>
+      <span className={cn("text-body-xs text-muted-foreground", className)}>
         {closed}
       </span>
     )
@@ -170,7 +170,7 @@ export function BusynessMeter({
     return (
       <span
         className={cn(
-          "inline-flex items-center gap-2 text-detail text-muted-foreground",
+          "inline-flex items-center gap-xs text-body-xs text-muted-foreground",
           className
         )}
       >
@@ -199,7 +199,10 @@ export function BusynessMeter({
   if (variant === "inline")
     return (
       <span
-        className={cn("inline-flex items-center gap-2 text-detail", className)}
+        className={cn(
+          "inline-flex items-center gap-xs text-body-xs",
+          className
+        )}
       >
         <RibMeter
           value={level}
@@ -211,14 +214,14 @@ export function BusynessMeter({
         />
         <span className="text-foreground">
           <span className="sr-only">Busyness </span>
-          {word} · <span className="num">{level}</span> of 5
+          {word} · <span className="tabular">{level}</span> of 5
         </span>
       </span>
     )
   if (variant === "card")
     return (
-      <div className={cn("flex flex-col gap-1", className)}>
-        <div className="flex items-center gap-3">
+      <div className={cn("flex flex-col gap-xxs", className)}>
+        <div className="flex items-center gap-s">
           <RibMeter
             value={level}
             tone={busyTone(level)}
@@ -227,22 +230,24 @@ export function BusynessMeter({
             valueText={valueText}
             decorative
           />
-          <span className="font-heading text-h3 leading-none">
+          <span className="font-display-wide font-display-wide text-body-xl leading-none font-heavy">
             {word}{" "}
-            <span className="num text-body text-muted-foreground">
+            <span className="tabular text-body-m text-muted-foreground">
               · {level} of 5
             </span>
           </span>
         </div>
         {updated ? (
-          <p className="text-detail text-muted-foreground">Updated {updated}</p>
+          <p className="text-body-xs text-muted-foreground">
+            Updated {updated}
+          </p>
         ) : null}
-        {hint ? <p className="text-caption">{hint}</p> : null}
+        {hint ? <p className="text-body-s">{hint}</p> : null}
       </div>
     )
   return (
-    <div className={cn("flex flex-col gap-3", className)}>
-      <div className="flex items-end gap-4">
+    <div className={cn("flex flex-col gap-s", className)}>
+      <div className="flex items-end gap-m">
         <RibMeter
           value={level}
           tone={busyTone(level)}
@@ -251,18 +256,18 @@ export function BusynessMeter({
           valueText={valueText}
           decorative
         />
-        <p className="font-heading text-h1 leading-none display-stretch">
+        <p className="font-display-wide font-display-wide text-display-s leading-none font-heavy">
           <span className="sr-only">Busyness </span>
           {word}
-          <span className="ml-2 num text-h3 text-muted-foreground">
+          <span className="tabular font-display-wide ml-xs text-body-xl font-heavy text-muted-foreground">
             {level} of 5
           </span>
         </p>
       </div>
       {updated ? (
-        <p className="text-caption text-muted-foreground">Updated {updated}</p>
+        <p className="text-body-s text-muted-foreground">Updated {updated}</p>
       ) : null}
-      {hint ? <p className="text-body">{hint}</p> : null}
+      {hint ? <p className="text-body-m">{hint}</p> : null}
     </div>
   )
 }
@@ -290,8 +295,16 @@ export function CapacityIndicator({
     left === 0 ? `Full · ${waiting ?? 0} waiting` : `${left} ${u} left`
   if (variant === "large")
     return (
-      <span className={cn("flex flex-col gap-1", className)} aria-live="polite">
-        <span className={cn("num text-h1 leading-none", low && "text-warning")}>
+      <span
+        className={cn("flex flex-col gap-xxs", className)}
+        aria-live="polite"
+      >
+        <span
+          className={cn(
+            "tabular font-display-wide text-display-s leading-none font-heavy",
+            low && "text-warning"
+          )}
+        >
           {left === 0 ? "Full" : left}
         </span>
       </span>
@@ -300,7 +313,10 @@ export function CapacityIndicator({
     return (
       <span
         className={cn(
-          "inline-flex items-center rounded-sm bg-photo-band px-2 py-1 text-detail font-semibold text-on-night",
+          "inline-flex items-center",
+          "corner-xs px-xs py-xxs",
+          "text-body-xs font-heavy",
+          "bg-photo-band text-night-foreground",
           className
         )}
       >
@@ -308,7 +324,7 @@ export function CapacityIndicator({
       </span>
     )
   return (
-    <span className={cn("inline-flex items-center gap-2", className)}>
+    <span className={cn("inline-flex items-center gap-xs", className)}>
       {variant === "ribs" ? (
         <RibMeter
           value={ribs}
@@ -321,7 +337,7 @@ export function CapacityIndicator({
       ) : null}
       <span
         className={cn(
-          "num text-caption whitespace-nowrap",
+          "tabular text-body-s whitespace-nowrap",
           low && "text-warning",
           left === 0 && "text-muted-foreground"
         )}

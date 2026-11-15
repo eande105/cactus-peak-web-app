@@ -2,13 +2,8 @@
 import { useRouter } from "next/navigation"
 import { useState } from "react"
 import { useApp } from "@/components/app/use-app"
-import { Phone } from "@/components/icons"
-import {
-  Banner,
-  EmptyState,
-  PageHeader,
-  SectionTitle,
-} from "@/components/kit/ui"
+import { AppPage, Card, Row, Rows } from "@/components/kit/app"
+import { EmptyState } from "@/components/kit/ui"
 import {
   Accordion,
   AccordionContent,
@@ -21,9 +16,30 @@ import { Textarea } from "@/components/ui/textarea"
 import { ensureThread, sendMessage } from "@/lib/actions"
 import { CLUBS, FAQ } from "@/lib/data/catalog"
 import { toast } from "@/lib/toast"
+import { cn } from "@/lib/utils"
 
+/** A phone number as a link, for the end of a row. */
+function TelLink({ phone, className }: { phone: string; className?: string }) {
+  return (
+    <a
+      href={`tel:${phone.replace(/\D/g, "")}`}
+      className={cn(
+        "tabular font-medium whitespace-nowrap text-link hover:underline",
+        className
+      )}
+    >
+      {phone}
+    </a>
+  )
+}
+
+/**
+ * Help: the search field at the top, the answers as groups of accordion rows directly on the sheet, and from
+ * 1024 px a right column with the two ways to reach a person. A message to the front desk becomes a thread in
+ * the inbox.
+ */
 export default function Help() {
-  const { s, me } = useApp()
+  const { me } = useApp()
   const router = useRouter()
   const [q, setQ] = useState("")
   const [msg, setMsg] = useState("")
@@ -33,140 +49,161 @@ export default function Help() {
       (i) => !q || (i.q + i.a).toLowerCase().includes(q.toLowerCase())
     ),
   })).filter((g) => g.items.length)
-  void s
+  const found = groups.reduce((n, g) => n + g.items.length, 0)
   return (
-    <div className="flex flex-col gap-8">
-      <PageHeader
-        title="Help"
-        description="Answers, club phone numbers and the front desk."
-      />
-      <div className="max-w-xl">
-        <label htmlFor="help-q" className="sr-only">
-          Search help
-        </label>
-        <Input
-          id="help-q"
-          type="search"
-          placeholder="Search help"
-          value={q}
-          onChange={(e) => setQ(e.target.value)}
-        />
-      </div>
-      {groups.length ? (
-        <div className="grid gap-x-12 gap-y-8 lg:grid-cols-2">
-          {groups.map((g) => (
-            <section key={g.group} aria-labelledby={`h-${g.group}`}>
-              <SectionTitle id={`h-${g.group}`}>{g.group}</SectionTitle>
-              <Accordion className="mt-1">
-                {g.items.map((i) => (
-                  <AccordionItem key={i.q} value={i.q}>
-                    <AccordionTrigger>{i.q}</AccordionTrigger>
-                    <AccordionContent className="max-w-[60ch] text-muted-foreground">
-                      {i.a}
-                    </AccordionContent>
-                  </AccordionItem>
-                ))}
-              </Accordion>
-            </section>
-          ))}
-        </div>
-      ) : (
-        <EmptyState
-          title={`No answers for "${q}".`}
-          body="Message the front desk. We're staffed 6:00 am–8:00 pm."
-          action={
-            <Button
-              onClick={() =>
-                document.getElementById("contact")?.scrollIntoView()
-              }
-            >
-              Message the front desk
-            </Button>
-          }
-        />
-      )}
-      <section
-        id="contact"
-        aria-labelledby="ct"
-        className="grid scroll-mt-24 gap-x-12 gap-y-6 pt-6 rule-t lg:grid-cols-2"
-      >
-        <div className="flex flex-col gap-3">
-          <SectionTitle id="ct">Call a person</SectionTitle>
-          <p className="text-caption text-muted-foreground">
-            Member services{" "}
-            <a className="text-link num underline" href="tel:4805550100">
-              (480) 555-0100
-            </a>
-          </p>
-          <ul className="rule-rows">
-            {CLUBS.map((c) => (
-              <li
-                key={c.slug}
-                className="flex items-center justify-between gap-3 py-2.5"
-              >
-                <span>{c.name}</span>
-                <a
-                  href={`tel:${c.phone.replace(/\D/g, "")}`}
-                  className="text-link inline-flex min-h-11 items-center gap-2 num underline"
-                >
-                  <Phone className="size-4" aria-hidden="true" />
-                  {c.phone}
-                </a>
-              </li>
-            ))}
-          </ul>
-        </div>
-        <div className="flex flex-col gap-3">
-          <SectionTitle>Message the front desk</SectionTitle>
-          <p className="text-caption text-muted-foreground">
-            Staffed 6:00 am–8:00 pm. We answer within the hour.
-          </p>
-          <label htmlFor="fd" className="sr-only">
-            Your message
+    <AppPage title="Help">
+      <div className="gap-s flex flex-wrap items-center">
+        <div className="w-full max-w-[480px]">
+          <label htmlFor="help-q" className="sr-only">
+            Search help
           </label>
-          <Textarea
-            id="fd"
-            rows={4}
-            value={msg}
-            onChange={(e) => setMsg(e.target.value)}
-            placeholder="How can we help?"
+          <Input
+            id="help-q"
+            type="search"
+            placeholder="Search help"
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
           />
-          <div className="flex gap-2">
-            <Button
-              disabled={!msg.trim()}
-              onClick={() => {
-                const id = ensureThread("Front desk", "Help")
-                sendMessage(id, msg.trim())
-                setMsg("")
-                toast({
-                  title: "Message sent",
-                  description: "Find the reply in your inbox.",
-                })
-                router.push(`/inbox/${id}`)
-              }}
-            >
-              Send message
-            </Button>
-            <Button
-              variant="outline"
-              onClick={() =>
-                toast({
-                  title: "Report sent",
-                  description: "Thanks. We'll look into it.",
-                })
-              }
-            >
-              Report a problem
-            </Button>
-          </div>
         </div>
-      </section>
-      <Banner
-        tone="neutral"
-        title={`Signed in as ${me.firstName} ${me.lastName}`}
-      >
-        Demo data resets from the account menu.
-      </Banner>
-    </div>
+        {q ? (
+          <p
+            role="status"
+            className="tabular text-body-m text-muted-foreground sm:text-body-s"
+          >
+            {found} {found === 1 ? "answer" : "answers"}
+          </p>
+        ) : null}
+      </div>
+      <div className="gap-l grid items-start lg:grid-cols-[minmax(0,1fr)_22.5rem]">
+        <div className="gap-l flex min-w-0 flex-col">
+          {groups.length ? (
+            groups.map((g) => (
+              <Card
+                key={g.group}
+                tone="bare"
+                id={`h-${g.group}`}
+                title={g.group}
+              >
+                <Accordion>
+                  {g.items.map((i) => (
+                    <AccordionItem key={i.q} value={i.q}>
+                      <AccordionTrigger>{i.q}</AccordionTrigger>
+                      <AccordionContent className="max-w-[60ch] text-body-m text-pretty text-muted-foreground sm:text-body-s">
+                        {i.a}
+                      </AccordionContent>
+                    </AccordionItem>
+                  ))}
+                </Accordion>
+              </Card>
+            ))
+          ) : (
+            <EmptyState
+              title={`No answers for "${q}"`}
+              action={
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => {
+                    document
+                      .getElementById("contact")
+                      ?.scrollIntoView({ block: "nearest" })
+                    document.getElementById("fd")?.focus()
+                  }}
+                >
+                  Message the front desk
+                </Button>
+              }
+              secondary={
+                <Button size="sm" variant="ghost" onClick={() => setQ("")}>
+                  Clear search
+                </Button>
+              }
+            />
+          )}
+        </div>
+        <div
+          id="contact"
+          className="gap-m flex min-w-0 scroll-mt-24 flex-col lg:sticky lg:top-[calc(var(--bar-h)+var(--space-m))]"
+        >
+          <Card id="ct" title="Contact" flush>
+            <Rows className="rule-t">
+              <Row
+                title="Member services"
+                end={<TelLink phone="(480) 555-0100" />}
+              />
+              {CLUBS.map((c) => (
+                <Row
+                  key={c.slug}
+                  title={c.name}
+                  line={c.city}
+                  end={<TelLink phone={c.phone} />}
+                />
+              ))}
+            </Rows>
+          </Card>
+          <Card
+            id="fd-h"
+            title="Message the front desk"
+            footer={
+              <>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() =>
+                    toast({
+                      title: "Report sent",
+                      description: "Thanks. We'll look into it.",
+                    })
+                  }
+                >
+                  Report a problem
+                </Button>
+                <Button
+                  size="sm"
+                  disabled={!msg.trim()}
+                  onClick={() => {
+                    const id = ensureThread("Front desk", "Help")
+                    sendMessage(id, msg.trim())
+                    setMsg("")
+                    toast({
+                      title: "Message sent",
+                      description: "Find the reply in your inbox.",
+                    })
+                    router.push(`/inbox/${id}`)
+                  }}
+                >
+                  Send message
+                </Button>
+              </>
+            }
+          >
+            <div className="gap-xs flex flex-col">
+              <label htmlFor="fd" className="sr-only">
+                Your message
+              </label>
+              <Textarea
+                id="fd"
+                rows={4}
+                value={msg}
+                onChange={(e) => setMsg(e.target.value)}
+                placeholder="How can we help?"
+              />
+              <p className="tabular text-body-m text-muted-foreground sm:text-body-s">
+                Staffed 6 am–8 pm. Replies within the hour.
+              </p>
+            </div>
+          </Card>
+          <Card tone="plain" as="div">
+            <p className="text-body-m text-muted-foreground sm:text-body-s">
+              Signed in as{" "}
+              <span className="font-medium text-foreground">
+                {me.firstName} {me.lastName}
+              </span>
+              . Demo data resets from the account menu.
+            </p>
+          </Card>
+        </div>
+      </div>
+    </AppPage>
   )
 }

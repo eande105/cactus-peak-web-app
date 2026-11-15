@@ -559,7 +559,7 @@
   font-family: var(--cte-font);
   font-size: var(--cte-font-size);
   letter-spacing: var(--cte-letter-spacing);
-  font-weight: var(--weight-ui-regular);
+  font-weight: var(--weight-body-regular);
   line-height: var(--cte-line-height);
 }
 .themed-range-heading {
@@ -570,7 +570,7 @@
   margin-bottom: var(--space-s);
 }
 .themed-range-heading > :last-child {
-  font-weight: var(--weight-ui-medium);
+  font-weight: var(--weight-body-medium);
   font-variant-numeric: tabular-nums;
 }
 .themed-range-control {
@@ -636,7 +636,7 @@
     0 0 0 var(--border-s) var(--neutral-4-transparent)
   );
   color: var(--neutral-10);
-  font-family: var(--font-ui);
+  font-family: var(--font-body);
 }
 .themed-option-row {
   position: relative;
@@ -726,7 +726,7 @@
 .themed-option-label {
   font-size: var(--cte-font-size);
   letter-spacing: var(--cte-letter-spacing);
-  font-weight: var(--weight-ui-medium);
+  font-weight: var(--weight-body-medium);
   line-height: var(--cte-line-height);
 }
 .themed-option-copy .themed-option-label {
@@ -738,7 +738,7 @@
   color: var(--neutral-7);
   font-size: var(--cte-font-size);
   letter-spacing: var(--cte-letter-spacing);
-  font-weight: var(--option-description-weight, var(--weight-ui-regular));
+  font-weight: var(--option-description-weight, var(--weight-body-regular));
   line-height: var(--cte-line-height);
 }
 .themed-option-badge {
@@ -748,7 +748,7 @@
   color: var(--option-badge-foreground);
   font-size: var(--cte-detail-font-size);
   letter-spacing: var(--cte-detail-letter-spacing);
-  font-weight: var(--weight-ui-heavy);
+  font-weight: var(--weight-body-heavy);
   line-height: var(--cte-detail-line-height);
 }
 .themed-radio:focus-visible,
@@ -769,10 +769,10 @@
   justify-content: space-between;
   gap: var(--space-m);
   color: var(--neutral-10);
-  font-family: var(--font-ui);
+  font-family: var(--font-body);
   font-size: var(--size-m);
   letter-spacing: var(--letter-spacing-m);
-  font-weight: var(--weight-ui-regular);
+  font-weight: var(--weight-body-regular);
   line-height: var(--line-m);
 }
 .themed-number-group {
@@ -829,10 +829,10 @@
   border-radius: var(--radius-m);
   background: transparent;
   color: var(--neutral-7);
-  font-family: var(--font-ui);
+  font-family: var(--font-body);
   font-size: var(--size-m);
   letter-spacing: var(--letter-spacing-m);
-  font-weight: var(--weight-ui-medium);
+  font-weight: var(--weight-body-medium);
   line-height: var(--line-m);
   cursor: pointer;
   transition:
@@ -857,14 +857,14 @@
   width: 100%;
   flex-direction: column;
   gap: var(--space-m);
-  font-family: var(--font-ui);
+  font-family: var(--font-body);
 }
 .themed-step-slider .themed-step-label {
   color: var(--neutral-10);
-  font-family: var(--font-brand);
+  font-family: var(--font-display);
   font-size: var(--size-l);
   letter-spacing: var(--letter-spacing-l);
-  font-weight: var(--weight-brand-heavy);
+  font-weight: var(--weight-display-heavy);
   line-height: var(--line-l);
   text-align: center;
 }
@@ -927,7 +927,7 @@
   color: var(--cte-accent-text);
   font-size: var(--size-m);
   letter-spacing: var(--letter-spacing-m);
-  font-weight: var(--weight-ui-heavy);
+  font-weight: var(--weight-body-heavy);
   line-height: var(--line-m);
   font-variant-numeric: tabular-nums;
   transition: inset-inline-start var(--motion-large-duration, 350ms)
@@ -2582,7 +2582,7 @@
 /* Application date field. All appearance values come from its theme tokens. */
 .ui-date-field,
 .ui-date-positioner {
-  font-family: var(--font-ui);
+  font-family: var(--font-body);
   font-size: var(--size-m);
   letter-spacing: var(--letter-spacing-m);
   line-height: var(--line-m);
@@ -2599,7 +2599,7 @@
   font-size: var(--cte-detail-font-size);
   letter-spacing: var(--cte-detail-letter-spacing);
   line-height: var(--cte-detail-line-height);
-  font-weight: var(--weight-ui-medium);
+  font-weight: var(--weight-body-medium);
   color: var(--cte-text-muted);
 }
 

@@ -2,11 +2,12 @@ import type { Metadata, Viewport } from "next"
 
 import "./globals.css"
 import { CatalogBoundary } from "@/components/app/catalog-boundary"
+import { theme } from "@/components/graphical/theme"
 import { GraphicalThemeProvider } from "@/components/graphical-theme-provider"
 import { ThemeProvider } from "@/components/theme-provider"
-import { ThemeVariables } from "@/components/theme-variables"
-import { appTheme } from "@/lib/app-theme"
+import EditorRoot from "@/graphical/editor-root"
 import { getCatalog } from "@/lib/data/catalog-server"
+import { archivo, inter } from "@/lib/fonts"
 import { Toaster } from "@/lib/toast"
 
 export const metadata: Metadata = {
@@ -32,16 +33,20 @@ export default async function RootLayout({
   // Clubs, classes, coaches and plans come from Supabase. A failed read shows app/global-error.tsx.
   const catalog = await getCatalog()
   return (
-    <html lang="en-US" suppressHydrationWarning className="antialiased">
-      <head>
-        <ThemeVariables />
-      </head>
+    <html
+      lang="en-US"
+      suppressHydrationWarning
+      className={`${inter.variable} ${archivo.variable} antialiased`}
+    >
       <body>
         <ThemeProvider>
-          <GraphicalThemeProvider document={appTheme}>
+          <GraphicalThemeProvider document={theme}>
             <Toaster>
               <CatalogBoundary catalog={catalog}>
-                <div className="isolate min-h-dvh">{children}</div>
+                {/* The Graphical editor, in development only (graphical/editor-root.tsx). */}
+                <EditorRoot>
+                  <div className="isolate min-h-dvh">{children}</div>
+                </EditorRoot>
               </CatalogBoundary>
             </Toaster>
           </GraphicalThemeProvider>

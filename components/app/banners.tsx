@@ -39,7 +39,7 @@ export function PaymentBanners({
 function useBannerNode(offline: boolean, path: string) {
   const { s, me, hh, now } = useApp()
   const wrap = (node: React.ReactNode) => (
-    <div className="px-4 pt-2 md:px-6 md:pt-3 lg:px-8">{node}</div>
+    <div className="px-m pt-m sm:px-l lg:px-xl w-full">{node}</div>
   )
   const late = paymentDaysLate(s, me.id, now)
   const ownsPayment =
@@ -115,7 +115,16 @@ function useBannerNode(offline: boolean, path: string) {
         </Link>
       </Banner>
     )
-  if (hh.status === "freeze_scheduled" && hh.freeze && me.role === "primary")
+  // The Membership page shows the freeze, the end date and a plan change itself, with the same actions.
+  const ownsPlan =
+    (path === "/membership" || path.startsWith("/membership/")) &&
+    me.role === "primary"
+  if (
+    hh.status === "freeze_scheduled" &&
+    hh.freeze &&
+    me.role === "primary" &&
+    !ownsPlan
+  )
     return wrap(
       <Banner
         tone="neutral"
@@ -138,7 +147,7 @@ function useBannerNode(offline: boolean, path: string) {
         }
       />
     )
-  if (hh.status === "frozen" && hh.freeze)
+  if (hh.status === "frozen" && hh.freeze && !ownsPlan)
     return wrap(
       <Banner
         tone="neutral"
@@ -176,7 +185,12 @@ function useBannerNode(offline: boolean, path: string) {
         Saved {fmtTime(now)}
       </Banner>
     )
-  if (hh.status === "cancel_scheduled" && hh.cancelOn && me.role === "primary")
+  if (
+    hh.status === "cancel_scheduled" &&
+    hh.cancelOn &&
+    me.role === "primary" &&
+    !ownsPlan
+  )
     return wrap(
       <Banner
         tone="warning"
@@ -199,7 +213,7 @@ function useBannerNode(offline: boolean, path: string) {
         You keep full access until then.
       </Banner>
     )
-  if (hh.pendingPlan && me.role === "primary")
+  if (hh.pendingPlan && me.role === "primary" && !ownsPlan)
     return wrap(
       <Banner
         tone="neutral"

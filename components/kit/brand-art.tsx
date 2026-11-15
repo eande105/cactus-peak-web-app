@@ -109,16 +109,16 @@ export function CoachArt({
     <span
       aria-hidden="true"
       className={cn(
-        "relative inline-flex shrink-0 items-center justify-center bg-night font-semibold text-on-night",
-        shape === "circle" ? "rounded-full" : "rounded-sm",
-        (size ?? 48) >= 64 ? "text-label" : "text-caption",
+        "relative inline-flex shrink-0 items-center justify-center bg-night font-heavy text-night-foreground",
+        shape === "circle" ? "corner-full" : "corner-xs",
+        (size ?? 48) >= 64 ? "text-body-s font-heavy" : "text-body-s",
         className
       )}
       style={size ? { width: size, height: size } : undefined}
     >
       {initials(name)}
       {badge ? (
-        <span className="absolute -right-1 -bottom-1 grid size-[45%] place-items-center rounded-full bg-card ring-2 ring-background">
+        <span className="absolute -right-1 -bottom-1 grid size-[45%] place-items-center corner-full bg-card ring-2 ring-background">
           <GymObject id={object} className="size-[70%]" />
         </span>
       ) : null}

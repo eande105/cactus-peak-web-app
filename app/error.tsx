@@ -11,22 +11,22 @@ export default function ErrorPage({
   return (
     <main
       id="main"
-      className="mx-auto flex min-h-dvh max-w-[560px] flex-col items-start justify-center gap-4 px-4"
+      className="mx-auto flex min-h-dvh max-w-[560px] flex-col items-start justify-center gap-m px-m"
     >
-      <h1 className="font-heading text-h1 display-stretch">
+      <h1 className="font-display-wide text-display-s font-heavy">
         Something went wrong on our side.
       </h1>
       <p className="text-muted-foreground">
         Your bookings are safe. Try again, or call{" "}
-        <a className="text-link num underline" href="tel:4805550142">
+        <a className="tabular text-link underline" href="tel:4805550142">
           (480) 555-0142
         </a>
         .
       </p>
-      <p className="num text-detail text-muted-foreground">
+      <p className="tabular text-body-xs text-muted-foreground">
         Error id: {error.digest ?? "client"}
       </p>
-      <div className="flex gap-2">
+      <div className="flex gap-xs">
         <Button onClick={reset}>Try again</Button>
         <Button variant="outline" render={<a href="/help" />}>
           Message the front desk

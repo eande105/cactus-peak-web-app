@@ -2,15 +2,18 @@
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
-import { StepUp } from "@/components/app/step-up"
 import { useApp } from "@/components/app/use-app"
-import { CircleCheck } from "@/components/icons"
+import { SuccessPanel } from "@/components/booking/success-panel"
 import {
-  FormField,
-  LoadingBlock,
-  PageHeader,
-  RadioList,
-} from "@/components/kit/ui"
+  CheckList,
+  ChoiceList,
+  FlowAside,
+  InfoLine,
+  RESULT_WIDTH,
+  StepFooter,
+} from "@/components/flows/parts"
+import { Facts, Group, Task } from "@/components/kit/app"
+import { Banner, FormField, LoadingBlock } from "@/components/kit/ui"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { cancelDate, keepMembership, scheduleCancel } from "@/lib/actions"
@@ -22,7 +25,9 @@ import {
 } from "@/lib/engine"
 import { fmtDay, fmtDayShort, fmtMoney } from "@/lib/time"
 import { toast } from "@/lib/toast"
+import { cn } from "@/lib/utils"
 
+const BACK = { href: "/membership", label: "Membership" }
 const REASONS = [
   { value: "price", label: "Too expensive" },
   { value: "moving", label: "Moving" },
@@ -32,19 +37,12 @@ const REASONS = [
   { value: "club", label: "Another club" },
   { value: "other", label: "Other" },
 ]
-const OFFER: Record<string, string[]> = {
-  price: [
-    "Trailhead is $54 per month and covers one home club.",
-    "Or freeze for $10 per month, 1 to 3 months.",
-  ],
-  injury: [
-    "Freeze for $10 per month while you recover. Your streak and plan stay.",
-  ],
-  moving: ["Moving to another club? Ridge covers all 5 clubs."],
-  unused: ["Freeze for $10 per month. We'll remind you 7 days before it ends."],
-  schedule: [
-    "Try a new time. These classes have spots this week: Climb Cycle, Desert Flow Yoga, Switchback HIIT.",
-  ],
+type Offer = { title: string; line: string; href: string; action: string }
+const FREEZE: Offer = {
+  title: "Freeze instead",
+  line: "$10 per month, 1 to 3 months. Your plan and streak stay.",
+  href: "/membership/freeze",
+  action: "Freeze instead",
 }
 
 export default function CancelPage() {
@@ -65,10 +63,42 @@ export default function CancelPage() {
   const on = cancelDate(hh, now)
   const total = householdMonthly(s, hh).total
   const late = paymentDaysLate(s, me.id, now) >= 0
-  const offer = OFFER[reason]
-  const saving =
-    householdMonthly(s, hh).total - householdMonthly(s, hh, "trailhead").total
+  const saving = total - householdMonthly(s, hh, "trailhead").total
   const next = nextBillingDate(hh, now)
+  const trailhead: Offer = {
+    title: "Switch to Trailhead",
+    line:
+      hh.plan !== "trailhead" && saving > 0
+        ? `$54 per month, one home club. ${fmtMoney(saving, false)} a month less than your ${fmtMoney(total, false)} today.`
+        : "$54 per month, one home club.",
+    href: "/membership/change-plan",
+    action: "Change plan",
+  }
+  const offers: Offer[] =
+    reason === "price"
+      ? [...(hh.plan !== "trailhead" ? [trailhead] : []), FREEZE]
+      : reason === "injury" || reason === "unused"
+        ? [FREEZE]
+        : reason === "moving"
+          ? [
+              {
+                title: "Moving near another club?",
+                line: "Ridge covers all 5 clubs.",
+                href: "/membership/change-plan",
+                action: "Change plan",
+              },
+            ]
+          : reason === "schedule"
+            ? [
+                {
+                  title: "Try a new time",
+                  line: "Climb Cycle, Desert Flow Yoga and Switchback HIIT have spots this week.",
+                  href: "/schedule",
+                  action: "See schedule",
+                },
+              ]
+            : []
+  const hasOffer = offers.length > 0
   const doCancel = async () => {
     setBusy(true)
     await new Promise((r) => setTimeout(r, 600))
@@ -81,30 +111,19 @@ export default function CancelPage() {
   }
   if (done || hh.status === "cancel_scheduled")
     return (
-      <div className="flex max-w-[640px] flex-col items-start gap-4">
-        <CircleCheck className="size-10 text-success" aria-hidden="true" />
-        <h1
-          id="page-title"
-          tabIndex={-1}
-          className="font-heading text-h1 display-stretch outline-none"
-        >
-          Your membership ends {fmtDay(done ?? hh.cancelOn!)}
-        </h1>
-        <p className="text-body">
-          You keep full access until then. We emailed your receipt.
-        </p>
-        <div className="flex flex-wrap gap-2">
-          <Button
-            variant="outline"
-            onClick={() =>
-              toast({
-                title: "Visit history downloaded",
-                description: "visits.csv",
-              })
-            }
-          >
-            Download my visit history (CSV)
-          </Button>
+      <SuccessPanel
+        className={RESULT_WIDTH}
+        headline={`Your membership ends ${fmtDay(done ?? hh.cancelOn!)}`}
+        pill="Cancellation scheduled"
+        summary={[
+          { label: "Access", value: "Full access until then" },
+          { label: "Receipt", value: "Sent by email" },
+          {
+            label: "Sign-in after",
+            value: "90 days, for invoices and to reactivate",
+          },
+        ]}
+        primary={
           <Button
             onClick={() => {
               keepMembership()
@@ -115,171 +134,186 @@ export default function CancelPage() {
               router.push("/membership")
             }}
           >
-            Changed your mind? Keep my membership
+            Keep my membership
           </Button>
-        </div>
-        <p className="text-caption text-muted-foreground">
-          You can sign in for 90 days after to download invoices and reactivate.
-        </p>
-      </div>
-    )
-  return (
-    <div className="flex max-w-[640px] flex-col gap-6">
-      <StepUp />
-      <PageHeader
-        backHref="/membership"
-        backLabel="Membership"
-        title="Cancel membership"
+        }
+        rows={[
+          {
+            label: "Download visit history (CSV)",
+            onClick: () =>
+              toast({
+                title: "Visit history downloaded",
+                description: "visits.csv",
+              }),
+          },
+          { label: "Back to Membership", href: "/membership" },
+        ]}
       />
-      <div className="flex flex-col gap-2">
-        <p role="status" className="text-caption text-muted-foreground">
-          Step {step} of 3
-        </p>
-        <div
-          className="h-1.5 overflow-hidden rounded-full bg-muted"
-          aria-hidden="true"
-        >
-          <div
-            className="h-full rounded-full bg-night dark:bg-on-night"
-            style={{ width: `${(step / 3) * 100}%` }}
+    )
+  const terms = [
+    {
+      label: "Access",
+      text: `You keep full access until ${fmtDayShort(on)}.`,
+    },
+    { label: "Family", text: "Family members end on the same date." },
+    {
+      label: "Training",
+      text: "Unused sessions are refunded at the price you paid per session.",
+    },
+    {
+      label: "Guest passes and bookings",
+      text: `Cancelled after ${fmtDayShort(on)} with no late-cancel strike.`,
+    },
+    { label: "Visit history", text: "Available to download." },
+  ]
+  return (
+    <Task
+      title="Cancel membership"
+      step={step}
+      of={3}
+      close={BACK}
+      aside={
+        <FlowAside title="If you cancel">
+          <Facts
+            items={[
+              {
+                label: "Ends",
+                value: <span className="tabular">{fmtDay(on)}</span>,
+              },
+              {
+                label: "Last charge",
+                value: (
+                  <span className="tabular">
+                    {fmtDayShort(next)} · {fmtMoney(total)}
+                  </span>
+                ),
+              },
+              { label: "Annual fee in March", value: "None" },
+            ]}
           />
-        </div>
-      </div>
-      {step === 1 ? (
-        <div className="flex flex-col gap-4">
-          <h2 className="font-heading text-h3 display-stretch">
-            Before you go, tell us why. It&apos;s optional.
-          </h2>
-          <RadioList
-            label="Why are you leaving?"
-            value={reason}
-            onChange={setReason}
-            options={REASONS}
-          />
-          {reason === "other" ? (
-            <FormField label="Tell us more (optional)">
-              {(p) => (
-                <Input
-                  {...p}
-                  value={other}
-                  onChange={(e) => setOther(e.target.value)}
-                />
-              )}
-            </FormField>
-          ) : null}
-          <div className="flex gap-3">
-            <Button variant="outline" onClick={() => setStep(offer ? 2 : 3)}>
+        </FlowAside>
+      }
+      footer={
+        step === 1 ? (
+          <StepFooter
+            back={{ label: "Keep my membership", href: "/membership" }}
+          >
+            <Button
+              variant="ghost"
+              onClick={() => {
+                setReason("")
+                setStep(3)
+              }}
+            >
               Skip
             </Button>
-            <Button onClick={() => setStep(offer ? 2 : 3)}>Continue</Button>
-          </div>
-        </div>
-      ) : null}
-      {step === 2 && offer ? (
-        <div className="flex flex-col gap-4">
-          <h2 className="font-heading text-h3 display-stretch">Options</h2>
-          <ul className="flex flex-col rule-rows">
-            {offer.map((o) => (
-              <li key={o} className="py-3 text-body">
-                {reason === "price" &&
-                o.startsWith("Trailhead") &&
-                hh.plan !== "trailhead" &&
-                saving > 0
-                  ? `Trailhead is $54 per month and covers one home club. That is ${fmtMoney(saving, false)} a month less than your ${fmtMoney(householdMonthly(s, hh).total, false)} today.`
-                  : o}
-              </li>
-            ))}
-          </ul>
-          <div className="flex flex-wrap gap-2">
-            {reason === "price" ? (
-              <Button
-                variant="outline"
-                render={<Link href="/membership/change-plan" />}
-              >
-                Switch to Trailhead
-              </Button>
-            ) : null}
-            {["price", "injury", "unused"].includes(reason) ? (
-              <Button
-                variant="outline"
-                render={<Link href="/membership/freeze" />}
-              >
-                Freeze instead
-              </Button>
-            ) : null}
-          </div>
-          <p className="text-caption text-muted-foreground">
-            No pressure. You can still cancel.
-          </p>
-          <div className="grid grid-cols-2 gap-3">
-            <Button
-              size="lg"
-              className="w-full"
-              render={<Link href="/membership" />}
-            >
-              Keep my membership
-            </Button>
-            <Button
-              size="lg"
-              variant="outline"
-              className="w-full"
-              onClick={() => setStep(3)}
-            >
+            <Button onClick={() => setStep(hasOffer ? 2 : 3)}>Continue</Button>
+          </StepFooter>
+        ) : step === 2 ? (
+          <StepFooter back={{ label: "Back", onClick: () => setStep(1) }}>
+            <Button variant="outline" onClick={() => setStep(3)}>
               Continue to cancel
             </Button>
-          </div>
-        </div>
-      ) : null}
-      {step === 3 ? (
-        <div className="flex flex-col gap-4">
-          <h2 className="font-heading text-h2 display-stretch">
-            Cancel your membership?
-          </h2>
-          <p className="text-body">
-            Your membership ends on {fmtDay(on)}. You keep full access until
-            then.
-          </p>
-          <ul className="flex flex-col text-body rule-rows">
-            {[
-              `Last charge: ${fmtDayShort(next)} · ${fmtMoney(total)}. No annual fee in March.`,
-              "Family members end on the same date.",
-              "Unused training sessions are refunded at the price you paid per session.",
-              `Guest passes and bookings after ${fmtDayShort(on)} are cancelled with no late-cancel strike.`,
-              "Your visit history is available to download.",
-            ].map((x) => (
-              <li key={x} className="py-2.5">
-                {x}
-              </li>
-            ))}
-          </ul>
-          {late ? (
-            <p className="rounded-md bg-warning-subtle p-3 text-caption">
-              You owe {fmtMoney(total)} from{" "}
-              {fmtDayShort(hh.paymentFailedAt ?? now)}. Pay it to close your
-              account.
-            </p>
-          ) : null}
-          <div className="grid grid-cols-2 gap-3">
-            <Button
-              size="lg"
-              variant="outline"
-              className="w-full"
-              render={<Link href="/membership" />}
-            >
+            <Button render={<Link href="/membership" />}>
+              Keep my membership
+            </Button>
+          </StepFooter>
+        ) : (
+          <StepFooter
+            back={{
+              label: "Back",
+              onClick: () => setStep(hasOffer ? 2 : 1),
+            }}
+          >
+            <Button variant="outline" render={<Link href="/membership" />}>
               Keep my membership
             </Button>
             <Button
-              size="lg"
               variant="destructive"
-              className="w-full"
               loading={busy}
               onClick={() => void doCancel()}
             >
               Cancel membership
             </Button>
-          </div>
-        </div>
+          </StepFooter>
+        )
+      }
+    >
+      {step === 1 ? (
+        <>
+          <Group label="Why are you leaving?" hint="Optional">
+            <ChoiceList
+              label="Why are you leaving?"
+              value={reason}
+              onChange={setReason}
+              options={REASONS}
+            />
+            {reason === "other" ? (
+              <FormField label="Tell us more (optional)">
+                {(p) => (
+                  <Input
+                    {...p}
+                    value={other}
+                    onChange={(e) => setOther(e.target.value)}
+                  />
+                )}
+              </FormField>
+            ) : null}
+          </Group>
+          <InfoLine>
+            <span className="tabular">
+              If you cancel, you keep full access until {fmtDay(on)}.
+            </span>
+          </InfoLine>
+        </>
       ) : null}
-    </div>
+      {step === 2 ? (
+        <Group label="Other options">
+          <ul className="gap-xs flex flex-col">
+            {offers.map((o) => (
+              <OfferRow key={o.title} offer={o} />
+            ))}
+          </ul>
+        </Group>
+      ) : null}
+      {step === 3 ? (
+        <>
+          <Group label={`Your membership ends ${fmtDay(on)}`}>
+            <CheckList items={terms} />
+          </Group>
+          {late ? (
+            <Banner tone="warning">
+              <span className="tabular">
+                You owe {fmtMoney(total)} from{" "}
+                {fmtDayShort(hh.paymentFailedAt ?? now)}. Pay it to close your
+                account.
+              </span>
+            </Banner>
+          ) : null}
+        </>
+      ) : null}
+    </Task>
+  )
+}
+
+/** One other option: what it is, one line, and the link to it. It has the frame of a choice row. */
+function OfferRow({ offer, className }: { offer: Offer; className?: string }) {
+  return (
+    <li
+      className={cn(
+        "gap-s p-s flex flex-wrap items-center justify-between corner-m raised",
+        className
+      )}
+    >
+      <span className="min-w-0 flex-1 basis-56">
+        <span className="block font-medium">{offer.title}</span>
+        <span className="tabular block text-pretty text-muted-foreground">
+          {offer.line}
+        </span>
+      </span>
+      <Button size="sm" variant="outline" render={<Link href={offer.href} />}>
+        {offer.action}
+      </Button>
+    </li>
   )
 }

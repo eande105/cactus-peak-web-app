@@ -15,30 +15,41 @@ import {
   type TimeBand,
 } from "@/lib/schedule-filters"
 import type { CategoryId } from "@/lib/types"
+import { cn } from "@/lib/utils"
 
 function Group({
   title,
   children,
   defaultOpen = true,
+  className,
 }: {
   title: string
   children: React.ReactNode
   defaultOpen?: boolean
+  className?: string
 }) {
   return (
     <Collapsible.Root
       defaultOpen={defaultOpen}
-      className="py-3 rule-t first:pt-0 first:shadow-none"
+      className={cn("py-s rule-t first:pt-zero first:shadow-none", className)}
     >
-      <Collapsible.Trigger className="group flex min-h-9 w-full items-center justify-between !bg-transparent !p-0 text-label !shadow-none">
+      <Collapsible.Trigger
+        className={cn(
+          "group flex min-h-9 w-full items-center justify-between",
+          "!p-zero",
+          "text-body-m font-heavy",
+          "!bg-transparent !shadow-none",
+          "sm:text-body-s"
+        )}
+      >
         {title}
         <ChevronDown
-          className="size-4 transition-transform group-data-[panel-open]:rotate-180"
+          className="size-4 shrink-0 transition-transform group-data-[panel-open]:rotate-180 motion-reduce:transition-none"
           aria-hidden="true"
         />
       </Collapsible.Trigger>
-      <Collapsible.Content className="pt-2">
-        <div className="flex flex-col gap-2">{children}</div>
+      <Collapsible.Content className="pt-xs">
+        <div className="gap-xs flex flex-col">{children}</div>
       </Collapsible.Content>
     </Collapsible.Root>
   )
@@ -71,18 +82,18 @@ export function ScheduleFilters({
   const toggle = <T,>(arr: T[], v: T) =>
     arr.includes(v) ? arr.filter((x) => x !== v) : [...arr, v]
   return (
-    <search className="flex flex-col gap-3" aria-label="Schedule filters">
+    <search className="flex flex-col" aria-label="Schedule filters">
       <Group title="Club">
         {CLUBS.map((c) => {
           const locked = !multi && c.slug !== me.homeClub
           return locked ? (
             <p
               key={c.slug}
-              className="flex min-h-9 items-center gap-2 text-caption text-muted-foreground"
+              className="gap-xs flex min-h-9 items-center text-body-m text-muted-foreground sm:text-body-s"
             >
-              <Lock className="size-4" aria-hidden="true" />
+              <Lock className="size-4 shrink-0" aria-hidden="true" />
               {c.name}
-              <span className="text-detail">Ridge or Summit</span>
+              <span>· Ridge or Summit</span>
             </p>
           ) : (
             <CheckRow
@@ -107,9 +118,9 @@ export function ScheduleFilters({
             checked={f.cats.includes(c.id as CategoryId)}
             onChange={() => set({ cats: toggle(f.cats, c.id as CategoryId) })}
           >
-            <span className="flex items-center gap-2">
+            <span className="gap-xs flex items-center">
               <CategoryBadge id={c.id} />
-              <span className="num text-detail text-muted-foreground">
+              <span className="tabular text-body-xs text-muted-foreground">
                 {counts[c.id] ?? 0}
               </span>
             </span>
@@ -119,7 +130,7 @@ export function ScheduleFilters({
       <Group title="Time of day">
         {/* biome-ignore lint/a11y/useSemanticElements: toggle-button group, a fieldset would add legend and border styles */}
         <div
-          className="flex flex-wrap gap-2"
+          className="gap-xs flex flex-wrap"
           role="group"
           aria-label="Time of day"
         >
@@ -137,13 +148,15 @@ export function ScheduleFilters({
         </div>
       </Group>
       <Group title="Intensity">
-        <p className="text-detail text-muted-foreground">1 Easy · 5 All-out</p>
+        <p className="text-body-m text-muted-foreground sm:text-body-s">
+          1 Easy · 5 All-out
+        </p>
         {(["intMin", "intMax"] as const).map((k) => (
-          <div key={k} className="flex items-center justify-between gap-3">
-            <span className="text-caption">
+          <div key={k} className="gap-s flex items-center justify-between">
+            <span className="text-body-m sm:text-body-s">
               {k === "intMin" ? "At least" : "At most"}
             </span>
-            <span className="flex items-center gap-1">
+            <span className="gap-xxs flex items-center">
               <Button
                 variant="outline"
                 size="icon"
@@ -156,7 +169,7 @@ export function ScheduleFilters({
                 <Minus aria-hidden="true" />
               </Button>
               <span
-                className="w-8 text-center num text-body-strong"
+                className="tabular w-8 text-center text-body-m font-heavy sm:text-body-s"
                 aria-live="polite"
               >
                 {f[k]}
@@ -219,7 +232,7 @@ export function ScheduleFilters({
           ]}
         />
       </Group>
-      <div className="flex flex-col gap-3 pt-3 rule-t">
+      <div className="gap-s pt-s flex flex-col rule-t">
         <CheckRow
           checked={saved}
           onChange={(c) => {
@@ -238,7 +251,8 @@ export function ScheduleFilters({
           >
             Clear all
           </Button>
-          <p role="status" className="num text-caption text-muted-foreground">
+          {/* The sheet's own button shows the count, so this one is for screen readers only. */}
+          <p role="status" className="sr-only">
             {count} {count === 1 ? "class" : "classes"}
           </p>
         </div>

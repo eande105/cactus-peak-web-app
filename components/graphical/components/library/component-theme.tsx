@@ -43,9 +43,16 @@ export type PartAppearances = Partial<
 const ThemeContext = createContext<{
   appearances: PartAppearances;
   variables: CSSProperties;
+  /**
+   * App change (Cactus Peak): false when a stylesheet (graphical/generated/theme.css) defines the theme
+   * variables. Parts then read them from :root, where the Graphical editor's live edits land, instead of carrying
+   * inline copies that would shadow those edits. JavaScript still reads `variables` (motion, icon style).
+   */
+  inlineVariables: boolean;
   component?: ComponentId;
   resolveComponent?: (component: ComponentId) => PartAppearances;
 } | null>(null);
+const noVariables: CSSProperties = {};
 export const APPEARANCE_STATES: ComponentState[] = [
   'rest',
   'hover',
@@ -100,19 +107,30 @@ export function createAppearanceResolver(
 export function ComponentTheme({
   appearances,
   variables,
+  inlineVariables,
   component,
   resolveComponent,
   children,
 }: {
   appearances: PartAppearances;
   variables: CSSProperties;
+  /** Omit to inherit the enclosing theme's choice (default true). */
+  inlineVariables?: boolean;
   component?: ComponentId;
   resolveComponent?: (component: ComponentId) => PartAppearances;
   children: ReactNode;
 }) {
+  const inherited = useContext(ThemeContext)?.inlineVariables ?? true;
+  const inline = inlineVariables ?? inherited;
   const value = useMemo(
-    () => ({ appearances, variables, component, resolveComponent }),
-    [appearances, variables, component, resolveComponent],
+    () => ({
+      appearances,
+      variables,
+      inlineVariables: inline,
+      component,
+      resolveComponent,
+    }),
+    [appearances, variables, inline, component, resolveComponent],
   );
   return (
     <ThemeContext value={value}>
@@ -217,6 +235,13 @@ export function usePartAppearance(
       : theme?.appearances[part];
   return (appearances ?? defaultAppearances(component)[part])?.[state];
 }
+
+const emptyPartAppearances: NonNullable<PartAppearances[ComponentPartId]> = {};
+const partStyles = new WeakMap<
+  CSSProperties,
+  WeakMap<NonNullable<PartAppearances[ComponentPartId]>, CSSProperties>
+>();
+
 export function usePartStyle(
   component: ComponentId,
   part: ComponentPartId,
@@ -226,9 +251,24 @@ export function usePartStyle(
     (theme?.component && theme.component !== component && theme.resolveComponent
       ? theme.resolveComponent(component)[part]
       : theme?.appearances[part]) ?? defaultAppearances(component)[part];
-  const variables = theme?.variables ?? defaultVariables;
+  const variables =
+    theme && !theme.inlineVariables
+      ? noVariables
+      : (theme?.variables ?? defaultVariables);
   return useMemo(
-    () => ({ ...variables, ...appearanceVariables(appearances ?? {}) }),
+    () => {
+      // Instances of the same part share resolved inputs. Generate its state
+      // declarations once per theme update, including for portalled instances.
+      let styles = partStyles.get(variables);
+      if (!styles) partStyles.set(variables, (styles = new WeakMap()));
+      const states = appearances ?? emptyPartAppearances;
+      let style = styles.get(states);
+      if (!style) {
+        style = { ...variables, ...appearanceVariables(states) };
+        styles.set(states, style);
+      }
+      return style;
+    },
     [variables, appearances],
   );
 }
@@ -244,7 +284,10 @@ export function themeContainer<C extends ElementType>(
       className?: string | ((state: unknown) => string | undefined);
       style?: CSSProperties | ((state: unknown) => CSSProperties | undefined);
     };
-    const variables = theme?.variables ?? defaultVariables;
+    const variables =
+      theme && !theme.inlineVariables
+        ? noVariables
+        : (theme?.variables ?? defaultVariables);
     const classes = (value?: string) =>
       [structure, value].filter(Boolean).join(' ');
     return createElement(Base, {
@@ -256,7 +299,9 @@ export function themeContainer<C extends ElementType>(
       style:
         typeof style === 'function'
           ? (state: unknown) => ({ ...variables, ...style(state) })
-          : { ...variables, ...style },
+          : style
+            ? { ...variables, ...style }
+            : variables,
     });
   }
   ThemedContainer.displayName = `Themed(${structure})`;
@@ -295,7 +340,9 @@ export function themePart<C extends ElementType>(
       style:
         typeof consumerStyle === 'function'
           ? (state: unknown) => ({ ...style, ...consumerStyle(state) })
-          : { ...style, ...consumerStyle },
+          : consumerStyle
+            ? { ...style, ...consumerStyle }
+            : style,
     });
   }
   ThemedPart.displayName = `Themed(${component}.${part})`;

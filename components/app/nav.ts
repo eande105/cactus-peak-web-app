@@ -21,34 +21,93 @@ export interface NavItem {
   href: string
   label: string
   icon: IconComponent | ((p: React.ComponentProps<"svg">) => React.JSX.Element)
-  group?: "BOOK" | "EXPLORE" | "ACCOUNT"
-  footer?: boolean
 }
+
+/**
+ * The sidebar. The first group is what a member does: see what is next, book, change a booking, check a club,
+ * follow progress, read messages. The bottom group is help (beside the search button). What a member manages
+ * (Household, Account and its pages) is in the user menu under it. `match` lists the path prefixes that keep the
+ * link current.
+ */
+export interface PrimaryNavItem extends NavItem {
+  match: readonly string[]
+}
+export const PRIMARY_NAV: readonly PrimaryNavItem[] = [
+  { href: "/today", label: "Home", icon: Sun, match: ["/today"] },
+  {
+    href: "/schedule",
+    label: "Book",
+    icon: CalendarDays,
+    match: ["/schedule", "/reserve", "/training"],
+  },
+  { href: "/bookings", label: "Bookings", icon: Ticket, match: ["/bookings"] },
+  { href: "/clubs", label: "Clubs", icon: MapPin, match: ["/clubs"] },
+  {
+    href: "/progress",
+    label: "Progress",
+    icon: TrendingUp,
+    match: ["/progress"],
+  },
+  { href: "/inbox", label: "Inbox", icon: Inbox, match: ["/inbox"] },
+]
+export const HELP_NAV: PrimaryNavItem = {
+  href: "/help",
+  label: "Help",
+  icon: CircleHelp,
+  match: ["/help"],
+}
+
+/** The Account area: one side menu for the plan, the money and the member's own settings. */
+export const ACCOUNT_NAV: readonly { href: string; label: string }[] = [
+  { href: "/account", label: "Overview" },
+  { href: "/membership", label: "Membership" },
+  { href: "/billing", label: "Billing" },
+  { href: "/guest-passes", label: "Guest passes" },
+  { href: "/settings/profile", label: "Profile" },
+  { href: "/settings/preferences", label: "Home club and interests" },
+  { href: "/settings/notifications", label: "Notifications" },
+  { href: "/settings/calendar", label: "Calendar" },
+  { href: "/settings/security", label: "Sign-in and security" },
+  { href: "/settings/display", label: "Display and accessibility" },
+  { href: "/settings/privacy", label: "Privacy and data" },
+]
+
+/** The path prefixes that show the Account side menu. Task pages under them (freeze, cancel, change plan) do not. */
+export const ACCOUNT_PATHS: readonly string[] = [
+  "/account",
+  "/membership",
+  "/billing",
+  "/guest-passes",
+  "/settings",
+]
+
+export function isCurrent(path: string, prefixes: readonly string[]): boolean {
+  return prefixes.some((p) => path === p || path.startsWith(`${p}/`))
+}
+
+/** Every page a member can search for in the command menu. */
 export const NAV: NavItem[] = [
-  { href: "/today", label: "Today", icon: Sun },
-  { href: "/schedule", label: "Schedule", icon: CalendarDays },
-  { href: "/bookings", label: "My bookings", icon: Ticket },
-  { href: "/reserve", label: "Reserve", icon: Grid2x2, group: "BOOK" },
+  { href: "/today", label: "Home", icon: Sun },
+  { href: "/schedule", label: "Book a class", icon: CalendarDays },
+  { href: "/bookings", label: "Bookings", icon: Ticket },
+  { href: "/reserve/courts", label: "Reserve a court", icon: Grid2x2 },
+  { href: "/reserve/lanes", label: "Reserve a lap lane", icon: Grid2x2 },
+  { href: "/reserve/kids-club", label: "Book kids club", icon: Grid2x2 },
   {
     href: "/training",
-    label: "Training",
+    label: "Personal training",
     icon: RibBarbell as unknown as IconComponent,
-    group: "BOOK",
   },
-  { href: "/clubs", label: "Clubs", icon: MapPin, group: "EXPLORE" },
-  { href: "/progress", label: "Progress", icon: TrendingUp, group: "EXPLORE" },
-  { href: "/family", label: "Family", icon: Users, group: "ACCOUNT" },
-  { href: "/membership", label: "Membership", icon: IdCard, group: "ACCOUNT" },
-  { href: "/billing", label: "Billing", icon: CreditCard, group: "ACCOUNT" },
-  {
-    href: "/guest-passes",
-    label: "Guest passes",
-    icon: Gift,
-    group: "ACCOUNT",
-  },
-  { href: "/inbox", label: "Inbox", icon: Inbox, footer: true },
-  { href: "/settings", label: "Settings", icon: Settings, footer: true },
-  { href: "/help", label: "Help", icon: CircleHelp, footer: true },
+  { href: "/clubs", label: "Clubs", icon: MapPin },
+  { href: "/progress", label: "Progress", icon: TrendingUp },
+  { href: "/account", label: "Account", icon: IdCard },
+  { href: "/family", label: "Household", icon: Users },
+  { href: "/membership", label: "Membership", icon: IdCard },
+  { href: "/billing", label: "Billing", icon: CreditCard },
+  { href: "/guest-passes", label: "Guest passes", icon: Gift },
+  { href: "/inbox", label: "Inbox", icon: Inbox },
+  { href: "/settings", label: "Settings", icon: Settings },
+  { href: "/help", label: "Help", icon: CircleHelp },
 ]
 
 export function canSee(m: Member, href: string): boolean {
@@ -62,8 +121,8 @@ export function canSee(m: Member, href: string): boolean {
       return role === "primary"
     case "/guest-passes":
       return role === "primary" || role === "adult"
-    case "/reserve":
-      return true
+    case "/reserve/kids-club":
+      return role === "primary" || role === "adult"
     default:
       return true
   }

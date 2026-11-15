@@ -101,7 +101,7 @@ export function CancelDialog({
         announce(`Cancelled. ${last.strikeCount} late cancels in 30 days.`)
       } else {
         toast({
-          title: `Cancelled: ${booking.title}, ${fmtDowTime(booking.start)}`,
+          title: `Cancelled: ${booking.title}, ${fmtDowTime(booking.start)}.`,
           action: {
             label: "Undo",
             onClick: () => {
@@ -123,17 +123,17 @@ export function CancelDialog({
         isKids
           ? "It's free. Please cancel at least 2 hours before so another family can use the spots."
           : late
-            ? `Cancelling now adds 1 late cancel to your account. ${booking.title}, ${fmtDowTime(booking.start)}`
-            : `${booking.title}, ${fmtDowTime(booking.start)} You can cancel for free until ${fmtTime(freeUntil)} You can rebook until it fills.`
+            ? `Cancelling now adds 1 late cancel to your account. ${booking.title}, ${fmtDowTime(booking.start)}.`
+            : `${booking.title}, ${fmtDowTime(booking.start)}. You can cancel for free until ${fmtTime(freeUntil)}. You can rebook until it fills.`
       }
     >
       {late && !isKids ? (
-        <div className="flex flex-col gap-3">
-          <ul className="flex flex-col gap-2 text-body">
+        <div className="flex flex-col gap-s">
+          <ul className="flex flex-col gap-xs text-body-m">
             {booking.kind === "pt" ? (
-              <li className="flex gap-2">
+              <li className="flex gap-xs">
                 <XCircle
-                  className="mt-0.5 size-5 shrink-0 text-destructive"
+                  className="mt-xxs size-5 shrink-0 text-destructive"
                   aria-hidden="true"
                 />
                 This session counts as used (free to move until 24 hours
@@ -141,33 +141,33 @@ export function CancelDialog({
               </li>
             ) : (
               <>
-                <li className="flex gap-2">
+                <li className="flex gap-xs">
                   <XCircle
-                    className="mt-0.5 size-5 shrink-0 text-destructive"
+                    className="mt-xxs size-5 shrink-0 text-destructive"
                     aria-hidden="true"
                   />
                   Counts as a strike ({next} of 3 in 30 days)
                 </li>
                 {booking.sessionId ? (
-                  <li className="flex gap-2">
+                  <li className="flex gap-xs">
                     <XCircle
-                      className="mt-0.5 size-5 shrink-0 text-destructive"
+                      className="mt-xxs size-5 shrink-0 text-destructive"
                       aria-hidden="true"
                     />
                     Your spot goes to the next person on the waitlist
                   </li>
                 ) : null}
-                <li className="flex gap-2">
+                <li className="flex gap-xs">
                   <XCircle
-                    className="mt-0.5 size-5 shrink-0 text-destructive"
+                    className="mt-xxs size-5 shrink-0 text-destructive"
                     aria-hidden="true"
                   />
                   3 strikes in 30 days pause booking for 3 days
                 </li>
                 {willPause ? (
-                  <li className="flex gap-2">
+                  <li className="flex gap-xs">
                     <XCircle
-                      className="mt-0.5 size-5 shrink-0 text-destructive"
+                      className="mt-xxs size-5 shrink-0 text-destructive"
                       aria-hidden="true"
                     />
                     This is your 3rd late cancel. Booking pauses until{" "}
@@ -179,9 +179,9 @@ export function CancelDialog({
             )}
           </ul>
           {booking.kind !== "pt" ? (
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-s">
               <LateCancelMeter count={Math.min(3, next)} />
-              <span className="text-caption">
+              <span className="text-body-s">
                 Strike {next} of 3. This one clears on{" "}
                 {fmtDayShort(strikes.length ? clears : now + 30 * DAY)}.
               </span>
@@ -207,7 +207,7 @@ export function CancelDialog({
           )}
         </FormField>
       ) : null}
-      <div className="flex flex-col gap-2">
+      <div className="flex flex-col gap-xs">
         <Button className="w-full" onClick={() => onOpenChange(false)}>
           {isKids ? "Keep my spot" : "Keep my spot"}
         </Button>

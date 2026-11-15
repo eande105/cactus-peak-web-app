@@ -178,7 +178,7 @@ const control = (
     borderWidth: 's',
     radius: 's',
     foreground: 'neutral-10',
-    font: 'ui',
+    font: 'body',
     textSize: 's',
     weight: 'medium',
     shadow: 's',
@@ -238,7 +238,7 @@ const text = (
   label,
   properties: TEXT,
   states: ['rest', 'disabled', 'invalid'],
-  defaults: { font: 'ui', textSize: 's', weight: 'regular', ...defaults },
+  defaults: { font: 'body', textSize: 's', weight: 'regular', ...defaults },
   stateDefaults: {
     disabled: { foreground: 'neutral-6' },
     invalid: id === 'error' ? { foreground: 'error' } : {},

@@ -3,9 +3,11 @@ import Link from "next/link"
 import { notFound, useRouter } from "next/navigation"
 import { useState } from "react"
 import { useApp } from "@/components/app/use-app"
-import { CompactClass } from "@/components/booking/class-row"
+import { Check, Clock3, ShieldCheck, TriangleAlert } from "@/components/icons"
+import { AppPage, Card, Facts, Group, Row, Rows } from "@/components/kit/app"
 import { CoachArt } from "@/components/kit/brand-art"
-import { PageHeader, SectionTitle } from "@/components/kit/ui"
+import { CapacityIndicator } from "@/components/kit/ribs"
+import { StatusPill } from "@/components/kit/ui"
 import { Button } from "@/components/ui/button"
 import { ensureThread } from "@/lib/actions"
 import {
@@ -16,8 +18,147 @@ import {
   PT_PRICE,
 } from "@/lib/data/catalog"
 import { sessionsRange } from "@/lib/data/sessions"
-import { ptOpenSlots } from "@/lib/engine"
-import { dayStart, fmtDay, fmtMoney, fmtTime } from "@/lib/time"
+import {
+  bookingOf,
+  bookingState,
+  ptOpenSlots,
+  sessionLeft,
+  waitCount,
+} from "@/lib/engine"
+import { dayStart, fmtDay, fmtDowTime, fmtMoney, fmtTime } from "@/lib/time"
+import type { Session } from "@/lib/types"
+import { cn } from "@/lib/utils"
+
+/** A row of quiet tag chips: specialties, "Good for". */
+function Chips({
+  items,
+  label,
+  className,
+}: {
+  items: string[]
+  label: string
+  className?: string
+}) {
+  return (
+    <ul aria-label={label} className={cn("gap-xs flex flex-wrap", className)}>
+      {items.map((x) => (
+        <li key={x}>
+          <StatusPill tone="outline">{x}</StatusPill>
+        </li>
+      ))}
+    </ul>
+  )
+}
+
+/**
+ * The parts of a first session. An item is "10 minutes talking": the length is the strong title and the rest is
+ * the line. An item without a length is the title alone.
+ */
+function StepList({
+  items,
+  className,
+}: {
+  items: string[]
+  className?: string
+}) {
+  return (
+    <ol className={cn("flex flex-col [&>li+li]:rule-t", className)}>
+      {items.map((g, i) => {
+        const m = /^(\d+\s+\w+)\s+(.+)$/.exec(g)
+        const line = m ? m[2].charAt(0).toUpperCase() + m[2].slice(1) : ""
+        return (
+          <li
+            key={g}
+            className="gap-s py-s flex items-baseline text-body-m sm:text-body-s"
+          >
+            <span
+              className="tabular w-4 shrink-0 text-muted-foreground"
+              aria-hidden="true"
+            >
+              {i + 1}
+            </span>
+            <span className="min-w-0">
+              <span className="tabular block font-heavy">{m ? m[1] : g}</span>
+              {line ? (
+                <span className="block text-muted-foreground">{line}</span>
+              ) : null}
+            </span>
+          </li>
+        )
+      })}
+    </ol>
+  )
+}
+
+/** One class the coach teaches, as a row that opens the class. The right end shows the member's state or the spots. */
+function ClassRow({ se }: { se: Session }) {
+  const { s, me, now } = useApp()
+  const st = bookingState(s, me.id, se, now)
+  const bk = bookingOf(s, me.id, se.id)
+  return (
+    <Row
+      className="px-zero"
+      href={`/schedule/${se.id}`}
+      title={se.name}
+      line={
+        <span className="tabular">
+          {fmtDowTime(se.start)} · {se.studio}
+        </span>
+      }
+      end={
+        st.state === "booked" || st.state === "late-cancel" ? (
+          <StatusPill tone="success" icon={Check}>
+            Booked
+          </StatusPill>
+        ) : bk?.status === "waitlisted" ? (
+          <StatusPill icon={Clock3}>
+            Waitlist {bk.position === 2 ? "2nd" : `#${bk.position}`}
+          </StatusPill>
+        ) : st.state === "hold" ? (
+          <StatusPill tone="warning" icon={TriangleAlert}>
+            Spot held
+          </StatusPill>
+        ) : (
+          <CapacityIndicator
+            variant="text"
+            className="text-muted-foreground"
+            left={sessionLeft(s, se)}
+            capacity={se.capacity}
+            unit={se.unit}
+            waiting={waitCount(s, se)}
+          />
+        )
+      }
+    />
+  )
+}
+
+/** One open time as a chip. The chip opens the booking flow with that time picked. */
+function TimeChip({
+  t,
+  slug,
+  className,
+}: {
+  t: number
+  slug: string
+  className?: string
+}) {
+  return (
+    <Link
+      href={`/training/coaches/${slug}/book?t=${t}`}
+      className={cn(
+        "tabular flex min-h-11 flex-col justify-center hairline",
+        "px-s corner-s py-xs",
+        "text-body-m",
+        "hover:bg-muted/40 sm:text-body-s",
+        className
+      )}
+    >
+      <span className="truncate text-muted-foreground">{fmtDay(t)}</span>
+      <span className="truncate font-heavy">{fmtTime(t)}</span>
+    </Link>
+  )
+}
 
 export default function CoachProfile({ slug }: { slug: string }) {
   const { s, me, hh, now } = useApp()
@@ -25,169 +166,158 @@ export default function CoachProfile({ slug }: { slug: string }) {
   const c = COACH_BY_SLUG[slug]
   const [busy, setBusy] = useState(false)
   if (!c) notFound()
-  const slots = ptOpenSlots(s, slug, now)
-  const byDay = slots.slice(0, 8).reduce<Record<number, number[]>>((a, x) => {
-    const day = dayStart(x)
-    a[day] ??= []
-    a[day].push(x)
-    return a
-  }, {})
+  const slots = ptOpenSlots(s, slug, now).slice(0, 8)
   const first = c.name.split(" ")[0]
   const classes = INSTRUCTORS.filter((i) => i.name === c.name).length
     ? sessionsRange(c.clubs[0], dayStart(now), 5)
         .filter((x) => x.instructorId === c.id)
         .slice(0, 3)
     : []
+  const book = `/training/coaches/${slug}/book`
   return (
-    <div className="flex flex-col gap-8">
-      <PageHeader
-        backHref="/training"
-        backLabel="Training"
-        title={c.name}
-        eyebrow={c.specialties.join(" · ")}
-        description={`Coaching since ${c.since} · ${c.clubs.map((x) => CLUB_BY_SLUG[x].name).join(", ")}`}
-      />
-      <div className="grid gap-x-10 gap-y-8 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
-        <div className="flex flex-col gap-8">
-          <div className="grid gap-6 sm:grid-cols-[minmax(0,280px)_1fr]">
-            <CoachArt
-              name={c.name}
-              roles={c.specialties}
-              shape="square"
-              className="aspect-square w-full max-w-[280px] rounded-lg"
-            />
-            <div className="flex flex-col gap-5">
-              <p className="max-w-[58ch] text-body">{c.about}</p>
-              <div>
-                <p className="mb-2 eyebrow text-muted-foreground">Good for</p>
-                <ul className="flex flex-wrap gap-2">
-                  {c.goodFor.map((g) => (
-                    <li
-                      key={g}
-                      className="rounded-full bg-muted px-3 py-1 text-caption"
-                    >
-                      {g}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-              <div>
-                <p className="mb-2 eyebrow text-muted-foreground">
-                  A first session looks like
-                </p>
-                <ul className="flex flex-col gap-1 text-body">
-                  {c.firstSession.map((g) => (
-                    <li key={g} className="flex gap-2">
-                      <span aria-hidden="true">•</span>
-                      {g}
-                    </li>
-                  ))}
-                </ul>
-              </div>
+    <AppPage
+      back={{ href: "/training", label: "Training" }}
+      title={c.name}
+      meta={
+        <Chips
+          items={c.specialties}
+          label="Specialties"
+          className="min-w-0 flex-nowrap overflow-hidden max-sm:hidden"
+        />
+      }
+      actions={
+        <Button
+          variant="outline"
+          loading={busy}
+          onClick={() => {
+            setBusy(true)
+            const id = ensureThread(`Coach ${c.name}`, "Your first session")
+            setTimeout(() => router.push(`/inbox/${id}`), 200)
+          }}
+        >
+          Message
+          <span className="sr-only"> {first}</span>
+        </Button>
+      }
+    >
+      <div className="gap-l grid items-start lg:grid-cols-[minmax(0,1fr)_22.5rem]">
+        <div className="gap-l flex min-w-0 flex-col">
+          <Chips
+            items={c.specialties}
+            label="Specialties"
+            className="sm:hidden"
+          />
+          <Card id="ab" title="About">
+            <div className="gap-m flex items-start">
+              <CoachArt name={c.name} roles={c.specialties} size={56} />
+              <p className="max-w-[64ch] min-w-0 flex-1 text-body-m text-pretty sm:text-body-s">
+                {c.about}
+              </p>
             </div>
-          </div>
-          <section aria-labelledby="no">
-            <SectionTitle id="no">Next open times</SectionTitle>
-            {Object.keys(byDay).length ? (
-              <div className="mt-3 flex flex-col gap-3">
-                {Object.entries(byDay).map(([d, list]) => (
-                  <div key={d} className="flex flex-wrap items-center gap-3">
-                    <p className="w-28 text-label">{fmtDay(Number(d))}</p>
-                    <ul className="flex flex-wrap gap-2">
-                      {list.map((t) => (
-                        <li key={t}>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            render={
-                              <Link
-                                href={`/training/coaches/${slug}/book?t=${t}`}
-                              />
-                            }
-                          >
-                            <span
-                              className="size-2 rounded-full bg-success"
-                              aria-hidden="true"
-                              data-icon="inline-start"
-                            />
-                            <span className="num">{fmtTime(t)}</span>
-                          </Button>
+            <Facts
+              className="mt-m rule-t"
+              items={[
+                { label: "Coaching since", value: String(c.since) },
+                {
+                  label: c.clubs.length === 1 ? "Club" : "Clubs",
+                  value: c.clubs.map((x) => (
+                    <span key={x} className="block">
+                      {CLUB_BY_SLUG[x].name}
+                    </span>
+                  )),
+                },
+              ]}
+            />
+          </Card>
+          {c.goodFor.length ? (
+            <Card tone="bare" title="Good for">
+              <Chips items={c.goodFor} label="Good for" className="pt-s" />
+            </Card>
+          ) : null}
+          {c.firstSession.length ? (
+            <Card id="fs" tone="bare" title="What a first session is">
+              <StepList items={c.firstSession} />
+            </Card>
+          ) : null}
+          {classes.length ? (
+            <Card id="ct" tone="bare" title="Classes">
+              <Rows label={`Classes with ${first}`}>
+                {classes.map((x) => (
+                  <ClassRow key={x.id} se={x} />
+                ))}
+              </Rows>
+            </Card>
+          ) : null}
+        </div>
+        <Card
+          id="cf"
+          as="aside"
+          title="Sessions"
+          className="max-lg:order-first lg:sticky lg:top-[calc(var(--bar-h)+var(--space-m))]"
+        >
+          <div className="gap-m flex flex-col">
+            <Facts
+              items={[
+                { label: "Length", value: "45 minutes" },
+                {
+                  label: "Single session",
+                  value: fmtMoney(PT_PRICE, false),
+                },
+                {
+                  label: "Pack price",
+                  value: `From ${fmtMoney(PT_PACKS[2].price / 12, false)} each`,
+                },
+                ...(hh.plan === "summit"
+                  ? [
+                      {
+                        label: "Summit intro session",
+                        value: `${hh.ptIntroLeft} left this quarter`,
+                      },
+                    ]
+                  : []),
+                ...(me.role === "teen"
+                  ? [{ label: "Approval", value: "By your parent" }]
+                  : []),
+              ]}
+            />
+            <div id="no">
+              <Group label="Next open times" hint="Arizona time">
+                {slots.length ? (
+                  <>
+                    <ul
+                      aria-label="Next open times"
+                      className="gap-xs grid grid-cols-2"
+                    >
+                      {slots.map((t) => (
+                        <li key={t} className="min-w-0">
+                          <TimeChip t={t} slug={slug} />
                         </li>
                       ))}
                     </ul>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="mt-3 text-muted-foreground">
-                No open times with {first} in the next 14 days. Try another
-                coach, or message the front desk.
-              </p>
-            )}
-            <p className="mt-3 text-detail text-muted-foreground">
-              Arizona time (no daylight saving)
-            </p>
-          </section>
-          {classes.length ? (
-            <section aria-labelledby="ct">
-              <SectionTitle id="ct">Classes {first} teaches</SectionTitle>
-              <ul className="mt-3 flex flex-wrap gap-6">
-                {classes.map((x) => (
-                  <li key={x.id}>
-                    <CompactClass se={x} />
-                  </li>
-                ))}
-              </ul>
-            </section>
-          ) : null}
-        </div>
-        <aside className="lg:sticky lg:top-24 lg:self-start">
-          <div className="flex flex-col gap-3 rounded-lg bg-card p-5 edge ring-border">
-            <p className="font-heading text-h3 display-stretch">
-              45-minute session
-            </p>
-            <p className="text-body">
-              Single <span className="num">{fmtMoney(PT_PRICE, false)}</span> ·
-              Pack from{" "}
-              <span className="num">
-                {fmtMoney(PT_PACKS[2].price / 12, false)}
-              </span>{" "}
-              each
-            </p>
-            <p className="text-caption text-muted-foreground">
+                    <Link
+                      href={book}
+                      className="w-fit text-body-m font-medium text-link sm:text-body-s"
+                    >
+                      See more times
+                    </Link>
+                  </>
+                ) : (
+                  <p className="text-body-m text-muted-foreground sm:text-body-s">
+                    No open times with {first} in the next 14 days.
+                  </p>
+                )}
+              </Group>
+            </div>
+            <p className="gap-xs flex items-center text-body-m text-muted-foreground sm:text-body-s">
+              <ShieldCheck className="size-4 shrink-0" aria-hidden="true" />
               Free to move until 24 hours before.
             </p>
-            {hh.plan === "summit" ? (
-              <p className="text-caption">
-                Use your Summit intro session.{" "}
-                <span className="num">{hh.ptIntroLeft}</span> left this quarter.
-              </p>
-            ) : null}
-            {me.role === "teen" ? (
-              <p className="text-caption text-muted-foreground">
-                Your parent approves training requests.
-              </p>
-            ) : null}
-            <Button
-              size="lg"
-              render={<Link href={`/training/coaches/${slug}/book`} />}
-            >
+            <Button className="w-full" render={<Link href={book} />}>
               Book a session
             </Button>
-            <Button
-              variant="outline"
-              loading={busy}
-              onClick={() => {
-                setBusy(true)
-                const id = ensureThread(`Coach ${c.name}`, "Your first session")
-                setTimeout(() => router.push(`/inbox/${id}`), 200)
-              }}
-            >
-              Message {first}
-            </Button>
           </div>
-        </aside>
+        </Card>
       </div>
-    </div>
+    </AppPage>
   )
 }

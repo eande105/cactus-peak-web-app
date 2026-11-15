@@ -52,6 +52,7 @@ export function themeIconWeightVariables(theme: IconTheme) {
       ? undefined
       : resolveIconWeight(theme.iconFamily, theme.iconWeight);
   return {
+    '--theme-icon-weight': weight ?? 'initial',
     '--theme-icon-stroke-width':
       weight === undefined
         ? 'initial'

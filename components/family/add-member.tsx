@@ -5,12 +5,21 @@ import { Suspense, useState } from "react"
 import { useApp } from "@/components/app/use-app"
 import { SuccessPanel } from "@/components/booking/success-panel"
 import {
+  ChoiceList,
+  cardLabel,
+  FlowAside,
+  FlowError,
+  Highlight,
+  InfoLine,
+  RESULT_WIDTH,
+  StepFooter,
+} from "@/components/flows/parts"
+import { Facts, Group, Task } from "@/components/kit/app"
+import {
   Banner,
   CheckRow,
   FormField,
   LoadingBlock,
-  PageHeader,
-  RadioList,
   SwitchRow,
 } from "@/components/kit/ui"
 import { Button } from "@/components/ui/button"
@@ -25,6 +34,9 @@ import {
 } from "@/lib/engine"
 import { fmtDayShort, fmtMoney } from "@/lib/time"
 import type { Member } from "@/lib/types"
+
+const BACK = { href: "/family", label: "Family" }
+const ROLE = { adult: "Adult", teen: "Teen", child: "Child" } as const
 
 function Inner() {
   const { s, me, hh, now } = useApp()
@@ -96,109 +108,183 @@ function Inner() {
       pickup,
     })
     setBusy(false)
-    if (r.ok) {
-      setCreated({ m: r.member, today: r.today })
-      setStep(4)
-    } else setServerErr(r.message)
+    if (r.ok) setCreated({ m: r.member, today: r.today })
+    else setServerErr(r.message)
   }
-  if (kind === "visit" && step === 1)
+  if (created)
     return (
-      <div className="max-w-xl">
-        <PageHeader
-          title="Add to your plan"
-          backHref="/family"
-          backLabel="Family"
-        />
-        <Banner tone="neutral" title="Just visiting?">
-          Send a guest pass instead. A guest pass covers one visit at one club.
-        </Banner>
-        <div className="mt-4 flex gap-2">
-          <Button render={<Link href="/guest-passes" />}>
-            Send a guest pass
-          </Button>
-          <Button variant="outline" onClick={() => setKind("child")}>
-            Back
-          </Button>
-        </div>
-      </div>
+      <SuccessPanel
+        className={RESULT_WIDTH}
+        headline={
+          created.m.role === "adult"
+            ? `Invitation sent to ${created.m.firstName}`
+            : `${created.m.firstName} is on your plan`
+        }
+        summary={[
+          {
+            label: "Role",
+            value:
+              ROLE[created.m.role === "primary" ? "adult" : created.m.role],
+          },
+          { label: "Adds", value: `${fmtMoney(price, false)} per month` },
+          { label: "Charged today", value: fmtMoney(created.today) },
+        ]}
+        pill={
+          created.m.role === "adult" ? "Invitation sent" : "Added to your plan"
+        }
+        primary={<Button render={<Link href="/family" />}>Go to family</Button>}
+        rows={
+          created.m.role === "adult"
+            ? []
+            : [
+                {
+                  label: `Set up ${created.m.firstName}'s pass`,
+                  href: `/family/${created.m.id}`,
+                },
+              ]
+        }
+      />
     )
-  const progress = (step / 4) * 100
+  const visit = kind === "visit"
   return (
-    <div className="grid gap-x-16 gap-y-6 lg:grid-cols-[minmax(0,520px)_minmax(0,1fr)]">
-      <div className="flex flex-col gap-6">
-        <PageHeader
-          title="Add to your plan"
-          backHref="/family"
-          backLabel="Family"
-        />
-        <div className="flex flex-col gap-2">
-          <p role="status" className="text-caption text-muted-foreground">
-            Step {step} of 4
-          </p>
-          <div
-            className="h-1.5 overflow-hidden rounded-full bg-muted"
-            aria-hidden="true"
-          >
-            <div
-              className="h-full rounded-full bg-night transition-[width] dark:bg-on-night"
-              style={{ width: `${progress}%` }}
+    <Task
+      title="Add to your plan"
+      step={step}
+      of={3}
+      close={BACK}
+      aside={
+        <FlowAside title="Your plan after this">
+          {visit ? (
+            <p className="text-body-m text-muted-foreground sm:text-body-s">
+              A guest pass does not change your plan.
+            </p>
+          ) : (
+            <Facts
+              items={[
+                ...(f.first.trim()
+                  ? [
+                      {
+                        label: ROLE[role],
+                        value: `${f.first.trim()} ${f.last.trim()}`,
+                      },
+                    ]
+                  : []),
+                {
+                  label: "Adds",
+                  value: (
+                    <span className="tabular">
+                      {fmtMoney(price, false)} per month
+                    </span>
+                  ),
+                },
+                {
+                  label: "Charged today",
+                  value: <span className="tabular">{fmtMoney(today)}</span>,
+                  hint: (
+                    <span className="tabular">
+                      {left} of {days} days
+                    </span>
+                  ),
+                },
+                {
+                  label: "New monthly total",
+                  value: (
+                    <span className="tabular">{fmtMoney(newTotal, false)}</span>
+                  ),
+                  hint: (
+                    <span className="tabular">
+                      From {fmtDayShort(nextBillingDate(hh, now))}
+                    </span>
+                  ),
+                },
+              ]}
             />
-          </div>
-        </div>
-        {step === 1 ? (
-          <>
-            <h2 className="font-heading text-h3 display-stretch">
-              Who are you adding?
-            </h2>
-            <RadioList
+          )}
+        </FlowAside>
+      }
+      footer={
+        <StepFooter
+          back={
+            step > 1
+              ? { label: "Back", onClick: () => setStep(step - 1) }
+              : { label: "Cancel", href: "/family" }
+          }
+        >
+          {step < 3 ? (
+            <Button
+              onClick={() => {
+                if (step === 2 && !validateDetails()) return
+                setStep(step + 1)
+              }}
+              disabled={step === 1 && visit}
+            >
+              Continue
+            </Button>
+          ) : (
+            <Button
+              loading={busy}
+              disabled={role !== "adult" && sign.trim().length < 3}
+              onClick={() => void submit()}
+            >
+              Add member
+            </Button>
+          )}
+        </StepFooter>
+      }
+    >
+      {step === 1 ? (
+        <>
+          <Group label="Who are you adding?">
+            <ChoiceList
               label="Who are you adding?"
               value={kind}
               onChange={setKind}
               options={[
                 {
                   value: "adult",
-                  label: (
-                    <>
-                      Another adult (18+){" "}
-                      <span className="ml-2 num text-muted-foreground">
-                        +$39 per month
-                      </span>
-                    </>
-                  ),
-                  help: "Gets their own login and pass.",
+                  label: "Another adult (18+)",
+                  line: "Gets their own login and pass.",
+                  end: "+$39 per month",
                 },
                 {
                   value: "child",
-                  label: (
-                    <>
-                      A child or teen (6 months–17){" "}
-                      <span className="ml-2 num text-muted-foreground">
-                        +$19 per month
-                      </span>
-                    </>
-                  ),
-                  help: "Kids club is included. Teens get a login.",
+                  label: "A child or teen (6 months–17)",
+                  line: "Kids club is included. Teens get a login.",
+                  end: "+$19 per month",
                 },
                 {
                   value: "visit",
-                  label: "Just visiting? Send a guest pass instead",
-                  help: "One visit, one club.",
+                  label: "Someone who is visiting",
+                  line: "One visit, one club.",
+                  end: "Guest pass",
                 },
               ]}
             />
-          </>
-        ) : null}
-        {step === 2 ? (
-          <form
-            className="flex flex-col gap-4"
-            onSubmit={(e) => {
-              e.preventDefault()
-              if (validateDetails()) setStep(3)
-            }}
-            noValidate
-          >
-            <h2 className="font-heading text-h3 display-stretch">Details</h2>
-            <div className="grid gap-4 sm:grid-cols-2">
+          </Group>
+          {visit ? (
+            <Banner
+              tone="info"
+              title="A visitor needs a guest pass, not a place on your plan."
+              actions={
+                <Button size="sm" render={<Link href="/guest-passes" />}>
+                  Send a guest pass
+                </Button>
+              }
+            />
+          ) : null}
+        </>
+      ) : null}
+      {step === 2 ? (
+        <form
+          className="gap-m flex flex-col"
+          onSubmit={(e) => {
+            e.preventDefault()
+            if (validateDetails()) setStep(3)
+          }}
+          noValidate
+        >
+          <Group label="Details">
+            <div className="gap-m grid sm:grid-cols-2">
               <FormField label="First name" error={err.first}>
                 {(p) => (
                   <Input
@@ -237,10 +323,10 @@ function Inner() {
               )}
             </FormField>
             {age !== null && kind === "child" && age < 18 ? (
-              <p className="text-caption text-muted-foreground">
+              <InfoLine>
                 {f.first || "They"} is {age}, so they join as a{" "}
-                {age >= 13 ? "teen" : "child"}. Adults are 18 and over.
-              </p>
+                {age >= 13 ? "teen" : "child"}.
+              </InfoLine>
             ) : null}
             {kind === "adult" || (age ?? 0) >= 13 ? (
               <FormField label="Email" error={err.email}>
@@ -271,225 +357,126 @@ function Inner() {
                 )}
               </FormField>
             ) : null}
-            <div className="pt-4 rule-t">
-              {role === "teen" ? (
-                <div className="flex flex-col gap-4">
-                  <h2 className="font-heading text-h3 display-stretch">
-                    What can {f.first || "they"} do?
-                  </h2>
-                  <SwitchRow
-                    checked={perm.classes}
-                    onChange={(c) => setPerm({ ...perm, classes: c })}
-                  >
-                    Classes (Teen OK)
-                  </SwitchRow>
-                  <SwitchRow
-                    checked={perm.courts}
-                    onChange={(c) => setPerm({ ...perm, courts: c })}
-                  >
-                    Court reservations
-                  </SwitchRow>
-                  <SwitchRow
-                    checked={perm.lanes}
-                    onChange={(c) => setPerm({ ...perm, lanes: c })}
-                    disabled={(age ?? 0) < 14}
-                  >
-                    Lap lanes (14 and up)
-                  </SwitchRow>
-                  <SwitchRow
-                    checked={perm.coachMessages}
-                    onChange={(c) => setPerm({ ...perm, coachMessages: c })}
-                  >
-                    Teen can message coaches
-                  </SwitchRow>
-                </div>
-              ) : role === "child" ? (
-                <fieldset className="flex flex-col gap-3">
-                  <legend className="font-heading text-h3 display-stretch">
-                    Authorised pick-up adults
-                  </legend>
-                  {members.map((m) => (
-                    <CheckRow
-                      key={m.id}
-                      checked={pickup.includes(m.id)}
-                      onChange={(on) =>
-                        setPickup((p) =>
-                          on ? [...p, m.id] : p.filter((x) => x !== m.id)
-                        )
-                      }
-                    >
-                      {m.firstName} {m.lastName}
-                    </CheckRow>
-                  ))}
-                </fieldset>
-              ) : (
-                <div className="flex flex-col gap-2">
-                  <h2 className="font-heading text-h3 display-stretch">
-                    Invitation
-                  </h2>
-                  <p className="text-body">
-                    We email {f.email} an invite. They set up their own login
-                    and pass. The invite lasts 14 days.
-                  </p>
-                </div>
-              )}
-            </div>
-            {kind === "child" ? (
-              <p className="text-detail text-muted-foreground">
-                Emergency contact is {me.firstName} {me.lastName}. You can
-                change it on the profile.
-              </p>
-            ) : null}
-            <button type="submit" className="sr-only">
-              Continue
-            </button>
-          </form>
-        ) : null}
-        {step === 3 ? (
-          <div className="flex flex-col gap-4">
-            <h2 className="font-heading text-h3 display-stretch">Review</h2>
-            <dl className="rounded-md bg-muted px-4 text-caption rule-rows">
-              <div className="flex justify-between py-2.5">
-                <dt className="text-muted-foreground">Adds</dt>
-                <dd className="num">{fmtMoney(price, false)} per month</dd>
-              </div>
-              <div className="flex justify-between py-2.5">
-                <dt className="text-muted-foreground">
-                  Charged today ({left} of {days} days)
-                </dt>
-                <dd className="num">{fmtMoney(today)}</dd>
-              </div>
-              <div className="flex justify-between py-2.5">
-                <dt className="text-muted-foreground">
-                  From {fmtDayShort(nextBillingDate(hh, now))}
-                </dt>
-                <dd className="num text-body-strong">
-                  {fmtMoney(newTotal, false)} per month
-                </dd>
-              </div>
-            </dl>
-            <p className="text-caption text-muted-foreground">
-              {hh.card.brand[0].toUpperCase() + hh.card.brand.slice(1)} ending{" "}
-              {hh.card.last4}
-            </p>
-            {role !== "adult" ? (
-              <FormField
-                label="Guardian e-signature"
-                help={`Type your full name to sign the waiver for ${f.first}.`}
+          </Group>
+          {role === "teen" ? (
+            <Group
+              label={`What can ${f.first || "they"} do?`}
+              hint={`Emergency contact: ${me.firstName} ${me.lastName}. You can change it on the profile.`}
+              className="pt-m rule-t"
+            >
+              <SwitchRow
+                checked={perm.classes}
+                onChange={(c) => setPerm({ ...perm, classes: c })}
               >
-                {(p) => (
-                  <Input
-                    {...p}
-                    value={sign}
-                    onChange={(e) => setSign(e.target.value)}
-                    placeholder={`${me.firstName} ${me.lastName}`}
-                  />
-                )}
-              </FormField>
-            ) : null}
-            {serverErr ? (
-              <p
-                role="alert"
-                className="text-caption font-semibold text-destructive"
+                Classes (Teen OK)
+              </SwitchRow>
+              <SwitchRow
+                checked={perm.courts}
+                onChange={(c) => setPerm({ ...perm, courts: c })}
               >
-                {serverErr}
-              </p>
-            ) : null}
-          </div>
-        ) : null}
-        {step === 4 && created ? (
-          <SuccessPanel
-            headline={
-              created.m.role === "adult"
-                ? `Invitation sent to ${created.m.firstName}`
-                : `${created.m.firstName} is on your plan`
-            }
-            summary={[
-              {
-                label: "Role",
-                value:
-                  created.m.role === "adult"
-                    ? "Adult"
-                    : created.m.role === "teen"
-                      ? "Teen"
-                      : "Child",
-              },
-              { label: "Adds", value: `${fmtMoney(price, false)} per month` },
-              { label: "Charged today", value: fmtMoney(created.today) },
-            ]}
-            pill={
-              created.m.role === "adult"
-                ? "Invitation sent"
-                : "Added to your plan"
-            }
-            primary={
-              <Button render={<Link href="/family" />}>Go to family</Button>
-            }
-            rows={
-              created.m.role === "adult"
-                ? []
-                : [
-                    {
-                      label: `Set up ${created.m.firstName}'s pass`,
-                      href: `/family/${created.m.id}`,
-                    },
-                  ]
-            }
-          />
-        ) : null}
-        {step < 4 ? (
-          <div className="flex gap-3 pt-4 rule-t">
-            {step > 1 ? (
-              <Button variant="outline" onClick={() => setStep(step - 1)}>
-                Back
-              </Button>
-            ) : (
-              <Button variant="outline" render={<Link href="/family" />}>
-                Cancel
-              </Button>
-            )}
-            {step < 3 ? (
-              <Button
-                onClick={() => {
-                  if (step === 2 && !validateDetails()) return
-                  setStep(step + 1)
-                }}
-                disabled={step === 1 && kind === "visit"}
+                Court reservations
+              </SwitchRow>
+              <SwitchRow
+                checked={perm.lanes}
+                onChange={(c) => setPerm({ ...perm, lanes: c })}
+                disabled={(age ?? 0) < 14}
               >
-                Continue
-              </Button>
-            ) : (
-              <Button
-                loading={busy}
-                disabled={role !== "adult" && sign.trim().length < 3}
-                onClick={() => void submit()}
+                Lap lanes (14 and up)
+              </SwitchRow>
+              <SwitchRow
+                checked={perm.coachMessages}
+                onChange={(c) => setPerm({ ...perm, coachMessages: c })}
               >
-                Add {f.first}
-              </Button>
-            )}
-          </div>
-        ) : null}
-      </div>
-      {step < 4 ? (
-        <aside
-          aria-label="New monthly total"
-          className="flex flex-col gap-2 lg:sticky lg:top-24 lg:self-start lg:pt-12"
-        >
-          <p className="eyebrow text-muted-foreground">Your plan after this</p>
-          <p className="num-l">
-            {fmtMoney(newTotal, false)}{" "}
-            <span className="font-sans text-body font-normal text-muted-foreground">
-              per month
-            </span>
-          </p>
-          <p className="num text-body">
-            {kind === "visit"
-              ? "No change."
-              : `${f.first || "New member"} adds ${fmtMoney(price, false)} per month. Charged today: ${fmtMoney(today)} (${left} of ${days} days). Then ${fmtMoney(newTotal, false)} from ${fmtDayShort(nextBillingDate(hh, now))}.`}
-          </p>
-        </aside>
+                Teen can message coaches
+              </SwitchRow>
+            </Group>
+          ) : role === "child" ? (
+            <Group
+              label="Authorised pick-up adults"
+              hint={`Emergency contact: ${me.firstName} ${me.lastName}. You can change it on the profile.`}
+              className="pt-m rule-t"
+            >
+              <fieldset className="gap-s flex flex-col">
+                <legend className="sr-only">Authorised pick-up adults</legend>
+                {members.map((m) => (
+                  <CheckRow
+                    key={m.id}
+                    checked={pickup.includes(m.id)}
+                    onChange={(on) =>
+                      setPickup((p) =>
+                        on ? [...p, m.id] : p.filter((x) => x !== m.id)
+                      )
+                    }
+                  >
+                    {m.firstName} {m.lastName}
+                  </CheckRow>
+                ))}
+              </fieldset>
+            </Group>
+          ) : (
+            <InfoLine className="pt-m rule-t">
+              We email {f.email || "them"} an invite to set up a login and a
+              pass. The invite lasts 14 days.
+            </InfoLine>
+          )}
+          <button type="submit" className="sr-only">
+            Continue
+          </button>
+        </form>
       ) : null}
-    </div>
+      {step === 3 ? (
+        <>
+          <Group label="Review">
+            <Highlight
+              label={`Add ${f.first.trim()} ${f.last.trim()}`}
+              value={`+${fmtMoney(price, false)}`}
+              unit="per month"
+            >
+              <InfoLine>
+                <span className="tabular">
+                  We charge {fmtMoney(today)} to {cardLabel(hh.card)} today.
+                  Your total becomes {fmtMoney(newTotal, false)} per month from{" "}
+                  {fmtDayShort(nextBillingDate(hh, now))}.
+                </span>
+              </InfoLine>
+            </Highlight>
+          </Group>
+          <Facts
+            items={[
+              { label: "Name", value: `${f.first.trim()} ${f.last.trim()}` },
+              { label: "Joins as", value: ROLE[role] },
+              {
+                label: "Date of birth",
+                value: <span className="tabular">{f.dob}</span>,
+              },
+              ...(role !== "child" && f.email
+                ? [{ label: "Email", value: f.email }]
+                : []),
+              {
+                label: "Card",
+                value: <span className="tabular">{cardLabel(hh.card)}</span>,
+              },
+            ]}
+          />
+          {role !== "adult" ? (
+            <FormField
+              label="Guardian e-signature"
+              help={`Type your full name to sign the waiver for ${f.first}.`}
+            >
+              {(p) => (
+                <Input
+                  {...p}
+                  value={sign}
+                  onChange={(e) => setSign(e.target.value)}
+                  placeholder={`${me.firstName} ${me.lastName}`}
+                />
+              )}
+            </FormField>
+          ) : null}
+          {serverErr ? <FlowError>{serverErr}</FlowError> : null}
+        </>
+      ) : null}
+    </Task>
   )
 }
 export default function AddMember() {

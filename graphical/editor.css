@@ -1,0 +1,6 @@
+/* The Graphical editor's stylesheet, loaded only in development (graphical/installed-editor.tsx).
+   Its component rules share selectors with the app's bundled runtime (.graphical-theme, [data-ui-component]) and
+   are unlayered, so they would beat Tailwind's utilities (px-xl would compute to 0). In this layer, which
+   app/globals.css orders after `base` and before `components` and `utilities`, the app's classes win and the
+   editor's own UI still overrides the preflight reset. */
+@import "@graphical/editor/styles.css" layer(graphical-editor);

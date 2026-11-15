@@ -70,7 +70,9 @@ export function minutesOfDay(ms: number) {
 export function fmtTime(ms: number, withSuffix = true) {
   const { h, min } = parts(ms)
   const h12 = h % 12 === 0 ? 12 : h % 12
-  return `${h12}:${String(min).padStart(2, "0")}${withSuffix ? (h < 12 ? " am" : " pm") : ""}`
+  // Brand time format: "8 am", "4:30 pm". No ":00" on the hour.
+  const mm = min === 0 ? "" : `:${String(min).padStart(2, "0")}`
+  return `${h12}${mm}${withSuffix ? (h < 12 ? " am" : " pm") : ""}`
 }
 export function fmtRange(a: number, b: number) {
   const pa = parts(a)

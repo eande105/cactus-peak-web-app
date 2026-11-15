@@ -1,6 +1,7 @@
 "use client"
+import Link from "next/link"
+import type { ReactNode } from "react"
 import { useEffect, useState } from "react"
-import { Modal } from "@/components/kit/overlays"
 import { FormField } from "@/components/kit/ui"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -14,9 +15,22 @@ export function touchAuth() {
   } catch {}
 }
 
-// Sensitive pages ask the member for their password again if the last check is older than 30 minutes.
-// The password is checked with Supabase Auth.
-export function StepUp() {
+/** The paths that need a recent password check: billing, and the flows that change the plan. */
+export function needsStepUp(path: string): boolean {
+  return (
+    path === "/billing" ||
+    path.startsWith("/billing/") ||
+    path.startsWith("/membership/")
+  )
+}
+
+/**
+ * Sensitive pages ask the member for their password again if the last check is older than 30 minutes.
+ * The gate draws the password form in place of the page, so the page content is not on screen and cannot be used
+ * until the check passes. The password is checked with Supabase Auth. The gate is a browser-side check: row level
+ * security in Supabase is the server-side limit on what the member can read and change.
+ */
+export function StepUpGate({ children }: { children: ReactNode }) {
   const [open, setOpen] = useState(() => {
     try {
       const at = Number(localStorage.getItem(KEY) ?? 0)
@@ -66,29 +80,46 @@ export function StepUp() {
       setBusy(false)
     }
   }
+  if (!open) return children
   return (
-    <Modal
-      open={open}
-      onOpenChange={setOpen}
-      title="Confirm it's you"
-      description="Enter your password again to change billing or your membership."
+    <section
+      aria-labelledby="page-title"
+      className="gap-m p-m flex w-full flex-col corner-m raised"
     >
-      <form onSubmit={confirm} className="flex flex-col gap-4" noValidate>
+      <div className="gap-xs flex flex-col">
+        <h1
+          id="page-title"
+          tabIndex={-1}
+          className="text-body-m font-heavy outline-none"
+        >
+          Confirm it&apos;s you
+        </h1>
+        <p className="text-body-m text-pretty text-muted-foreground sm:text-body-s">
+          Enter your password again to change billing or your membership.
+        </p>
+      </div>
+      <form onSubmit={confirm} className="gap-m flex flex-col" noValidate>
         <FormField label="Password" error={error}>
           {(p) => (
             <Input
               {...p}
               type="password"
+              name="password"
               autoComplete="current-password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
             />
           )}
         </FormField>
-        <Button type="submit" loading={busy}>
-          Confirm
-        </Button>
+        <div className="gap-xs flex items-center justify-between">
+          <Button variant="ghost" render={<Link href="/account" />}>
+            Back to Account
+          </Button>
+          <Button type="submit" loading={busy}>
+            Confirm
+          </Button>
+        </div>
       </form>
-    </Modal>
+    </section>
   )
 }

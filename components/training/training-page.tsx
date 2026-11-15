@@ -2,16 +2,15 @@
 import Link from "next/link"
 import { useEffect, useState } from "react"
 import { useApp } from "@/components/app/use-app"
+import { BookPage } from "@/components/book/book-tabs"
 import { Toggle } from "@/components/graphical"
+import { Card, Facts, Stat, Stats } from "@/components/kit/app"
 import { CoachArt } from "@/components/kit/brand-art"
 import { Modal } from "@/components/kit/overlays"
-import { RibMeter } from "@/components/kit/ribs"
 import {
   EmptyState,
   LoadingBlock,
-  PageHeader,
   RadioList,
-  SectionTitle,
   SelectBox,
 } from "@/components/kit/ui"
 import { Button } from "@/components/ui/button"
@@ -29,6 +28,17 @@ import { fmtDateFull, fmtDay, fmtDowTime, fmtMoney, fmtTime } from "@/lib/time"
 import { toast } from "@/lib/toast"
 import type { Coach } from "@/lib/types"
 
+/** The short club name: the cross streets without the city. */
+const clubShort = (slug: string) => {
+  const name = CLUB_BY_SLUG[slug].name
+  return name.split(" – ")[1] ?? name
+}
+
+/**
+ * One coach as a card of the coach grid. The art and name head the card, with the specialties and clubs as quiet
+ * lines under the name. The next opening and Book sit together under them, top-aligned. The name link covers the
+ * card, so the whole card opens the profile. Book sits above that link.
+ */
 export function CoachCard({
   c,
   s,
@@ -40,32 +50,49 @@ export function CoachCard({
 }) {
   const next = ptOpenSlots(s, c.slug, now)[0]
   return (
-    <Link
-      href={`/training/coaches/${c.slug}`}
-      className="group grid min-h-20 grid-cols-[64px_minmax(0,1fr)_auto] items-center gap-4 py-4"
+    <Card
+      as="div"
+      className="relative h-full focus-within:bg-muted/40 hover:bg-muted/40"
     >
-      <CoachArt name={c.name} roles={c.specialties} size={64} />
-      <span className="min-w-0">
-        <span className="block text-body-strong group-hover:underline">
-          {c.name}
-        </span>
-        <span className="block text-caption text-muted-foreground">
-          {c.specialties.join(" · ")} ·{" "}
-          {c.clubs.map((x) => CLUB_BY_SLUG[x].name.split(" – ")[1]).join(", ")}
-        </span>
-      </span>
-      <span className="text-right num text-caption">
-        {next ? (
-          <>
-            Next open
-            <br />
-            {fmtDowTime(next)}
-          </>
-        ) : (
-          "No open times"
-        )}
-      </span>
-    </Link>
+      <div className="gap-m flex h-full flex-col text-body-m sm:text-body-s">
+        <div className="gap-s flex min-w-0 items-center">
+          <CoachArt name={c.name} roles={c.specialties} size={48} />
+          <div className="min-w-0">
+            <h3 className="truncate font-heavy">
+              <Link
+                href={`/training/coaches/${c.slug}`}
+                className="outline-none after:absolute after:inset-0 after:corner-m focus-visible:underline"
+              >
+                {c.name}
+              </Link>
+            </h3>
+            <p className="truncate text-muted-foreground">
+              {c.specialties.join(" · ")}
+            </p>
+            <p className="truncate text-muted-foreground">
+              {c.clubs.map(clubShort).join(", ")}
+            </p>
+          </div>
+        </div>
+        <div className="gap-xs flex flex-col items-start">
+          <p className="gap-xs flex flex-wrap">
+            <span className="text-muted-foreground">Next opening</span>
+            <span className="tabular font-medium">
+              {next ? fmtDowTime(next) : "No open times"}
+            </span>
+          </p>
+          <Button
+            size="sm"
+            variant="outline"
+            className="relative z-10"
+            render={<Link href={`/training/coaches/${c.slug}/book`} />}
+          >
+            Book
+            <span className="sr-only"> {c.name}</span>
+          </Button>
+        </div>
+      </div>
+    </Card>
   )
 }
 
@@ -106,7 +133,12 @@ export default function TrainingPage() {
       (ptOpenSlots(s, b.slug, now)[0] ?? 1e15)
   )
   const canBuy = me.role === "primary" || me.role === "adult"
-  if (loading) return <LoadingBlock text="Finding coaches…" rows={4} />
+  if (loading)
+    return (
+      <BookPage>
+        <LoadingBlock text="Finding coaches…" rows={4} />
+      </BookPage>
+    )
   const goalMap: Record<string, string> = {
     return: "Return to training",
     strength: "Olympic lifting",
@@ -114,220 +146,174 @@ export default function TrainingPage() {
     mobility: "Mobility",
     teen: "Youth and teen",
   }
+  const clear = () => {
+    setFilter("")
+    setClub("all")
+  }
   return (
-    <div className="flex flex-col gap-10">
-      <PageHeader
-        title="Training"
-        description="One-to-one coaching, 45 minutes."
-        actions={
+    <BookPage
+      actions={
+        <>
           <Button variant="outline" onClick={() => setMatch(true)}>
             Match me to a coach
           </Button>
-        }
-      />
-      <section
-        aria-labelledby="yt"
-        className="grid gap-6 pt-6 rule-t md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]"
-      >
-        <div className="flex flex-col gap-3">
-          <h2 id="yt" className="eyebrow text-muted-foreground">
-            Your training
-          </h2>
-          {hh.ptPack ? (
-            <>
-              <div className="flex items-center gap-4">
-                <RibMeter
-                  value={Math.max(
-                    left ? 1 : 0,
-                    Math.round((left / hh.ptPack.total) * 5)
-                  )}
-                  tone="brand"
-                  size="xl"
-                  label="Training sessions left"
-                  valueText={`${left} of ${hh.ptPack.total} sessions left`}
-                  decorative
-                />
-                <div>
-                  <p className="font-heading text-h1 leading-none display-stretch">
-                    <span className="num">{left}</span>{" "}
-                    <span className="text-h3">left</span>
-                  </p>
-                  <p className="mt-1 text-caption text-muted-foreground">
-                    {hh.ptPack.total}-pack · valid until{" "}
-                    {fmtDateFull(hh.ptPack.expiresOn)}
-                  </p>
-                </div>
-              </div>
-              <p className="text-detail text-muted-foreground">
-                Packs last 12 months and pause during a freeze.
-              </p>
-            </>
-          ) : (
-            <EmptyState
-              object="whistle"
-              title="No sessions yet."
-              body="Pick a coach to start."
-              className="py-0"
-            />
-          )}
-          {hh.plan === "summit" ? (
-            <p className="text-caption">
-              Summit intro session:{" "}
-              <span className="num">{hh.ptIntroLeft}</span> left this quarter.
-            </p>
+          {canBuy ? (
+            <Button onClick={() => setPackOpen(true)}>Buy a pack</Button>
           ) : null}
-        </div>
-        <div className="flex flex-col gap-3 md:border-l md:border-border md:pl-6">
-          <p className="eyebrow text-muted-foreground">Next session</p>
-          {nextPt ? (
-            <>
-              <p className="num font-heading text-h3 display-stretch">
-                {fmtDay(nextPt.start)} · {fmtTime(nextPt.start)}
-              </p>
-              <p className="text-body">
-                {nextPt.title.replace("Training with ", "Coach ")} ·{" "}
-                {nextPt.place}
-              </p>
-              <div className="flex gap-2">
-                <Button
-                  size="sm"
-                  variant="outline"
-                  render={<Link href="/bookings" />}
-                >
-                  Details
-                </Button>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  render={
-                    <Link
-                      href={`/training/coaches/${nextPt.coachSlug}/book?move=${nextPt.id}`}
-                    />
-                  }
-                >
-                  Move
-                </Button>
-              </div>
-            </>
-          ) : (
-            <p className="text-muted-foreground">Nothing booked yet.</p>
-          )}
-        </div>
-      </section>
-      <section aria-labelledby="fc" className="flex flex-col gap-4">
-        <SectionTitle id="fc">Find a coach</SectionTitle>
-        <div className="flex flex-wrap items-end gap-3">
-          <ul className="flex flex-wrap gap-2" aria-label="Specialty">
-            {COACH_FILTERS.map((x) => (
-              <li key={x}>
-                <Toggle
-                  pressed={filter === x}
-                  onPressedChange={() => setFilter(filter === x ? "" : x)}
-                  className="max-md:min-h-11"
-                >
-                  {x}
-                </Toggle>
-              </li>
-            ))}
-          </ul>
-          <SelectBox
-            label="Club"
-            value={club}
-            onChange={setClub}
-            options={[
-              { value: "all", label: "All clubs" },
-              ...CLUBS.map((c) => ({ value: c.slug, label: c.name })),
-            ]}
-            className="w-52"
+        </>
+      }
+    >
+      <section id="yt" aria-label="Your training">
+        <Stats>
+          <Stat
+            label="Sessions left"
+            value={hh.ptPack ? `${left} of ${hh.ptPack.total}` : "No pack"}
           />
-        </div>
-        {list.length ? (
-          <ul className="max-w-3xl rule-rows">
-            {list.map((c) => (
-              <li key={c.id}>
-                <CoachCard c={c} s={s} now={now} />
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <EmptyState
-            title="No coach matches."
-            body="Clear a filter."
-            action={
-              <Button
-                onClick={() => {
-                  setFilter("")
-                  setClub("all")
-                }}
-              >
-                Clear filters
-              </Button>
+          {hh.ptPack ? (
+            <Stat
+              label="Valid until"
+              value={fmtDateFull(hh.ptPack.expiresOn)}
+            />
+          ) : null}
+          {hh.plan === "summit" ? (
+            <Stat
+              label="Summit intro session"
+              value={hh.ptIntroLeft}
+              hint="Left this quarter"
+            />
+          ) : null}
+          <Stat
+            label="Next session"
+            value={
+              nextPt
+                ? `${fmtDay(nextPt.start)} · ${fmtTime(nextPt.start)}`
+                : "Nothing booked"
+            }
+            hint={
+              nextPt
+                ? `${nextPt.title.replace("Training with ", "Coach ")} · ${nextPt.place}`
+                : undefined
+            }
+            actions={
+              nextPt ? (
+                <>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    render={<Link href="/bookings" />}
+                  >
+                    Details
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    render={
+                      <Link
+                        href={`/training/coaches/${nextPt.coachSlug}/book?move=${nextPt.id}`}
+                      />
+                    }
+                  >
+                    Move
+                  </Button>
+                </>
+              ) : undefined
             }
           />
-        )}
+        </Stats>
       </section>
-      <section aria-labelledby="pk" className="flex flex-col gap-3">
-        <SectionTitle id="pk">Packs</SectionTitle>
-        <ul className="grid gap-x-8 rule-t sm:grid-cols-3">
-          {PT_PACKS.map((p) => (
-            <li
-              key={p.sessions}
-              className="flex flex-col gap-1 py-4 sm:[&:not(:first-child)]:border-l sm:[&:not(:first-child)]:pl-6"
+      <div className="gap-l grid items-start lg:grid-cols-[minmax(0,1fr)_18rem]">
+        <section
+          id="fc"
+          aria-label="Coaches"
+          className="gap-m flex min-w-0 flex-col"
+        >
+          <div className="gap-s flex flex-wrap items-center justify-between">
+            <ul
+              aria-label="Specialty"
+              className="gap-xs flex min-w-0 flex-1 flex-wrap p-xxs"
             >
-              <p className="num font-heading text-h2 leading-none">
-                {p.sessions}{" "}
-                <span className="text-body font-normal">sessions</span>
-              </p>
-              <p className="num text-body-strong">{fmtMoney(p.price, false)}</p>
-              <p className="text-caption text-muted-foreground">
-                {fmtMoney(p.price / p.sessions, false)} each
-              </p>
-            </li>
-          ))}
-        </ul>
-        <p className="text-caption text-muted-foreground">
-          Single session:{" "}
-          <span className="num">{fmtMoney(PT_PRICE, false)}</span>. Packs last
-          12 months and pause during a freeze.
-        </p>
-        {canBuy ? (
-          <Button
-            variant="outline"
-            className="w-fit"
-            onClick={() => setPackOpen(true)}
-          >
-            Buy a pack
-          </Button>
-        ) : null}
-      </section>
-      <section aria-labelledby="hw" className="pt-6 rule-t">
-        <h2 id="hw" className="eyebrow text-muted-foreground">
-          How it works
-        </h2>
-        <ol className="mt-3 grid gap-4 sm:grid-cols-3">
-          {["Pick a coach", "Choose a time", "Show your pass"].map((x, i) => (
-            <li key={x} className="flex gap-3">
-              <span className="num font-heading text-h2 leading-none text-muted-foreground">
-                {i + 1}
-              </span>
-              <span className="text-body">{x}.</span>
-            </li>
-          ))}
-        </ol>
-      </section>
-      {hh.plan !== "summit" && canBuy ? (
-        <section className="flex flex-wrap items-center justify-between gap-4 rounded-lg bg-night px-6 py-5 text-on-night">
-          <p className="font-heading text-h3 display-stretch">
-            Summit includes a PT intro session every quarter.
-          </p>
-          <Button
-            className="!bg-dawn !text-night hover:!bg-on-night"
-            render={<Link href="/membership/change-plan" />}
-          >
-            Compare plans
-          </Button>
+              {COACH_FILTERS.map((x) => (
+                <li key={x} className="shrink-0">
+                  <Toggle
+                    pressed={filter === x}
+                    onPressedChange={() => setFilter(filter === x ? "" : x)}
+                    className="corner-full max-md:min-h-11"
+                  >
+                    {x}
+                  </Toggle>
+                </li>
+              ))}
+            </ul>
+            <SelectBox
+              label="Club"
+              hideLabel
+              value={club}
+              onChange={setClub}
+              options={[
+                { value: "all", label: "All clubs" },
+                ...CLUBS.map((c) => ({ value: c.slug, label: c.name })),
+              ]}
+              className="w-full shrink-0 sm:w-52"
+            />
+          </div>
+          {list.length ? (
+            <div className="@container">
+              <ul
+                aria-label="Coaches"
+                className="gap-m grid @lg:grid-cols-2 @4xl:grid-cols-3"
+              >
+                {list.map((c) => (
+                  <li key={c.id}>
+                    <CoachCard c={c} s={s} now={now} />
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : (
+            <EmptyState
+              title="No coach matches."
+              action={
+                <Button size="sm" variant="outline" onClick={clear}>
+                  Clear filters
+                </Button>
+              }
+            />
+          )}
         </section>
-      ) : null}
+        <div className="gap-l flex min-w-0 flex-col">
+          <Card id="pk" title="Prices">
+            <Facts
+              items={[
+                { label: "Single session", value: fmtMoney(PT_PRICE, false) },
+                ...PT_PACKS.map((p) => ({
+                  label: `${p.sessions} sessions`,
+                  value: fmtMoney(p.price, false),
+                  hint: `${fmtMoney(p.price / p.sessions, false)} each`,
+                })),
+                { label: "Pack validity", value: "12 months" },
+                { label: "During a freeze", value: "Pack pauses" },
+              ]}
+            />
+          </Card>
+          {hh.plan !== "summit" && canBuy ? (
+            <Card tone="night" as="aside">
+              <div className="gap-s flex flex-col items-start">
+                <p className="text-body-m font-heavy text-balance sm:text-body-s">
+                  Summit includes a PT intro session every quarter.
+                </p>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="!text-night-foreground !ring-night-foreground/40 hover:!bg-night-foreground/10"
+                  render={<Link href="/membership/change-plan" />}
+                >
+                  Compare plans
+                </Button>
+              </div>
+            </Card>
+          ) : null}
+        </div>
+      </div>
       <Modal
         open={packOpen}
         onOpenChange={setPackOpen}
@@ -344,7 +330,7 @@ export default function TrainingPage() {
             help: `${fmtMoney(p.price / p.sessions, false)} each`,
           }))}
         />
-        <div className="flex justify-end gap-2">
+        <div className="gap-xs flex justify-end">
           <Button variant="outline" onClick={() => setPackOpen(false)}>
             Cancel
           </Button>
@@ -386,7 +372,7 @@ export default function TrainingPage() {
             { value: "teen", label: "Youth and teen training" },
           ]}
         />
-        <div className="flex justify-end gap-2">
+        <div className="gap-xs flex justify-end">
           <Button variant="outline" onClick={() => setMatch(false)}>
             Cancel
           </Button>
@@ -400,6 +386,6 @@ export default function TrainingPage() {
           </Button>
         </div>
       </Modal>
-    </div>
+    </BookPage>
   )
 }

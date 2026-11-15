@@ -1,50 +1,39 @@
 /*
- * shadcn token file. Every value here is an alias of the Graphical theme "Cactus Peak Athletic" (D-16).
- * Nothing in this file is a color, size, or font chosen by hand. The owning values live in GUI.md,
- * components/graphical/theme.ts, and the variables that components/theme-variables.tsx (first paint) and
- * GraphicalProvider (runtime) write from that document. Those variables change with the color mode, so the
- * aliases below need no separate .dark block: --neutral-1 is white in light mode and the dark canvas in dark mode.
+ * App styles on the Graphical theme "Cactus Peak Athletic" (graphical/themes/graphical.json, the source of truth).
+ * The member app and the marketing site run the same theme document; a theme change is made in both apps.
+ * graphical/generated/theme.css defines every theme variable at :root and .dark; tailwind-theme.css adds Graphical's
+ * classes (text-body-m, p-m, corner-m, edge-s, font-heavy, bg-neutral-3, ...). Both are generated: edit the theme
+ * (or apply an editor batch with graphical-adopt), then run `npx graphical-install --theme graphical`.
  *
- * ROLE MAP (shadcn variable -> Graphical token; the iOS theme generator reads this table)
+ * This file defines no color, size or font by hand. Its tokens are aliases of Graphical tokens, recorded in
+ * graphical/role-map.json:
  *
- *   --background            neutral-1                canvas
- *   --foreground            neutral-10               text
- *   --card                  neutral-2                surface
- *   --card-foreground       neutral-10
- *   --popover               neutral-1                dialog, drawer, select popup (Graphical popover parts)
- *   --popover-foreground    neutral-10
- *   --primary               color-1                  primaryActionColor
- *   --primary-foreground    cte-accent-text          automatic contrast foreground on color-1 (white in light, black in dark)
- *   --secondary             neutral-3                Button secondary fill
- *   --secondary-foreground  neutral-10
- *   --muted                 neutral-3                surface-muted
- *   --muted-foreground      neutral-7                text-muted, description text
- *   --accent                color-1-transparent      selected and active fill (color-1 at the theme's 20% translucency)
- *   --accent-foreground     neutral-10
- *   --destructive           error                    Button danger fill, error text
- *   --border                neutral-4                hairline edges and dividers
- *   --input                 neutral-6                Input and Checkbox edge
- *   --ring                  color-5                  focus ring on every component
+ *   shadcn and app color roles (:root, used as bg-card, text-muted-foreground, ring-border, ...):
+ *   background = neutral-3 (Sand; dark neutral-1), foreground = neutral-10 (Ink), sheet = neutral-2,
+ *   card and popover = neutral-1 (dark neutral-3), muted = neutral-4,
+ *   border = neutral-5 (dark neutral-4, Caliche), primary = color-1 (Arizona Copper) with on-color-1 text,
+ *   primary-hover and link = color-2 (Copper Deep), secondary = neutral-3, muted-foreground = neutral-8,
+ *   accent = color-1 transparent, destructive = error, destructive-hover = color-4 (Chili), input = neutral-6,
+ *   ring = color-3 (Monsoon Sky, focus only), night = color-5 (Saguaro Night), night-foreground = neutral-3
+ *   (dark neutral-10), night-muted = neutral-5 (dark neutral-8), and the status colors' transparent levels.
  *
- *   Roles the app uses that shadcn has no slot for (variable here, @theme inline entry below):
- *   --input-hover           neutral-8                Input hover edge
- *   --hover                 neutral-3-transparent    Button outline hover fill
- *   --secondary-hover       neutral-4                Button secondary and ghost hover fill
- *   --primary-hover         color-6                  Button primary hover fill
- *   --destructive-hover     color-7                  Button danger hover fill
- *   --border-strong         neutral-6                Button secondary and outline edge
- *   --border-strong-hover   neutral-8                Button secondary and outline hover edge
- *   --disabled-foreground   neutral-6                disabled label and icon
- *   --success-subtle        success-transparent      status fill
- *   --warning-subtle        warning-transparent      status fill
- *   --danger-subtle         error-transparent        status fill
- *   success, warning        the theme's own --success and --warning, used directly as text-success, text-warning
- *
- *   Type roles (text-display .. text-caption, text-detail) alias the theme's size, line, and letter-spacing
- *   steps plus a font role weight. Radii, spacing, and motion alias --radius-*, --space-*, and --motion-*.
- *   See the @theme inline block.
+ * The member app restates the surface roles for dark mode: the page is the dark canvas and the sheet, cards and muted
+ * fills are each one step lighter.
+ * The category colors (--cat-*), the count badge, the pass accent (--dawn) and the photo band are fixed: they keep
+ * their own values (spec 01, section 2.2).
+ * Headlines: Archivo (font-display) at width 112 via .font-display-wide. Body and UI: Inter (font-body).
+ * Figures: Archivo (font-data, .tabular). Each role's weights come from its font class: font-regular, font-medium,
+ * font-heavy.
  */
+/* Cascade layers, in order. graphical-editor holds the development editor's stylesheet (graphical/editor.css): above
+   the preflight reset, below the app's components and utilities. */
+@layer theme, base, graphical-editor, components, utilities;
+/* Theme variables first, so every alias below and the component runtime read them. */
+@import "../graphical/generated/theme.css";
 @import "tailwindcss";
+/* Clear Tailwind's default palette, type, radius and shadow scales before Graphical's classes are added. */
+@import "./tailwind-reset.css";
+@import "../graphical/generated/tailwind-theme.css";
 /* Graphical runtime stylesheet, imported once. It sits in the base layer so Tailwind utilities still win over
    its zero-specificity reset and component defaults. */
 @import "../components/graphical/styles.css" layer(base);
@@ -55,214 +44,62 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  --background: var(--neutral-1);
+  --background: var(--neutral-3);
   --foreground: var(--neutral-10);
-  --card: var(--neutral-2);
+  --card: var(--neutral-1);
   --card-foreground: var(--neutral-10);
   --popover: var(--neutral-1);
   --popover-foreground: var(--neutral-10);
   --primary: var(--color-1);
-  --primary-foreground: var(--cte-accent-text);
+  --primary-foreground: var(--on-color-1);
   --secondary: var(--neutral-3);
   --secondary-foreground: var(--neutral-10);
-  --muted: var(--neutral-3);
-  --muted-foreground: var(--neutral-7);
+  --muted: var(--neutral-4);
+  --muted-foreground: var(--neutral-8);
   --accent: var(--color-1-transparent);
   --accent-foreground: var(--neutral-10);
   --destructive: var(--error);
-  --border: var(--neutral-4);
+  --border: var(--neutral-5);
   --input: var(--neutral-6);
-  --ring: var(--color-5);
+  --ring: var(--color-3);
 
   --input-hover: var(--neutral-8);
   --hover: var(--neutral-3-transparent);
   --secondary-hover: var(--neutral-4);
-  --primary-hover: var(--color-6);
-  --destructive-hover: var(--color-7);
+  --primary-hover: var(--color-2);
+  --destructive-hover: var(--color-4);
   --border-strong: var(--neutral-6);
   --border-strong-hover: var(--neutral-8);
   --disabled-foreground: var(--neutral-6);
   --success-subtle: var(--success-transparent);
   --warning-subtle: var(--warning-transparent);
   --danger-subtle: var(--error-transparent);
+  --night: var(--color-5);
+  --night-foreground: var(--neutral-3);
+  --night-muted: var(--neutral-5);
+  /* Dividers on Saguaro Night: the night text color at the theme's 20% translucency. */
+  --night-rule: var(--neutral-3-transparent);
+  --link: var(--color-2);
+  /* The content sheet beside the sidebar. Cards sit on it one step lighter (light) or one step raised (dark), so a
+     card always reads as a surface of its own. */
+  --sheet: var(--neutral-2);
 }
-
-@theme inline {
-  /* Clear Tailwind's defaults so a palette class, a default size, or a default radius cannot appear by accident. */
-  --color-*: initial;
-  --font-*: initial;
-  --font-weight-*: initial;
-  --text-*: initial;
-  --radius-*: initial;
-  --shadow-*: initial;
-  --ease-*: initial;
-
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --color-card: var(--card);
-  --color-card-foreground: var(--card-foreground);
-  --color-popover: var(--popover);
-  --color-popover-foreground: var(--popover-foreground);
-  --color-primary: var(--primary);
-  --color-primary-foreground: var(--primary-foreground);
-  --color-secondary: var(--secondary);
-  --color-secondary-foreground: var(--secondary-foreground);
-  --color-muted: var(--muted);
-  --color-muted-foreground: var(--muted-foreground);
-  --color-accent: var(--accent);
-  --color-accent-foreground: var(--accent-foreground);
-  --color-destructive: var(--destructive);
-  --color-border: var(--border);
-  --color-input: var(--input);
-  --color-ring: var(--ring);
-  --color-input-hover: var(--input-hover);
-  --color-hover: var(--hover);
-  --color-secondary-hover: var(--secondary-hover);
-  --color-primary-hover: var(--primary-hover);
-  --color-destructive-hover: var(--destructive-hover);
-  --color-border-strong: var(--border-strong);
-  --color-border-strong-hover: var(--border-strong-hover);
-  --color-disabled-foreground: var(--disabled-foreground);
-  --color-success: var(--success);
-  --color-warning: var(--warning);
-  --color-success-subtle: var(--success-subtle);
-  --color-warning-subtle: var(--warning-subtle);
-  --color-danger-subtle: var(--danger-subtle);
-
-  /* Font roles: ui and editorial are Inter, brand and data are Archivo (see lib/app-theme.ts). */
-  --font-sans: var(--font-ui);
-  --font-heading: var(--font-brand);
-  --font-weight-normal: var(--weight-ui-regular);
-  --font-weight-medium: var(--weight-ui-medium);
-  --font-weight-semibold: var(--weight-ui-heavy);
-
-  /* Type roles. Each one is a Graphical text step (size, line height, tracking) with a font role weight. */
-  --text-display: var(--size-xxl);
-  --text-display--line-height: var(--line-xxl);
-  --text-display--letter-spacing: var(--letter-spacing-xxl);
-  --text-display--font-weight: var(--weight-brand-heavy);
-  --text-h1: var(--size-xl);
-  --text-h1--line-height: var(--line-xl);
-  --text-h1--letter-spacing: var(--letter-spacing-xl);
-  --text-h1--font-weight: var(--weight-brand-heavy);
-  --text-h2: var(--size-l);
-  --text-h2--line-height: var(--line-l);
-  --text-h2--letter-spacing: var(--letter-spacing-l);
-  --text-h2--font-weight: var(--weight-brand-heavy);
-  --text-h3: var(--size-l);
-  --text-h3--line-height: var(--line-l);
-  --text-h3--letter-spacing: var(--letter-spacing-l);
-  --text-h3--font-weight: var(--weight-brand-medium);
-  --text-body: var(--size-m);
-  --text-body--line-height: var(--line-m);
-  --text-body--letter-spacing: var(--letter-spacing-m);
-  --text-body--font-weight: var(--weight-ui-regular);
-  --text-body-strong: var(--size-m);
-  --text-body-strong--line-height: var(--line-m);
-  --text-body-strong--letter-spacing: var(--letter-spacing-m);
-  --text-body-strong--font-weight: var(--weight-ui-heavy);
-  --text-label: var(--size-s);
-  --text-label--line-height: var(--line-s);
-  --text-label--letter-spacing: var(--letter-spacing-s);
-  --text-label--font-weight: var(--weight-ui-heavy);
-  --text-caption: var(--size-s);
-  --text-caption--line-height: var(--line-s);
-  --text-caption--letter-spacing: var(--letter-spacing-s);
-  --text-caption--font-weight: var(--weight-ui-regular);
-  --text-detail: var(--size-xs);
-  --text-detail--line-height: var(--line-xs);
-  --text-detail--letter-spacing: var(--letter-spacing-xs);
-  --text-detail--font-weight: var(--weight-ui-regular);
-
-  /* Radii: Tailwind's t-shirt names point at Graphical radius steps. sm = xs, md = s (buttons, inputs), lg = m (cards), 2xl = xl. */
-  --radius-sm: var(--radius-xs);
-  --radius-md: var(--radius-s);
-  --radius-lg: var(--radius-m);
-  --radius-2xl: var(--radius-xl);
-
-  /* Spacing: the numeric scale (p-4, gap-6, size-11) counts in Graphical's smallest step, so p-4 is --space-m. */
-  --spacing: var(--space-xxs);
-
-  /* Small motion is the default for every transition utility. */
-  --default-transition-duration: var(--motion-duration);
-  --default-transition-timing-function: var(--motion-easing);
-}
-
-/* Graphical draws an edge as a zero-blur shadow, never a native border (GUI.md "Rules for UI work").
-   `edge` is that hairline. Set its color with a ring color utility (ring-input, ring-accent) and add an elevation
-   with shadow-(--shadow-s). It composes with both. */
-@utility edge {
-  --tw-ring-shadow: 0 0 0 var(--border-s) var(--tw-ring-color, var(--border));
-  box-shadow:
-    var(--tw-inset-shadow, 0 0 #0000), var(--tw-inset-ring-shadow, 0 0 #0000),
-    var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow),
-    var(--tw-shadow, 0 0 #0000);
-}
-
-/* edge-l is the same hairline at the theme's large border width, for an emphasized edge such as a selected or invalid group. */
-@utility edge-l {
-  --tw-ring-shadow: 0 0 0 var(--border-l) var(--tw-ring-color, var(--border));
-  box-shadow:
-    var(--tw-inset-shadow, 0 0 #0000), var(--tw-inset-ring-shadow, 0 0 #0000),
-    var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow),
-    var(--tw-shadow, 0 0 #0000);
-}
-
-/* Dividers are one-sided inset shadows (gui/foundations.md). rule-t draws the top edge, rule-b the bottom edge,
-   and rule-rows draws a top edge between sibling rows. */
-@utility rule-t {
-  box-shadow: inset 0 var(--border-s) 0 var(--border);
-}
-@utility rule-b {
-  box-shadow: inset 0 calc(var(--border-s) * -1) 0 var(--border);
-}
-@utility rule-rows {
-  & > :where(:not(:first-child)) {
-    box-shadow: inset 0 var(--border-s) 0 var(--border);
-  }
-}
-
-@layer base {
-  * {
-    @apply border-border;
-  }
-  html {
-    /* Keeps a focused or anchored element out from under the sticky header (WCAG 2.4.11). */
-    @apply scroll-pt-20 font-sans;
-  }
-  body {
-    @apply bg-background text-body text-foreground;
-    /* Default wrapping for all interface text. It inherits into portals. */
-    text-wrap: pretty;
-  }
-  h1,
-  h2,
-  h3 {
-    @apply font-heading text-balance;
-  }
-  /* Keyboard focus: the theme's focus ring (color-5, 2px) placed just outside the 1px edge. */
-  :focus-visible {
-    outline: var(--border-l) solid var(--ring);
-    outline-offset: var(--border-s);
-  }
-}
-
-/* ------------------------------------------------------------------------------------------------
- * Member app layer. Page is Sand and surfaces are white (light), canvas and raised green-black (dark).
- * The Graphical neutrals swap meaning between modes, so the role map is restated for dark.
- * Category colours are the final tokens from specs 01-shared-brand-components.md section 2.2.
- * ---------------------------------------------------------------------------------------------- */
-:root {
-  --background: var(--neutral-3);
-  --card: var(--neutral-1);
-  --popover: var(--neutral-1);
+/* Dark mode: the page is the dark canvas and surfaces are raised from it, each one step lighter: the sheet, then cards
+   and popovers, then muted fills inside a card. On Saguaro Night the text stays light. */
+.dark {
+  --background: var(--neutral-1);
+  --card: var(--neutral-3);
+  --popover: var(--neutral-3);
   --muted: var(--neutral-4);
+  --border: var(--neutral-4);
+  --night-foreground: var(--neutral-10);
+  --night-muted: var(--neutral-8);
+  --night-rule: var(--neutral-10-transparent);
+}
 
-  --night: #1c3328;
-  --on-night: #f6f1e8;
-  --dawn: #e0804f;
-  --photo-band: color-mix(in srgb, var(--night) 80%, transparent);
-
+/* Fixed values (spec 01-shared-brand-components section 2.2). Category fill = stripe, icon, solid badge.
+   Category text = label colour on tint. */
+:root {
   --cat-strength: #b5532c;
   --cat-strength-text: #9e4522;
   --cat-cycle: #2f5a45;
@@ -281,13 +118,14 @@
   --cat-youth-text: #9c3d6b;
   --cat-tint-strength: 10%;
   --on-cat: #ffffff;
+  /* The pass accent on Saguaro Night. */
+  --dawn: #e0804f;
+  --photo-band: color-mix(in srgb, var(--night) 80%, transparent);
+  /* Count badges: white on Chili in light, pale on deep Chili in dark (both above 4.5:1). */
+  --badge-danger: #b42318;
+  --badge-danger-fg: #ffffff;
 }
-:root.dark {
-  --background: var(--neutral-1);
-  --card: var(--neutral-2);
-  --popover: var(--neutral-2);
-  --muted: var(--neutral-3);
-
+.dark {
   --cat-strength: #e0804f;
   --cat-strength-text: #e0804f;
   --cat-cycle: #6fb08f;
@@ -306,22 +144,77 @@
   --cat-youth-text: #e59bc0;
   --cat-tint-strength: 14%;
   --on-cat: #121a16;
-  --photo-band: color-mix(in srgb, var(--night) 80%, transparent);
+  --badge-danger: #7a1f17;
+  --badge-danger-fg: #ffe9e5;
 }
 
 @theme inline {
-  --color-night: var(--night);
-  --color-on-night: var(--on-night);
+  --color-background: var(--background);
+  --color-foreground: var(--neutral-10);
+  --color-card: var(--card);
+  --color-card-foreground: var(--neutral-10);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--neutral-10);
+  --color-primary: var(--color-1);
+  --color-primary-foreground: var(--on-color-1);
+  --color-secondary: var(--neutral-3);
+  --color-secondary-foreground: var(--neutral-10);
+  --color-muted: var(--neutral-4);
+  --color-muted-foreground: var(--neutral-8);
+  --color-accent: var(--color-1-transparent);
+  --color-accent-foreground: var(--neutral-10);
+  --color-destructive: var(--error);
+  --color-border: var(--border);
+  --color-input: var(--neutral-6);
+  --color-ring: var(--color-3);
+  --color-input-hover: var(--neutral-8);
+  --color-hover: var(--neutral-3-transparent);
+  --color-secondary-hover: var(--neutral-4);
+  --color-primary-hover: var(--color-2);
+  --color-destructive-hover: var(--color-4);
+  --color-border-strong: var(--neutral-6);
+  --color-border-strong-hover: var(--neutral-8);
+  --color-disabled-foreground: var(--neutral-6);
+  --color-success-subtle: var(--success-transparent);
+  --color-warning-subtle: var(--warning-transparent);
+  --color-danger-subtle: var(--error-transparent);
+  --color-night: var(--color-5);
+  --color-night-foreground: var(--night-foreground);
+  --color-night-muted: var(--night-muted);
+  --color-night-rule: var(--night-rule);
+  --color-link: var(--color-2);
+  --color-focus: var(--color-3);
+  --color-sheet: var(--neutral-2);
+
   --color-dawn: var(--dawn);
   --color-photo-band: var(--photo-band);
+  --color-badge-danger: var(--badge-danger);
+  --color-badge-danger-fg: var(--badge-danger-fg);
   --color-on-cat: var(--on-cat);
+  /* The category of the nearest .cat-* ancestor (see the .cat-* rules below). */
   --color-cat: var(--c);
   --color-cat-text: var(--ct);
   --color-cat-tint: var(--ctint);
-  --font-data: var(--font-data);
-  --text-tab: var(--size-xs);
-  --text-tab--line-height: var(--line-xs);
-  --text-tab--font-weight: 500;
+
+  /* Tailwind's named roles. Each names the Graphical step it renders. */
+  --radius-sm: var(--radius-xs);
+  --radius-md: var(--radius-s);
+  --radius-lg: var(--radius-m);
+  --radius-2xl: var(--radius-xl);
+  --font-weight-normal: var(--weight-body-regular);
+  --font-weight-semibold: var(--weight-body-heavy);
+
+  /* Section rhythm past Graphical's largest spacing step (XXL), as named multiples of it. */
+  --padding-section: calc(var(--space-xxl) * 4 / 3);
+  --margin-section: calc(var(--space-xxl) * 4 / 3);
+  --gap-section: calc(var(--space-xxl) * 4 / 3);
+  --padding-section-l: calc(var(--space-xxl) * 2);
+  --margin-section-l: calc(var(--space-xxl) * 2);
+  --gap-section-l: calc(var(--space-xxl) * 2);
+
+  /* Small motion is the default for every transition utility. */
+  --default-transition-duration: var(--motion-duration);
+  --default-transition-timing-function: var(--motion-easing);
 }
 
 .cat-strength {
@@ -364,31 +257,159 @@
   );
 }
 
-/* Eyebrow: Archivo 600 uppercase, wide tracking (brand guide section 5). */
+/* Graphical draws a visible edge as a zero-blur shadow, never a native border (gui/foundations.md).
+   `hairline` is that edge at the theme's small stroke. Set its color with a ring color utility (ring-input,
+   ring-accent) and add an elevation with shadow-s. It composes with both. Graphical's own `edge-*` classes set a
+   native border width; use them only where a real border is meant, such as a dashed rule. */
+@utility hairline {
+  --tw-ring-shadow: 0 0 0 var(--border-s) var(--tw-ring-color, var(--border));
+  box-shadow:
+    var(--tw-inset-shadow, 0 0 #0000), var(--tw-inset-ring-shadow, 0 0 #0000),
+    var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow),
+    var(--tw-shadow, 0 0 #0000);
+}
+
+/* A raised surface on the sheet: a card, a detail panel, a tile. The card colour, a soft ring in the text colour at
+   10% (an edge that never reads as a solid grey line) and the small theme shadow. Dark mode drops the shadow and keeps
+   the ring, as surfaces there are told apart by their lighter fill. */
+@utility raised {
+  background-color: var(--card);
+  --tw-ring-shadow: 0 0 0 var(--border-s)
+    color-mix(in oklab, var(--foreground) 10%, transparent);
+  --tw-shadow: var(--shadow-s);
+  box-shadow:
+    var(--tw-inset-shadow, 0 0 #0000), var(--tw-inset-ring-shadow, 0 0 #0000),
+    var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow),
+    var(--tw-shadow);
+  @variant dark {
+    --tw-shadow: 0 0 #0000;
+  }
+}
+
+/* hairline-l is the same edge at the theme's large stroke, for an emphasized edge such as a selected or invalid group. */
+@utility hairline-l {
+  --tw-ring-shadow: 0 0 0 var(--border-l) var(--tw-ring-color, var(--border));
+  box-shadow:
+    var(--tw-inset-shadow, 0 0 #0000), var(--tw-inset-ring-shadow, 0 0 #0000),
+    var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow),
+    var(--tw-shadow, 0 0 #0000);
+}
+
+/* Dividers are one-sided inset shadows (gui/foundations.md), never native borders. Each side is its own
+   custom property, and every rule utility draws all four, so sides combine (rule-t with md:rule-l) and turn off
+   per breakpoint (sm:rule-t-0) the way border sides do. The properties do not inherit, so a parent's rule never
+   reaches its children. The colour is --border; rule-strong, rule-night and rule-heavy change it on the same
+   element. rule-rows and rule-cols draw a rule between sibling rows or columns. Dashed edges keep native
+   borders: a shadow cannot dash. */
+@property --rule-t {
+  syntax: "*";
+  inherits: false;
+  initial-value: 0 0 #0000;
+}
+@property --rule-r {
+  syntax: "*";
+  inherits: false;
+  initial-value: 0 0 #0000;
+}
+@property --rule-b {
+  syntax: "*";
+  inherits: false;
+  initial-value: 0 0 #0000;
+}
+@property --rule-l {
+  syntax: "*";
+  inherits: false;
+  initial-value: 0 0 #0000;
+}
+/* No initial value: an unset width or colour falls back to the theme's --border-s and --border. */
+@property --rule-w {
+  syntax: "*";
+  inherits: false;
+}
+@property --rule-c {
+  syntax: "*";
+  inherits: false;
+}
+@utility rule-t {
+  --rule-t: inset 0 var(--rule-w, var(--border-s)) 0
+    var(--rule-c, var(--border));
+  box-shadow: var(--rule-t), var(--rule-r), var(--rule-b), var(--rule-l);
+}
+@utility rule-b {
+  --rule-b: inset 0 calc(var(--rule-w, var(--border-s)) * -1) 0
+    var(--rule-c, var(--border));
+  box-shadow: var(--rule-t), var(--rule-r), var(--rule-b), var(--rule-l);
+}
+@utility rule-l {
+  --rule-l: inset var(--rule-w, var(--border-s)) 0 0
+    var(--rule-c, var(--border));
+  box-shadow: var(--rule-t), var(--rule-r), var(--rule-b), var(--rule-l);
+}
+@utility rule-r {
+  --rule-r: inset calc(var(--rule-w, var(--border-s)) * -1) 0 0
+    var(--rule-c, var(--border));
+  box-shadow: var(--rule-t), var(--rule-r), var(--rule-b), var(--rule-l);
+}
+@utility rule-y {
+  --rule-t: inset 0 var(--rule-w, var(--border-s)) 0
+    var(--rule-c, var(--border));
+  --rule-b: inset 0 calc(var(--rule-w, var(--border-s)) * -1) 0
+    var(--rule-c, var(--border));
+  box-shadow: var(--rule-t), var(--rule-r), var(--rule-b), var(--rule-l);
+}
+@utility rule-t-0 {
+  --rule-t: 0 0 #0000;
+}
+@utility rule-b-0 {
+  --rule-b: 0 0 #0000;
+}
+@utility rule-l-0 {
+  --rule-l: 0 0 #0000;
+}
+@utility rule-none {
+  --rule-t: 0 0 #0000;
+  --rule-r: 0 0 #0000;
+  --rule-b: 0 0 #0000;
+  --rule-l: 0 0 #0000;
+}
+@utility rule-strong {
+  --rule-c: var(--border-strong);
+}
+@utility rule-night {
+  --rule-c: var(--night-rule);
+}
+/* Heavy rules: the theme's large border width in the text colour. They open a ruled list or table. */
+@utility rule-heavy {
+  --rule-w: var(--border-l);
+  --rule-c: var(--foreground);
+}
+/* The selection marker: the theme's large stroke in Copper on one side, with rule-l or rule-t. A selected row pairs it
+   with the bg-accent tint, so a selection reads as a mark and a fill, not a fill alone. */
+@utility rule-primary {
+  --rule-w: var(--border-l);
+  --rule-c: var(--primary);
+}
+@utility rule-rows {
+  & > :where(:not(:first-child)) {
+    --rule-t: inset 0 var(--border-s) 0 var(--border);
+    box-shadow: var(--rule-t), var(--rule-r), var(--rule-b), var(--rule-l);
+  }
+}
+@utility rule-cols {
+  & > :where(:not(:first-child)) {
+    --rule-l: inset var(--border-s) 0 0 var(--border);
+    box-shadow: var(--rule-t), var(--rule-r), var(--rule-b), var(--rule-l);
+  }
+}
+
+/* A quiet label for data: a column, a legend, a group in a menu. Sentence case, never above a heading
+   (same rule as the marketing site). */
 @utility eyebrow {
-  font-family: var(--font-brand);
-  font-weight: 600;
-  font-size: var(--size-xs);
-  line-height: var(--line-xs);
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-  font-stretch: 112%;
-}
-@utility display-stretch {
-  font-stretch: 112%;
-}
-@utility num {
-  font-family: var(--font-data);
-  font-variant-numeric: tabular-nums;
-  font-weight: 500;
-}
-@utility num-l {
-  font-family: var(--font-data);
-  font-variant-numeric: tabular-nums;
-  font-weight: 700;
-  font-size: var(--size-xl);
-  line-height: var(--line-xl);
-  letter-spacing: -0.02em;
+  font-family: var(--font-body);
+  font-weight: var(--weight-body-heavy);
+  font-size: var(--size-s);
+  line-height: var(--line-s);
+  letter-spacing: var(--tracking-l);
 }
 @utility hatch {
   background-image: repeating-linear-gradient(
@@ -396,6 +417,127 @@
     transparent 0 5px,
     color-mix(in srgb, var(--foreground) 14%, transparent) 5px 6px
   );
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  html {
+    /* The top bar is 64 px. Sticky parts and scroll targets read this. */
+    --header-height: 4rem;
+    /* Keeps a focused or anchored element out from under the sticky header (WCAG 2.4.11), and above the tab bar
+       on phones. */
+    scroll-padding-top: 5rem;
+    scroll-padding-bottom: 96px;
+    @apply font-body;
+  }
+  body {
+    @apply bg-background text-body-m text-foreground;
+    /* Default wrapping for all interface text. It inherits into portals. */
+    text-wrap: pretty;
+  }
+  h1,
+  h2,
+  h3 {
+    @apply font-display text-balance;
+  }
+  /* Keyboard focus: the theme's focus ring (color-3, 2px) placed just outside the 1px edge. */
+  :focus-visible {
+    outline: var(--border-l) solid var(--ring);
+    outline-offset: var(--border-s);
+  }
+  /* Focus on Night uses the night text color: the blue ring is too weak there. */
+  .bg-night :focus-visible {
+    outline-color: var(--night-foreground);
+  }
+  /* A link in page content is underlined at rest, so colour alone never marks an action. */
+  main :where(a, button).text-link {
+    text-decoration-line: underline;
+    text-decoration-thickness: from-font;
+    text-underline-offset: 4px;
+    text-decoration-color: color-mix(in oklab, currentColor 40%, transparent);
+    transition: text-decoration-color var(--motion-duration)
+      var(--motion-easing);
+  }
+  main :where(a, button).text-link:hover {
+    text-decoration-color: currentColor;
+  }
+  /* Grid items may shrink below their content width, so a scrolling row never widens the page. */
+  .grid > * {
+    min-width: 0;
+  }
+  /* Screen-reader-only text is absolutely positioned. Inside a scroller it must stay clipped by that scroller,
+     or it widens the whole page. Scrollers become the containing block. */
+  :where(.overflow-x-auto, .overflow-y-auto, .overflow-auto):not(
+    .sticky,
+    .fixed,
+    .absolute,
+    .relative
+  ) {
+    position: relative;
+  }
+}
+
+/* Archivo is a variable font with a width axis. Headlines use the expanded cut, width 112 (brand guide section 5). */
+.font-display-wide {
+  font-family: var(--font-display);
+  /* Like Graphical's font-display class: font-regular, font-medium and font-heavy take the display weights. */
+  --weight-regular: var(--weight-display-regular);
+  --weight-medium: var(--weight-display-medium);
+  --weight-heavy: var(--weight-display-heavy);
+  font-stretch: 112%;
+  letter-spacing: var(--tracking-s);
+}
+/* Times, prices and counts. */
+.tabular {
+  font-variant-numeric: tabular-nums;
+  font-family: var(--font-data);
+  /* Like Graphical's font-data class: the weight classes take the data weights. */
+  --weight-regular: var(--weight-data-regular);
+  --weight-medium: var(--weight-data-medium);
+  --weight-heavy: var(--weight-data-heavy);
+}
+/* Lede: the one supporting paragraph under a page title, one body step above body text. */
+.lede {
+  font-size: var(--size-l);
+  letter-spacing: var(--tracking-s);
+  line-height: var(--line-l);
+  max-width: 58ch;
+}
+/* Display sizes. Hero: the one statement a page opens with. Lead: a page title. Quiet: a section in a utility page. */
+.display-hero {
+  font-family: var(--font-display);
+  font-weight: var(--weight-display-heavy);
+  font-stretch: 112%;
+  font-size: clamp(2.75rem, 7.4vw, 6rem);
+  line-height: 0.98;
+  letter-spacing: var(--tracking-xs);
+  text-wrap: balance;
+}
+.display-lead {
+  font-family: var(--font-display);
+  font-weight: var(--weight-display-heavy);
+  font-stretch: 112%;
+  font-size: clamp(2.25rem, 4.6vw, 4.25rem);
+  line-height: 1;
+  letter-spacing: var(--tracking-xs);
+  text-wrap: balance;
+}
+.display-quiet {
+  font-family: var(--font-display);
+  font-weight: var(--weight-display-medium);
+  font-stretch: 112%;
+  font-size: var(--display-size-xxs);
+  letter-spacing: var(--tracking-s);
+  line-height: var(--display-line-xxs);
+  text-wrap: balance;
+}
+.scrollbar-none {
+  scrollbar-width: none;
+}
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
 }
 
 /* Side drawer: the Graphical drawer is a bottom sheet. From 768px it docks to the right edge. */
@@ -411,7 +553,7 @@
     width: min(480px, 100%);
     height: 100%;
     max-height: none;
-    border-radius: 0;
+    border-radius: var(--radius-zero);
     transform: translateX(var(--drawer-swipe-movement-x, 0px));
   }
   .side-drawer[data-starting-style],
@@ -427,22 +569,15 @@
   width: min(320px, calc(100% - 48px));
   height: 100%;
   max-height: none;
-  border-radius: 0;
-  padding: 0;
+  border-radius: var(--radius-zero);
+  padding: var(--space-zero);
   transform: translateX(var(--drawer-swipe-movement-x, 0px));
 }
 .nav-drawer[data-starting-style],
 .nav-drawer[data-ending-style] {
   transform: translateX(-100%);
 }
-.wide-modal {
-  /* biome-ignore lint/complexity/noImportantStyles: beats the dialog popup's own width, which loads later */
-  width: min(560px, calc(100vw - var(--space-xl))) !important;
-}
 
-html {
-  scroll-padding-bottom: 96px;
-}
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
@@ -506,33 +641,6 @@ html {
   }
 }
 
-/* Screen-reader-only text is absolutely positioned. Inside a scroller it must stay clipped by that scroller,
-   or it widens the whole page. Scrollers become the containing block. */
-@layer base {
-  :where(.overflow-x-auto, .overflow-y-auto, .overflow-auto):not(
-    .sticky,
-    .fixed,
-    .absolute,
-    .relative
-  ) {
-    position: relative;
-  }
-}
-
-/* Count badges: white on Chili in light, pale on deep Chili in dark (both above 4.5:1). */
-:root {
-  --badge-danger: #b42318;
-  --badge-danger-fg: #ffffff;
-}
-:root.dark {
-  --badge-danger: #7a1f17;
-  --badge-danger-fg: #ffe9e5;
-}
-@theme inline {
-  --color-badge-danger: var(--badge-danger);
-  --color-badge-danger-fg: var(--badge-danger-fg);
-}
-
 /* Collapse: grid row height and opacity on the large motion token. */
 .collapse-in,
 .collapse-out {
@@ -577,7 +685,25 @@ html {
     background-color: var(--foreground);
     background-image: none;
     color: var(--background);
-    font-weight: var(--weight-ui-heavy);
+    font-weight: var(--weight-body-heavy);
+  }
+}
+
+/* Graphical tabs (Home's Today filter). The theme fills the list with neutral-3, which is the card itself in dark mode,
+   so the container disappears; the selected fill is barely darker. The list takes the muted fill so the two choices
+   read as one control, and the selection takes the same foreground fill and bold text as a pressed toggle (design
+   review S8). Components layer, so it wins over the runtime's base styles without !important. */
+@layer components {
+  .ui-tabs-list[data-ui-component="tabs"] {
+    background-color: var(--muted);
+  }
+  .ui-tabs-list[data-ui-component="tabs"] > .ui-tabs-indicator {
+    background: var(--foreground);
+    box-shadow: none;
+  }
+  .ui-tabs-list[data-ui-component="tabs"] > .ui-tab[data-active] {
+    color: var(--background);
+    font-weight: var(--weight-body-heavy);
   }
 }
 
@@ -596,6 +722,6 @@ html {
     }
   }
   .brand-map .maplibregl-cooperative-gesture-screen {
-    @apply bg-night/70 text-body;
+    @apply bg-night/70 text-body-m;
   }
 }

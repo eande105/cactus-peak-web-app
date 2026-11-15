@@ -7,9 +7,9 @@ export function AuthShell({ children }: { children: React.ReactNode }) {
     <div className="grid min-h-dvh lg:grid-cols-2">
       <main
         id="main"
-        className="flex flex-col justify-center px-4 py-10 sm:px-10 lg:px-16"
+        className="flex flex-col justify-center px-m py-xxl sm:px-xxl lg:px-[calc(var(--space-xxl)*4/3)]"
       >
-        <div className="mx-auto flex w-full max-w-[400px] flex-col gap-8">
+        <div className="mx-auto flex w-full max-w-[400px] flex-col gap-xl">
           <Link href="/sign-in" aria-label="Cactus Peak Athletic">
             {/* biome-ignore lint/performance/noImgElement: static SVG brand mark, next/image adds nothing */}
             <img
@@ -25,18 +25,18 @@ export function AuthShell({ children }: { children: React.ReactNode }) {
             />
           </Link>
           {children}
-          <p className="text-caption text-muted-foreground">
+          <p className="text-body-s text-muted-foreground">
             Not a member yet?{" "}
             <button
               type="button"
-              className="text-link cursor-pointer underline underline-offset-4"
+              className="cursor-pointer text-link underline underline-offset-4"
               onClick={(e) => e.preventDefault()}
             >
               See plans
             </button>
             . Need help? Call{" "}
             <a
-              className="text-link num underline underline-offset-4"
+              className="tabular text-link underline underline-offset-4"
               href="tel:4805550142"
             >
               (480) 555-0142

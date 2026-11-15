@@ -21,5 +21,7 @@
   },
   "menuColor": "default",
   "menuAccent": "subtle",
-  "registries": {}
+  "registries": {
+    "@graphical": "https://www.graphicalui.com/r/{name}.json"
+  }
 }

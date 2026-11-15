@@ -1,0 +1,12 @@
+{
+  "format": "graphical-project-v1",
+  "active": "graphical",
+  "themes": [
+    {
+      "id": "graphical",
+      "name": "Cactus Peak Athletic",
+      "path": "themes/graphical.json"
+    }
+  ],
+  "id": "41ed126d-27e7-4d6b-9c69-cfd0949ddb41"
+}

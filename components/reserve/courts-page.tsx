@@ -1,24 +1,35 @@
 "use client"
-import Link from "next/link"
 import { useRouter, useSearchParams } from "next/navigation"
 import { Suspense, useEffect, useMemo, useState } from "react"
 import { useApp } from "@/components/app/use-app"
+import { BookPage } from "@/components/book/book-tabs"
+import { Clock } from "@/components/icons"
+import {
+  Card,
+  Facts,
+  Group,
+  Panel,
+  PanelEmpty,
+  Split,
+  Toolbar,
+} from "@/components/kit/app"
 import { Modal } from "@/components/kit/overlays"
 import {
   Banner,
   EmptyState,
   FormField,
   LoadingBlock,
-  PageHeader,
   Segmented,
   SelectBox,
 } from "@/components/kit/ui"
+import { BookingList } from "@/components/reserve/booking-list"
+import { LockedCard, SlotHoldTimer, Stepper } from "@/components/reserve/common"
 import {
-  LockedCard,
-  SlotHoldTimer,
-  Stepper,
-  StickyBar,
-} from "@/components/reserve/common"
+  CancelLine,
+  PanelError,
+  QuietLine,
+  SlotLegend,
+} from "@/components/reserve/parts"
 import {
   type CellInfo,
   SlotGrid,
@@ -42,10 +53,10 @@ import {
 } from "@/lib/engine"
 import {
   addDays,
-  DAY,
   dateKey,
   dayStart,
   fmtDay,
+  fmtDayLong,
   fmtDowTime,
   fmtRange,
   fmtTime,
@@ -71,12 +82,70 @@ const ROSTER = [
   "Sofia Reyes",
 ]
 
+type Player = { kind: "member" | "guest"; name: string }
+
+/** One more player in the booking panel: member or guest, the name, and what the choice costs. */
+function PlayerRow({
+  n,
+  player,
+  onChange,
+  invalid,
+  note,
+  className,
+}: {
+  /** The player's number. The member who books is player 1. */
+  n: number
+  player: Player
+  onChange: (p: Partial<Player>) => void
+  invalid: boolean
+  note: string
+  className?: string
+}) {
+  const member = player.kind === "member"
+  return (
+    <li className={cn("gap-xs py-s flex flex-col", className)}>
+      <Segmented
+        label={`Player ${n} type`}
+        size="sm"
+        value={player.kind}
+        onChange={(kind) => onChange({ kind })}
+        options={[
+          { value: "member", label: "Member" },
+          { value: "guest", label: "Guest" },
+        ]}
+      />
+      <FormField
+        label={
+          member ? `Player ${n}: search members` : `Player ${n}: guest's name`
+        }
+        error={
+          invalid
+            ? member
+              ? "Pick a member from the list, or switch to Guest."
+              : "Enter the guest's name."
+            : undefined
+        }
+      >
+        {(f) => (
+          <Input
+            {...f}
+            list={member ? "roster" : undefined}
+            value={player.name}
+            onChange={(e) => onChange({ name: e.target.value })}
+            placeholder={member ? "Linda Park" : "Guest name"}
+          />
+        )}
+      </FormField>
+      <p className="text-body-m text-muted-foreground sm:text-body-s">{note}</p>
+    </li>
+  )
+}
+
 function Inner() {
   const { s, me, hh, now, club: viewing } = useApp()
   const router = useRouter()
   const sp = useSearchParams()
   const wide = useMedia("(min-width: 1024px)")
-  const xl = useMedia("(min-width: 1280px)")
   const offline = useOffline()
   const [loading, setLoading] = useState(false)
   const withCourts = CLUBS.filter((c) => c.courts.length)
@@ -100,9 +169,9 @@ function Inner() {
   const [extended, setExtended] = useState(false)
   const [ended, setEnded] = useState<{ row: number; slot: number } | null>(null)
   const [count, setCount] = useState(2)
-  const [players, setPlayers] = useState<
-    { kind: "member" | "guest"; name: string }[]
-  >([{ kind: "member", name: "" }])
+  const [players, setPlayers] = useState<Player[]>([
+    { kind: "member", name: "" },
+  ])
   const [error, setError] = useState("")
   const [busy, setBusy] = useState(false)
   // biome-ignore lint/correctness/useExhaustiveDependencies: clubSlug restarts the fake load delay when the club changes
@@ -124,7 +193,7 @@ function Inner() {
   const rows = Array.from({ length: n }, (_, i) => ({
     id: i + 1,
     label: `Court ${i + 1}`,
-    sub: `${SPORTS[sport]}${club.slug === "power-mckellips" ? ", outdoor" : ", indoor"}`,
+    sub: club.slug === "power-mckellips" ? "Outdoor" : "Indoor",
   }))
   const slots = gridSlots(date, "court").filter((x) => x + 30 * MIN > now)
   const opens = opensAt(date + 9 * HOUR, 3)
@@ -204,7 +273,6 @@ function Inner() {
     !loading &&
     !notOpen &&
     rows.every((r) => slots.every((sl) => !free(r.id, sl)))
-  const guests = players.filter((p) => p.kind === "guest").length
   const { left: passesLeft } = guestPassesLeft(s, hh.id, now)
   const teen = me.role === "teen"
   const waiting = teen
@@ -219,7 +287,7 @@ function Inner() {
   const parentName = me.parentId
     ? s.members[me.parentId].firstName
     : "your parent"
-  const resolved = (p: { kind: "member" | "guest"; name: string }) =>
+  const resolved = (p: Player) =>
     p.kind === "guest"
       ? p.name.trim().length > 1
       : !!Object.values(s.members).find(
@@ -230,7 +298,10 @@ function Inner() {
               p.name.trim().toLowerCase()
         ) || ROSTER.some((r) => r.toLowerCase() === p.name.trim().toLowerCase())
   const valid = sel && (needsParent || players.every(resolved)) && !offline
-  const label = sel ? `Reserve Court ${sel.row}` : "Reserve a court"
+  const release = () => {
+    setSel(null)
+    setHoldUntil(0)
+  }
   const reserve = async () => {
     if (!sel) return
     if (needsParent) {
@@ -288,90 +359,116 @@ function Inner() {
       }
     }
   }
-  const playersPanel = sel ? (
-    <aside
-      aria-label="Players"
-      className="flex flex-col gap-4 rounded-lg bg-card p-4 edge ring-border"
-    >
+  const players_ = sel ? (
+    <Group label="Players">
       <Stepper
         label="How many players?"
         value={count}
         min={2}
         max={maxPlayers}
         onChange={changeCount}
-        help={
-          sport === "basketball"
-            ? "2 to 10 for basketball."
-            : "2 to 4 for pickleball and tennis."
-        }
+        help={sport === "basketball" ? "2 to 10." : "2 to 4."}
       />
       <datalist id="roster">
         {ROSTER.map((r) => (
           <option key={r} value={r} />
         ))}
       </datalist>
-      {players.map((p, i) => (
-        // biome-ignore lint/suspicious/noArrayIndexKey: player slots have no id and only change at the end of the list
-        <div key={i} className="flex flex-col gap-2 pt-3 rule-t">
-          <Segmented
-            label={`Player ${i + 2} type`}
-            size="sm"
-            value={p.kind}
-            onChange={(k) =>
+      <ul className="flex flex-col rule-t [&>li+li]:rule-t">
+        {players.map((p, i) => (
+          <PlayerRow
+            // biome-ignore lint/suspicious/noArrayIndexKey: player slots have no id and only change at the end of the list
+            key={i}
+            n={i + 2}
+            player={p}
+            onChange={(next) =>
               setPlayers((a) =>
-                a.map((x, j) => (j === i ? { ...x, kind: k } : x))
+                a.map((x, j) => (j === i ? { ...x, ...next } : x))
               )
             }
-            options={[
-              { value: "member", label: "Member" },
-              { value: "guest", label: "Guest" },
-            ]}
+            invalid={!!p.name.trim() && !resolved(p)}
+            note={
+              p.kind === "guest"
+                ? passesLeft -
+                    players.slice(0, i).filter((x) => x.kind === "guest")
+                      .length >
+                  0
+                  ? `Uses 1 guest pass. You have ${passesLeft} left.`
+                  : "Costs $20 per guest. Charged to your card on file."
+                : "We send an invite when you reserve."
+            }
           />
-          <FormField
-            label={
-              p.kind === "member"
-                ? `Player ${i + 2}: search members`
-                : `Player ${i + 2}: guest's name`
-            }
-            error={
-              p.name.trim() && !resolved(p)
-                ? p.kind === "member"
-                  ? "Pick a member from the list, or switch to Guest."
-                  : "Enter the guest's name."
-                : undefined
-            }
+        ))}
+      </ul>
+    </Group>
+  ) : null
+  if (hh.plan === "trailhead")
+    return (
+      <BookPage>
+        <LockedCard
+          title="Courts come with Ridge and Summit."
+          body="Trailhead covers pools and classes at your home club."
+        />
+      </BookPage>
+    )
+  const pu = pausedUntil(s, me.id, now)
+  // The household's coming court reservations, at every club.
+  const upcoming = s.bookings.filter(
+    (b) =>
+      b.kind === "court" &&
+      b.status === "booked" &&
+      b.end > now &&
+      s.members[b.memberId].householdId === hh.id
+  )
+  const note = sel ? cancelNote(s, me.id, sel.slot, now, "court") : null
+  const panel = sel ? (
+    <Panel
+      title={moving ? "Move your court" : "Reserve a court"}
+      onClose={release}
+      footer={
+        <>
+          <PanelError>{error}</PanelError>
+          <Button
+            className="w-full"
+            disabled={!valid || !!waiting}
+            loading={busy}
+            onClick={() => void reserve()}
           >
-            {(f) => (
-              <Input
-                {...f}
-                list={p.kind === "member" ? "roster" : undefined}
-                value={p.name}
-                onChange={(e) =>
-                  setPlayers((a) =>
-                    a.map((x, j) =>
-                      j === i ? { ...x, name: e.target.value } : x
-                    )
-                  )
-                }
-                placeholder={p.kind === "member" ? "Linda Park" : "Guest name"}
-              />
-            )}
-          </FormField>
-          {p.kind === "guest" ? (
-            <p className="text-detail text-muted-foreground">
-              {passesLeft -
-                players.slice(0, i).filter((x) => x.kind === "guest").length >
-              0
-                ? `Uses 1 guest pass. You have ${passesLeft} left.`
-                : "Costs $20 per guest. Charged to your card on file."}
-            </p>
-          ) : (
-            <p className="text-detail text-muted-foreground">
-              We send an invite. They add it to their calendar when they accept.
-            </p>
+            {waiting
+              ? `Waiting for ${parentName}`
+              : needsParent
+                ? `Ask ${parentName}`
+                : moving
+                  ? `Move to Court ${sel.row}`
+                  : "Reserve court"}
+          </Button>
+          {waiting ? null : (
+            <Button className="w-full" variant="ghost" onClick={release}>
+              Release
+            </Button>
           )}
-        </div>
-      ))}
+        </>
+      }
+    >
+      <Facts
+        items={[
+          { label: "Court", value: `Court ${sel.row} · ${SPORTS[sport]}` },
+          { label: "Day", value: fmtDay(sel.slot) },
+          {
+            label: "Time",
+            value: (
+              <span className="tabular">
+                {fmtRange(sel.slot, sel.slot + dur * MIN)}
+              </span>
+            ),
+          },
+          {
+            label: "Duration",
+            value: <span className="tabular">{dur} min</span>,
+          },
+          { label: "Club", value: club.name },
+        ]}
+      />
       {holdUntil ? (
         <SlotHoldTimer
           holdUntil={holdUntil}
@@ -389,48 +486,24 @@ function Inner() {
           }}
         />
       ) : null}
-      {(() => {
-        const c = cancelNote(s, me.id, sel.slot, now, "court")
-        return (
-          <p
-            className={
-              c.late
-                ? "rounded-md bg-warning-subtle px-3 py-2 text-caption"
-                : "text-caption text-muted-foreground"
-            }
-          >
-            {c.text}
-            {c.late ? "" : " Late cancels count as strikes."}
-          </p>
-        )
-      })()}
-    </aside>
+      {needsParent ? null : players_}
+      {needsParent ? (
+        <QuietLine>
+          Courts need {parentName}&apos;s OK. The time is held for 24 hours.
+        </QuietLine>
+      ) : note ? (
+        <CancelLine note={note} />
+      ) : null}
+    </Panel>
   ) : null
-  if (hh.plan === "trailhead")
-    return (
-      <div>
-        <PageHeader eyebrow="Reserve" title="Courts" />
-        <LockedCard
-          title="Courts come with Ridge and Summit."
-          body="Trailhead covers pools and classes at your home club."
-        />
-      </div>
-    )
-  const pu = pausedUntil(s, me.id, now)
   return (
-    <div className="flex flex-col gap-5 pb-28">
-      <PageHeader
-        eyebrow="Reserve"
-        title={moving ? "Move your court" : "Courts"}
-        backHref="/reserve"
-        backLabel="Reserve"
-      />
+    <BookPage>
       {moving ? (
         <Banner
           tone="neutral"
-          title={`Original selection: ${fmtDay(moving.start)}, ${fmtRange(moving.start, moving.end)}, ${moving.resource}`}
+          title={`Moving ${moving.resource}: ${fmtDay(moving.start)}, ${fmtRange(moving.start, moving.end)}`}
         >
-          Free to move until {fmtTime(moving.start - 2 * HOUR)}
+          Free to move until {fmtTime(moving.start - 2 * HOUR)}.
         </Banner>
       ) : null}
       {pu ? (
@@ -438,115 +511,128 @@ function Inner() {
           You can still look at courts.
         </Banner>
       ) : null}
-      <div className="sticky top-14 z-20 -mx-4 flex flex-wrap items-end gap-x-4 gap-y-3 bg-background px-4 py-3 md:top-16 md:mx-0 md:px-0">
-        <SelectBox
-          label="Club"
-          value={clubSlug}
-          onChange={(v) => setParam({ club: v, sport: "" })}
-          options={withCourts.map((c) => ({ value: c.slug, label: c.name }))}
-          className="min-w-52"
+      {waiting ? (
+        <Banner
+          tone="neutral"
+          title={`Waiting for ${parentName}: ${waiting.title}. Held until ${fmtDay(waiting.expiresAt)}, ${fmtTime(waiting.expiresAt)}.`}
         />
-        {sports.length > 1 ? (
-          <div className="flex flex-col gap-1.5">
-            <span className="text-label">Sport</span>
-            <Segmented
-              label="Sport"
-              value={sport}
-              onChange={(v) => setParam({ sport: v })}
-              options={sports.map((v) => ({ value: v, label: SPORTS[v] }))}
+      ) : null}
+      <Split
+        label="Your reservation"
+        open={!!sel}
+        onClose={release}
+        panel={panel}
+        empty={
+          <PanelEmpty icon={Clock}>
+            {offline
+              ? "Reconnect to reserve."
+              : "Pick a free time to hold a court for 5 minutes."}
+          </PanelEmpty>
+        }
+      >
+        <div className="gap-s flex flex-col">
+          <Toolbar>
+            <SelectBox
+              label="Club"
+              value={clubSlug}
+              onChange={(v) => setParam({ club: v, sport: "" })}
+              options={withCourts.map((c) => ({
+                value: c.slug,
+                label: c.name,
+              }))}
+              hideLabel
+              className="min-w-52"
             />
-          </div>
-        ) : (
-          <div className="flex flex-col gap-1.5">
-            <span className="text-label">Sport</span>
-            <p className="flex min-h-11 items-center text-body">
-              {SPORTS[sport]} · <span className="ml-1 num">{n}</span> courts
-            </p>
-          </div>
-        )}
-        <div className="flex flex-col gap-1.5">
-          <span className="text-label">Duration</span>
-          <Segmented
-            label="Duration"
-            value={dur}
-            onChange={(v) => setParam({ dur: String(v) })}
-            options={[
-              { value: 60, label: "60 min" },
-              { value: 90, label: "90 min" },
-            ]}
+            {sports.length > 1 ? (
+              <Segmented
+                label="Sport"
+                value={sport}
+                onChange={(v) => setParam({ sport: v })}
+                options={sports.map((v) => ({ value: v, label: SPORTS[v] }))}
+              />
+            ) : (
+              <p className="flex min-h-9 items-center text-body-m font-medium max-md:min-h-11 sm:text-body-s">
+                {SPORTS[sport]}
+              </p>
+            )}
+            <Segmented
+              label="Duration"
+              value={dur}
+              onChange={(v) => setParam({ dur: String(v) })}
+              options={[
+                { value: 60, label: "60 min" },
+                { value: 90, label: "90 min" },
+              ]}
+            />
+          </Toolbar>
+          <DayStrip
+            selected={date}
+            onSelect={(d) => setParam({ date: d === today ? "" : dateKey(d) })}
+            now={now}
+            windowDays={3}
+            days={5}
+            label="Choose a day"
           />
         </div>
-      </div>
-      <div className="flex flex-col gap-1">
-        <DayStrip
-          selected={date}
-          onSelect={(d) => setParam({ date: d === today ? "" : dateKey(d) })}
-          now={now}
-          windowDays={3}
-          days={5}
-          label="Choose a day"
-        />
-        <p className="text-detail text-muted-foreground">
-          <span className="rounded-xs bg-muted px-2 py-0.5">
-            Arizona time (no daylight saving)
-          </span>
-        </p>
-      </div>
-      <h2 className="sr-only">Choose a court and start time</h2>
-      {loading ? (
-        <LoadingBlock text="Checking availability…" rows={6} />
-      ) : notOpen ? (
-        <EmptyState
-          object="paddle"
-          title={`${fmtDay(date)} courts open ${fmtDay(opens)} at ${fmtTime(opens)}`}
-          body="Courts open 3 days ahead at 6:00 am. We can remind you."
-          action={
-            <Button
-              onClick={() => {
-                addRemind(`court-${dateKey(date)}`)
-                toast({ title: "We'll remind you" })
-              }}
-            >
-              Remind me
-            </Button>
-          }
-        />
-      ) : noneOpen ? (
-        <Banner
-          tone="warning"
-          title={`Every court is taken on ${fmtDay(date)}.`}
-          actions={
-            <>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => setParam({ date: dateKey(addDays(date, 1)) })}
-              >
-                Try the next day
-              </Button>
-              {club.slug !== "dobson-southern" ? (
+
+        <Card
+          id="court-times"
+          tone="bare"
+          title={fmtDayLong(date)}
+          description={`${SPORTS[sport]} · ${n} ${n === 1 ? "court" : "courts"}`}
+        >
+          {loading ? (
+            <div className="py-m">
+              <LoadingBlock text="Checking availability…" rows={6} />
+            </div>
+          ) : notOpen ? (
+            <EmptyState
+              object="paddle"
+              title={`${fmtDay(date)} courts open ${fmtDay(opens)} at ${fmtTime(opens)}`}
+              body="Courts open 3 days ahead at 6 am."
+              action={
                 <Button
                   size="sm"
-                  variant="outline"
-                  onClick={() => setParam({ club: "dobson-southern" })}
+                  onClick={() => {
+                    addRemind(`court-${dateKey(date)}`)
+                    toast({ title: "We'll remind you" })
+                  }}
                 >
-                  Dobson & Southern
+                  Remind me
                 </Button>
-              ) : null}
-            </>
-          }
-        >
-          Try another day, or another club.
-        </Banner>
-      ) : (
-        <div
-          className={cn(
-            "grid gap-6",
-            sel && !needsParent && "xl:grid-cols-[minmax(0,1fr)_320px]"
-          )}
-        >
-          <div className="flex min-w-0 flex-col gap-3">
-            {wide ? (
+              }
+            />
+          ) : noneOpen ? (
+            <div className="py-m">
+              <Banner
+                tone="warning"
+                title={`Every court is taken on ${fmtDay(date)}.`}
+                actions={
+                  <>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() =>
+                        setParam({ date: dateKey(addDays(date, 1)) })
+                      }
+                    >
+                      Try the next day
+                    </Button>
+                    {club.slug !== "dobson-southern" ? (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => setParam({ club: "dobson-southern" })}
+                      >
+                        Dobson & Southern
+                      </Button>
+                    ) : null}
+                  </>
+                }
+              />
+            </div>
+          ) : wide ? (
+            <div className="gap-s flex flex-col">
               <SlotGrid
                 kind="court"
                 rows={rows}
@@ -559,164 +645,50 @@ function Inner() {
                 disabled={offline || !!pu}
                 now={now}
               />
-            ) : (
-              <SlotList
-                kind="court"
-                rows={rows}
-                slots={slots.filter((sl) => rows.some((r) => free(r.id, sl)))}
-                info={info}
-                selected={sel}
-                onSelect={select}
-                label="Choose a court and start time"
-                disabled={offline || !!pu}
+              <SlotLegend
+                items={[
+                  { tone: "free", label: "Free" },
+                  { tone: "selected", label: "Selected" },
+                  { tone: "mine", label: "Yours" },
+                  { tone: "taken", label: "Taken or closed" },
+                  { tone: "short", label: `Under ${dur} min free` },
+                ]}
               />
-            )}
-            <ul
-              className="flex flex-wrap gap-x-5 gap-y-1 text-detail text-muted-foreground"
-              aria-label="Legend"
-            >
-              <li className="flex items-center gap-1.5">
-                <span
-                  className="size-2 rounded-full bg-success"
-                  aria-hidden="true"
-                />
-                Free
-              </li>
-              <li className="flex items-center gap-1.5">
-                <span
-                  className="rounded-xs size-3 bg-night"
-                  aria-hidden="true"
-                />
-                Selected
-              </li>
-              <li>
-                <span className="font-semibold">Yours</span> · mine
-              </li>
-              <li className="flex items-center gap-1.5">
-                <span
-                  className="rounded-xs size-3 bg-muted hatch"
-                  aria-hidden="true"
-                />
-                Taken or closed
-              </li>
-              <li>Dimmed: not enough time for {dur} minutes</li>
-            </ul>
-            {offline ? (
-              <p className="text-caption text-muted-foreground">
-                Reconnect to reserve.
-              </p>
-            ) : null}
-          </div>
-          {xl && !needsParent ? playersPanel : null}
-        </div>
-      )}
-      {!xl && !needsParent ? (
-        <Modal
-          open={!!sel && !wide}
-          onOpenChange={(o) => {
-            if (!o) {
-              setSel(null)
-              setHoldUntil(0)
-            }
-          }}
-          title="Who's playing?"
-          description={
-            sel
-              ? `Court ${sel.row} · ${fmtDay(sel.slot)} · ${fmtRange(sel.slot, sel.slot + dur * MIN)}`
-              : undefined
-          }
-        >
-          {playersPanel}
-          <Button
-            className="w-full"
-            disabled={!valid}
-            loading={busy}
-            onClick={() => void reserve()}
-          >
-            {label}
-          </Button>
-        </Modal>
-      ) : null}
-      {!xl && wide && sel && !needsParent ? <div>{playersPanel}</div> : null}
-      {needsParent ? (
-        <p className="text-caption text-muted-foreground">
-          Courts need {parentName}&apos;s OK. Pick a time, then ask. The time is
-          held for 24 hours.
-        </p>
-      ) : null}
-      <StickyBar>
-        <div className="mx-auto flex max-w-[1200px] flex-wrap items-center justify-between gap-3 lg:px-8">
-          <p className="min-w-0 flex-1 basis-64 text-caption">
-            {waiting ? (
-              <>
-                <span className="text-label">Waiting for {parentName}.</span>{" "}
-                {waiting.title}. Held until {fmtDay(waiting.expiresAt)},{" "}
-                {fmtTime(waiting.expiresAt)}
-              </>
-            ) : sel ? (
-              <>
-                <span className="text-label">
-                  {SPORTS[sport]} · Court {sel.row}
-                </span>{" "}
-                ·{" "}
-                <span className="num">
-                  {fmtDay(sel.slot)} ·{" "}
-                  {fmtRange(sel.slot, sel.slot + dur * MIN)}
-                </span>{" "}
-                · {club.name}
-              </>
-            ) : (
-              "Pick a free time to hold a court for 5 minutes."
-            )}
-            {error ? (
-              <span
-                role="alert"
-                className="mt-1 block font-semibold text-destructive"
-              >
-                {error}
-              </span>
-            ) : null}
-          </p>
-          <div className="flex items-center gap-2">
-            {sel && !waiting ? (
-              <Button
-                variant="ghost"
-                onClick={() => {
-                  setSel(null)
-                  setHoldUntil(0)
-                }}
-              >
-                Clear
-              </Button>
-            ) : null}
-            <Button
-              size="lg"
-              disabled={!valid || !!waiting}
-              loading={busy}
-              onClick={() => void reserve()}
-            >
-              {waiting
-                ? `Waiting for ${parentName}`
-                : needsParent
-                  ? `Ask ${parentName}`
-                  : moving
-                    ? `Move to ${sel ? `Court ${sel.row}` : "this court"}`
-                    : label}
-            </Button>
-          </div>
-        </div>
-      </StickyBar>
+            </div>
+          ) : (
+            <SlotList
+              kind="court"
+              rows={rows}
+              slots={slots.filter((sl) => rows.some((r) => free(r.id, sl)))}
+              info={info}
+              selected={sel}
+              onSelect={select}
+              label="Choose a court and start time"
+              disabled={offline || !!pu}
+            />
+          )}
+        </Card>
+
+        <BookingList
+          id="your-courts"
+          label="Your courts"
+          list={upcoming}
+          empty="No court reserved."
+        />
+      </Split>
+
       <Modal
         open={!!ended}
         onOpenChange={(o) => !o && setEnded(null)}
         title="Your hold ended"
         description="The court is open to others. Pick it again?"
       >
-        <div className="flex justify-end gap-2">
-          <Button variant="outline" onClick={() => setEnded(null)}>
+        <div className="gap-s flex justify-end">
+          <Button size="sm" variant="outline" onClick={() => setEnded(null)}>
             Close
           </Button>
           <Button
+            size="sm"
             onClick={() => {
               if (ended && free(ended.row, ended.slot))
                 select(ended.row, ended.slot)
@@ -732,12 +704,9 @@ function Inner() {
           </Button>
         </div>
       </Modal>
-      {guests > passesLeft ? null : null}
-    </div>
+    </BookPage>
   )
 }
-void Link
-void DAY
 export default function CourtsPage() {
   return (
     <Suspense fallback={null}>

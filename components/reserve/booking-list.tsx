@@ -1,13 +1,28 @@
 "use client"
-import Link from "next/link"
 import { useApp } from "@/components/app/use-app"
-import { Check } from "@/components/icons"
-import { StatusPill } from "@/components/kit/ui"
-import { Button } from "@/components/ui/button"
-import { fmtDay, fmtRange, fmtTime } from "@/lib/time"
+import { CategoryMark, ListRow, ListRows } from "@/components/booking/parts"
+import { Card, CardFooterLink } from "@/components/kit/app"
+import { fmtDay, fmtDayShort, fmtRange } from "@/lib/time"
 import type { Booking } from "@/lib/types"
 
-export function BookingList({ list }: { list: Booking[] }) {
+/**
+ * The member's reservations of one kind, as a bare list on the sheet under the slot picker. `label` is the title.
+ * The link to the full list is the footer. An empty list draws nothing, unless `empty` gives the line to show under
+ * the title.
+ */
+export function BookingList({
+  list,
+  label,
+  empty,
+  id,
+  className,
+}: {
+  list: Booking[]
+  label?: string
+  empty?: string
+  id?: string
+  className?: string
+}) {
   const { s } = useApp()
   const seen = new Set<string>()
   const rows = list
@@ -18,47 +33,52 @@ export function BookingList({ list }: { list: Booking[] }) {
       return true
     })
     .sort((a, b) => a.start - b.start)
+  if (!rows.length && !empty) return null
   return (
-    <ul className="mt-2 rule-rows">
-      {rows.map((b) => (
-        <li
-          key={b.id}
-          className={`cat-${b.category} flex flex-wrap items-center gap-x-4 gap-y-2 py-3`}
-        >
-          <span className="w-28 shrink-0">
-            <span className="block num text-body-strong">
-              {fmtTime(b.start)}
-            </span>
-            <span className="block text-detail text-muted-foreground">
-              {fmtDay(b.start)}
-            </span>
-          </span>
-          <span className="h-9 w-1 rounded-full bg-cat" aria-hidden="true" />
-          <span className="min-w-0 flex-1">
-            <span className="block text-label">
-              {b.kind === "kids"
-                ? `Kids club · ${list
-                    .filter((x) => x.ref === b.ref && x.start === b.start)
-                    .map((x) => s.members[x.memberId].firstName)
-                    .join(", ")}`
-                : b.title}
-            </span>
-            <span className="block text-caption text-muted-foreground">
-              {fmtRange(b.start, b.end)} · {b.place}
-            </span>
-          </span>
-          <StatusPill tone="success" icon={Check}>
-            Booked
-          </StatusPill>
-          <Button
-            size="sm"
-            variant="outline"
-            render={<Link href="/bookings" />}
-          >
-            Details
-          </Button>
-        </li>
-      ))}
-    </ul>
+    <Card
+      id={id}
+      tone="bare"
+      title={label}
+      className={className}
+      footer={
+        rows.length ? (
+          <CardFooterLink href="/bookings">View all</CardFooterLink>
+        ) : undefined
+      }
+    >
+      {rows.length ? (
+        // The list sits on the sheet. It reaches out by the rows' padding, so the text lines up with the title and the
+        // hover fill has room around it.
+        <ListRows label={label} className="-mx-s">
+          {rows.map((b) => (
+            <ListRow
+              key={b.id}
+              href="/bookings"
+              className="!px-s"
+              lead={fmtDay(b.start).split(",")[0]}
+              mark={<CategoryMark category={b.category} />}
+              title={
+                b.kind === "kids"
+                  ? `Kids club · ${list
+                      .filter((x) => x.ref === b.ref && x.start === b.start)
+                      .map((x) => s.members[x.memberId].firstName)
+                      .join(", ")}`
+                  : b.title
+              }
+              line={
+                <span className="tabular">
+                  {fmtDayShort(b.start)} · {fmtRange(b.start, b.end)} ·{" "}
+                  {b.place}
+                </span>
+              }
+            />
+          ))}
+        </ListRows>
+      ) : (
+        <p className="py-s text-body-m text-muted-foreground sm:text-body-s">
+          {empty}
+        </p>
+      )}
+    </Card>
   )
 }

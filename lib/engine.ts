@@ -396,7 +396,7 @@ export function busyHint(slug: string, now: number) {
       q = i + 4
       break
     }
-  return `Busier ${range}${q > 0 ? ` Quieter after ${bare(q)} ${ap(q)}` : ""}`
+  return `Busier ${range}.${q > 0 ? ` Quieter after ${bare(q)} ${ap(q)}.` : ""}`
 }
 
 // One place for the cancel rule line. Past the free window it says so, with the strike count.

@@ -11,7 +11,7 @@ export default function CardRoute() {
     router.replace("/billing")
   }, [router])
   return (
-    <p role="status" className="text-caption text-muted-foreground">
+    <p role="status" className="text-body-s text-muted-foreground">
       Opening…
     </p>
   )

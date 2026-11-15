@@ -1,26 +1,28 @@
+import { type ClassValue, clsx } from "clsx"
 import { createCn } from "cn/config"
+import graphicalClasses from "@/graphical/generated/tailwind-merge.cjs"
 
-// Class merging that knows the type roles (text-label, text-caption, ...) are font sizes.
-// Without this, merging "text-label text-primary-foreground" would drop text-label, because
-// an unknown text-* class looks like a text color. The role names are the --text-* keys in app/globals.css.
-export const cn = createCn({
+// shadcn's `cn` package merges the classes, extended with Graphical's classes (graphical/generated/
+// tailwind-merge.cjs), so a caller's `text-body-s` replaces `text-body-m`, `corner-zero` replaces `corner-m`, and
+// `font-heavy` replaces `font-regular`, the way Tailwind's own classes do.
+// The app's own steps join Graphical's: the section rhythm (app/globals.css).
+const merge = createCn({
   extend: {
-    classGroups: {
-      "font-size": [
-        {
-          text: [
-            "display",
-            "h1",
-            "h2",
-            "h3",
-            "body",
-            "body-strong",
-            "label",
-            "caption",
-            "detail",
-          ],
-        },
+    ...graphicalClasses.extend,
+    theme: {
+      ...graphicalClasses.extend?.theme,
+      spacing: [
+        ...(graphicalClasses.extend?.theme?.spacing ?? []),
+        "section",
+        "section-l",
       ],
     },
   },
 })
+
+// The outer clsx call returns the merged string unchanged. Graphical's style tools follow class lists through a
+// helper that returns a clsx, classnames or tailwind-merge call, and they don't know the `cn` package yet.
+// Without it, `graphical-install --check` can't see the classes passed to cn().
+export function cn(...inputs: ClassValue[]) {
+  return clsx(merge(...inputs))
+}

@@ -2,13 +2,26 @@
 
 import {
   createContext,
+  createElement,
   useContext,
   useId,
+  useMemo,
   type CSSProperties,
   type ReactNode,
   type SVGProps,
 } from 'react';
 import {
+  AtSign,
+  Link2,
+  MoreHorizontal,
+  Sparkles,
+  Zap,
+  Building2,
+  Clock3,
+  Volume2,
+  VolumeX,
+  RotateCcw,
+  RotateCw,
   Archive,
   PanelLeft,
   Check,
@@ -69,22 +82,32 @@ import {
   Trash2,
   UsersRound,
 } from 'lucide-react';
-import { THEME_ICON_ARTWORK } from "../../lib/icon-artwork";
-import { CENTRAL_OUTLINE_ARTWORK } from "../../lib/icon-artwork";
-import { LUCIDE_FILLED_ARTWORK } from "../../lib/icon-artwork";
-import {
-  CENTRAL_CONTROL_OUTLINES,
-  CENTRAL_CONTROL_FILLS,
-  CENTRAL_CONTROL_STROKES,
-  PHOSPHOR_CONTROL_ARTWORK,
-  LUCIDE_CONTROL_FILLS,
-} from "../../lib/icon-artwork";
 import type { ThemeDefinition } from "../../lib/theme-model";
+import {
+  iconWeightVariables,
+  themeIconWeightVariables,
+} from "../../lib/theme-icon-weight";
+import { ICON_SEMANTICS } from "../../lib/icon-semantics";
+import {
+  useThemeIconRenderer,
+  type ThemeIconRenderProps,
+} from "./icon-renderer";
+export {
+  IconRendererProvider,
+  useThemeIconRenderer,
+  type ThemeIconRenderProps,
+  type ThemeIconRenderer,
+} from "./icon-renderer";
+
+import {
+  CatalogIcon,
+  catalogIconFamily,
+  type CatalogIconName,
+} from "./icon-catalog";
 import {
   isHugeiconsVariant,
   type HugeiconsVariant,
 } from "../../lib/hugeicons-options";
-import { iconWeightVariables } from "../../lib/theme-icon-weight";
 
 const lucide = {
   home: House,
@@ -114,6 +137,18 @@ const lucide = {
   mailbox: Mailbox,
 };
 const controls = {
+  atSign: AtSign,
+  link: Link2,
+  more: MoreHorizontal,
+  sparkles: Sparkles,
+  lightning: Zap,
+  buildings: Building2,
+  clock: Clock3,
+  volume: Volume2,
+  volumeOff: VolumeX,
+  rotateLeft: RotateCcw,
+  rotateRight: RotateCw,
+
   panelLeft: PanelLeft,
   check: Check,
   chevronDown: ChevronDown,
@@ -150,23 +185,10 @@ const controls = {
   trendingUp: TrendingUp,
 };
 const allIcons = { ...lucide, ...controls };
-const centralOutlines = {
-  ...CENTRAL_OUTLINE_ARTWORK,
-  ...CENTRAL_CONTROL_OUTLINES,
-};
-const centralFills = {
-  ...THEME_ICON_ARTWORK.Central,
-  ...CENTRAL_CONTROL_FILLS,
-};
-const phosphorArtwork = {
-  ...THEME_ICON_ARTWORK.Phosphor,
-  ...PHOSPHOR_CONTROL_ARTWORK,
-};
-const lucideFills: Record<string, { body: string; cutouts?: string }> = {
-  ...LUCIDE_FILLED_ARTWORK,
-  ...LUCIDE_CONTROL_FILLS,
-};
-export type ThemeIconName = keyof typeof allIcons;
+export type ThemeIconName =
+  | keyof typeof allIcons
+  | CatalogIconName
+  | `hugeicons:${string}`;
 export const THEME_ICON_NAMES = Object.keys(lucide) as ThemeIconName[];
 export const CONTROL_ICON_NAMES = Object.keys(
   controls,
@@ -175,6 +197,7 @@ export const CONTROL_ICON_NAMES = Object.keys(
 type IconSettings = {
   family?: ThemeDefinition['iconFamily'];
   variant?: 'filled' | 'outlined';
+  weight?: number;
   hugeiconsVariant?: HugeiconsVariant;
 };
 const IconThemeContext = createContext<IconSettings>({});
@@ -189,60 +212,38 @@ export function IconTheme({
 }) {
   const inherited = useContext(IconThemeContext);
   const tokens = variables as Record<string, string | number | undefined>;
-  const family = tokens['--theme-icon-family'];
-  const variant = tokens['--theme-icon-style'];
-  const hugeiconsVariant = tokens['--theme-hugeicons-variant'];
-  return (
-    <IconThemeContext
-      value={{
-        hugeiconsVariant: isHugeiconsVariant(hugeiconsVariant)
-          ? hugeiconsVariant
-          : inherited.hugeiconsVariant,
-        family:
-          family === 'Central' ||
-          family === 'Phosphor' ||
-          family === 'Lucide' ||
-          family === 'Hugeicons'
-            ? family
-            : inherited.family,
-        variant:
-          variant === 'filled' || variant === 'outlined'
-            ? variant
-            : inherited.variant,
-      }}
-    >
-      {children}
-    </IconThemeContext>
+  const requestedFamily = tokens['--theme-icon-family'];
+  const requestedVariant = tokens['--theme-icon-style'];
+  const family =
+    requestedFamily === 'Hugeicons' ||
+    requestedFamily === 'Central' ||
+    requestedFamily === 'Phosphor' ||
+    requestedFamily === 'Lucide'
+      ? requestedFamily
+      : inherited.family;
+  const weight =
+    Number(tokens['--theme-icon-weight']) ||
+    Number(tokens['--weight-body-regular']) ||
+    inherited.weight;
+  const variant =
+    requestedVariant === 'filled' || requestedVariant === 'outlined'
+      ? requestedVariant
+      : inherited.variant;
+  const requestedHugeicons = tokens['--theme-hugeicons-variant'];
+  const hugeiconsVariant = isHugeiconsVariant(requestedHugeicons)
+    ? requestedHugeicons
+    : inherited.hugeiconsVariant;
+  // Theme variables change on every edit; icons follow only these settings.
+  const value = useMemo(
+    () => ({ family, weight, variant, hugeiconsVariant }),
+    [family, weight, variant, hugeiconsVariant],
   );
+  return <IconThemeContext value={value}>{children}</IconThemeContext>;
 }
 
 const IconNameContext = createContext<
   ((instance: string, name: ThemeIconName) => ThemeIconName) | null
 >(null);
-
-export type ThemeIconRenderProps = SVGProps<SVGSVGElement> & {
-  name: ThemeIconName;
-  family: NonNullable<ThemeDefinition['iconFamily']>;
-  variant: 'filled' | 'outlined';
-  weight?: number;
-  hugeiconsVariant?: HugeiconsVariant;
-};
-const IconRendererContext = createContext<
-  ((props: ThemeIconRenderProps) => ReactNode | undefined) | null
->(null);
-
-/** Supply separately installed or licensed artwork without changing component source. */
-export function IconRendererProvider({
-  renderIcon,
-  children,
-}: {
-  renderIcon: (props: ThemeIconRenderProps) => ReactNode | undefined;
-  children: ReactNode;
-}) {
-  return (
-    <IconRendererContext value={renderIcon}>{children}</IconRendererContext>
-  );
-}
 
 /** Optional instance-level name resolution; ordinary icons need no provider. */
 export function IconNameProvider({
@@ -253,6 +254,56 @@ export function IconNameProvider({
   children: ReactNode;
 }) {
   return <IconNameContext value={resolveName}>{children}</IconNameContext>;
+}
+
+/** The host owns the actual artwork and forwards SVG identity, styling, and refs. */
+export type HostIconProps = SVGProps<SVGSVGElement> & {
+  name: ThemeIconName;
+  family: ThemeDefinition['iconFamily'];
+  variant: 'filled' | 'outlined';
+  semantic: boolean;
+  weight?: number;
+};
+export type HostIconRenderer = import('react').ComponentType<HostIconProps>;
+const HostIconContext = createContext<HostIconRenderer | null>(null);
+
+/** Supply the app's existing icon component; no artwork is copied into this kit. */
+export function HostIconProvider({
+  renderIcon,
+  children,
+}: {
+  renderIcon: HostIconRenderer;
+  children: ReactNode;
+}) {
+  return <HostIconContext value={renderIcon}>{children}</HostIconContext>;
+}
+
+/** Bundled semantic artwork; return undefined to use the Lucide fallback. */
+export type ThemeIconArtwork = (
+  props: Omit<ThemeIconRenderProps, 'weight'>,
+) => ReactNode | undefined;
+const IconArtworkContext = createContext<ThemeIconArtwork | null>(null);
+
+/**
+ * Graphical registers its own Central, Phosphor and filled Lucide artwork at
+ * its app roots. The editor package never imports that artwork, so installed
+ * hosts render catalog Phosphor or an identified Lucide fallback instead.
+ */
+export function IconArtworkProvider({
+  renderArtwork,
+  children,
+}: {
+  renderArtwork: ThemeIconArtwork;
+  children: ReactNode;
+}) {
+  return (
+    <IconArtworkContext value={renderArtwork}>{children}</IconArtworkContext>
+  );
+}
+
+/** True where Graphical's own artwork is registered, so hosted artwork isn't needed. */
+export function useHasIconArtwork() {
+  return useContext(IconArtworkContext) !== null;
 }
 
 /** Decorative artwork; the containing control owns its accessible name. */
@@ -275,7 +326,9 @@ export function ThemedIcon({
   semantic?: boolean;
 }) {
   const inherited = useContext(IconThemeContext);
-  const renderIcon = useContext(IconRendererContext);
+  const renderer = useThemeIconRenderer();
+  const HostIcon = useContext(HostIconContext);
+  const renderArtwork = useContext(IconArtworkContext);
   const family = explicitFamily ?? inherited.family ?? 'Lucide';
   const instance = useId();
   const resolveName = useContext(IconNameContext);
@@ -285,17 +338,19 @@ export function ThemedIcon({
     'data-icon-name': name,
     ...(!semantic && { 'data-icon-instance': instance }),
   };
-  const Icon = allIcons[name];
   const resolvedStyle =
     variant ??
     centralStyle ??
     inherited.variant ??
     (family === 'Central' ? 'filled' : 'outlined');
   const iconStyle = {
-    ...(weight !== undefined && iconWeightVariables(weight)),
+    ...(weight !== undefined && {
+      ...themeIconWeightVariables({ iconFamily: family, iconWeight: weight }),
+      ...iconWeightVariables(weight),
+    }),
     ...style,
   } as CSSProperties;
-  const customIcon = renderIcon?.({
+  const customIcon = renderer?.renderIcon({
     'aria-hidden': true,
     ...props,
     ...identity,
@@ -304,147 +359,109 @@ export function ThemedIcon({
     family,
     variant: resolvedStyle,
     hugeiconsVariant: inherited.hugeiconsVariant,
-    weight,
+    weight: weight ?? inherited.weight,
   });
   if (customIcon !== undefined) return customIcon;
-  const outlined = (
-    <Icon
-      aria-hidden="true"
-      data-icon-family="Lucide"
-      data-icon-style="outlined"
-      data-icon-fallback={
-        family !== 'Lucide' || resolvedStyle !== 'outlined' || undefined
-      }
-      strokeWidth="var(--icon-stroke-width, 2)"
-      {...props}
-      {...identity}
-      style={iconStyle}
-    />
-  );
-  // A receiving app supplies its own licensed renderer; never substitute Phosphor.
-  if (family === 'Hugeicons') return outlined;
-  if (family === 'Lucide')
-    return resolvedStyle === 'filled' && lucideFills[name] ? (
-      <FilledLucideIcon
-        name={name}
+  if (catalogIconFamily(name)) {
+    return (
+      <CatalogIcon
+        name={name as CatalogIconName}
+        variant={resolvedStyle}
+        weight={weight ?? inherited.weight}
         {...props}
         {...identity}
         style={iconStyle}
       />
-    ) : (
-      outlined
     );
-  const centralOutline = family === 'Central' && resolvedStyle === 'outlined';
-  const artwork = centralOutline
-    ? centralOutlines[name]
-    : family === 'Central'
-      ? centralFills[name]
-      : phosphorArtwork[name];
-  if (!artwork) return outlined;
-  const filledPhosphor = family === 'Phosphor' && resolvedStyle === 'filled';
-  const controlStroke =
-    family === 'Central' ? CENTRAL_CONTROL_STROKES[name] : undefined;
-  // These strings are the static, bundled SVG catalog above, never user content.
+  }
+  if (HostIcon) {
+    return createElement(HostIcon, {
+      'aria-hidden': true,
+      ...props,
+      ...identity,
+      name,
+      family,
+      variant: resolvedStyle,
+      semantic,
+      weight,
+      style: iconStyle,
+    });
+  }
+  if (family === 'Hugeicons' || name.startsWith('hugeicons:')) {
+    return (
+      <svg
+        width={24}
+        height={24}
+        {...props}
+        {...identity}
+        style={iconStyle}
+        data-icon-family="Hugeicons"
+        data-icon-style={resolvedStyle}
+        data-icon-unavailable="true"
+      >
+        <title>Hugeicons catalog is not connected</title>
+      </svg>
+    );
+  }
+  const artwork = renderArtwork?.({
+    ...props,
+    ...identity,
+    style: iconStyle,
+    name,
+    family,
+    variant: resolvedStyle,
+  });
+  if (artwork !== undefined) return artwork;
+  const semanticName = name as keyof typeof allIcons;
+  if (family === 'Phosphor') {
+    return (
+      <CatalogIcon
+        name={`phosphor:${ICON_SEMANTICS[semanticName].phosphor}`}
+        variant={resolvedStyle}
+        weight={weight ?? inherited.weight}
+        {...props}
+        {...identity}
+        style={iconStyle}
+      />
+    );
+  }
+  const Icon = allIcons[semanticName];
+  // Preview vocabulary beyond the named set draws from the free catalog.
+  // An app's own glyph can reach the picker as its current value, unmapped.
+  if (!Icon && !Object.hasOwn(ICON_SEMANTICS, name))
+    return <svg width={24} height={24} {...props} {...identity} style={iconStyle} />;
+  if (!Icon) {
+    return (
+      <CatalogIcon
+        name={`lucide:${ICON_SEMANTICS[semanticName].lucide}`}
+        variant="outlined"
+        weight={weight ?? inherited.weight}
+        {...props}
+        {...identity}
+        data-icon-fallback={
+          family !== 'Lucide' || resolvedStyle !== 'outlined'
+            ? 'lucide-outlined'
+            : undefined
+        }
+        style={iconStyle}
+      />
+    );
+  }
+  // Without registered artwork, preserve the requested tokens and identify
+  // the actual fallback artwork honestly.
+  const fallback = family !== 'Lucide' || resolvedStyle !== 'outlined';
   return (
-    <svg
-      width="24"
-      height="24"
-      viewBox={artwork.viewBox}
-      fill={centralOutline ? 'none' : 'currentColor'}
+    <Icon
       aria-hidden="true"
-      data-icon-family={family}
-      data-icon-style={resolvedStyle}
+      strokeWidth="var(--icon-stroke-width, 2)"
       {...props}
       {...identity}
-      style={iconStyle}
-    >
-      {controlStroke ? (
-        <path
-          d={controlStroke}
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="var(--icon-stroke-width, 2)"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-      ) : filledPhosphor ? (
-        <g
-          dangerouslySetInnerHTML={{
-            __html: phosphorArtwork[name].filledBody,
-          }}
-        />
-      ) : (
-        <>
-          {family === 'Phosphor' && (
-            <g
-              style={{ display: 'var(--theme-icon-thin-display, none)' }}
-              dangerouslySetInnerHTML={{
-                __html: phosphorArtwork[name].thinBody,
-              }}
-            />
-          )}
-          <g
-            style={{ display: 'var(--icon-light-display, none)' }}
-            dangerouslySetInnerHTML={{ __html: artwork.lightBody }}
-          />
-          <g
-            style={{ display: 'var(--icon-regular-display, inline)' }}
-            dangerouslySetInnerHTML={{ __html: artwork.body }}
-          />
-          <g
-            style={{ display: 'var(--icon-bold-display, none)' }}
-            dangerouslySetInnerHTML={{ __html: artwork.boldBody }}
-          />
-        </>
-      )}
-    </svg>
-  );
-}
-
-/** Filled Lucide adaptations retain transparent details instead of painting white. */
-function FilledLucideIcon({
-  name,
-  ...props
-}: SVGProps<SVGSVGElement> & {
-  name: ThemeIconName;
-}) {
-  const maskId = useId();
-  const artwork = lucideFills[name];
-  return (
-    <svg
-      width="24"
-      height="24"
-      viewBox="0 0 24 24"
-      fill="currentColor"
-      aria-hidden="true"
       data-icon-family="Lucide"
-      data-icon-style="filled"
-      {...props}
-    >
-      {artwork.cutouts && (
-        <defs>
-          <mask
-            id={maskId}
-            x="0"
-            y="0"
-            width="24"
-            height="24"
-            maskUnits="userSpaceOnUse"
-            style={{ maskType: 'luminance' }}
-          >
-            <rect width="24" height="24" fill="white" />
-            <g
-              fill="black"
-              style={{ color: 'black' }}
-              dangerouslySetInnerHTML={{ __html: artwork.cutouts }}
-            />
-          </mask>
-        </defs>
-      )}
-      <g
-        mask={artwork.cutouts ? `url(#${maskId})` : undefined}
-        dangerouslySetInnerHTML={{ __html: artwork.body }}
-      />
-    </svg>
+      data-icon-style="outlined"
+      data-icon-fallback={fallback ? 'lucide-outlined' : undefined}
+      data-icon-requested-family={fallback ? family : undefined}
+      data-icon-requested-style={fallback ? resolvedStyle : undefined}
+      style={iconStyle}
+    />
   );
 }

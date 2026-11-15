@@ -14,6 +14,7 @@ export function Modal({
   wide,
   className,
   hideTitle,
+  hideClose,
   initialFocus,
 }: {
   open: boolean
@@ -24,6 +25,8 @@ export function Modal({
   wide?: boolean
   className?: string
   hideTitle?: boolean
+  /** No close button: for a dialog that Esc and a click outside close, such as the command menu. */
+  hideClose?: boolean
   initialFocus?: React.RefObject<HTMLElement | null>
 }) {
   return (
@@ -31,27 +34,46 @@ export function Modal({
       <Dialog.Portal>
         <Dialog.Backdrop />
         <Dialog.Popup
-          className={cn(wide && "wide-modal", "gap-4", className)}
+          className={cn(
+            "gap-m",
+            // A dialog whose content needs the room (a form with fields side by side, a list of options, a search). From
+            // 640 px it is 560 px wide: the utilities beat the runtime's base-layer width and its 420 px popup cap only at
+            // that breakpoint, so on a phone it keeps the modal's own width.
+            wide &&
+              "sm:w-[min(560px,calc(100vw-var(--space-xl)))] sm:max-w-none",
+            className
+          )}
           initialFocus={initialFocus}
         >
-          <div className="flex items-start justify-between gap-4">
+          <div
+            className={cn(
+              "flex items-start justify-between gap-m",
+              hideTitle && hideClose && "sr-only"
+            )}
+          >
             <Dialog.Title
               className={cn(
-                "font-heading text-h2 display-stretch",
+                "text-body-l font-heavy text-balance",
                 hideTitle && "sr-only"
               )}
             >
               {title}
             </Dialog.Title>
-            <Dialog.Close
-              aria-label="Close"
-              className="-mt-3 -mr-3 grid size-11 shrink-0 place-items-center rounded-md hover:bg-muted"
-            >
-              <X className="size-5" aria-hidden="true" />
-            </Dialog.Close>
+            {hideClose ? null : (
+              <Dialog.Close
+                aria-label="Close"
+                className={cn(
+                  "grid size-11 shrink-0 place-items-center",
+                  "-mt-s -mr-s corner-s",
+                  "hover:bg-muted"
+                )}
+              >
+                <X className="size-5" aria-hidden="true" />
+              </Dialog.Close>
+            )}
           </div>
           {description ? (
-            <Dialog.Description className="text-body text-muted-foreground">
+            <Dialog.Description className="text-body-m text-muted-foreground">
               {description}
             </Dialog.Description>
           ) : (
@@ -92,17 +114,17 @@ export function Confirm({
               <Drawer.Content>
                 <span
                   aria-hidden="true"
-                  className="mx-auto h-1 w-10 rounded-full bg-input"
+                  className="mx-auto h-1 w-10 corner-full bg-input"
                 />
-                <Drawer.Title className="font-heading text-h2 display-stretch">
+                <Drawer.Title className="text-body-l font-heavy text-balance">
                   {title}
                 </Drawer.Title>
                 {description ? (
-                  <Drawer.Description className="text-body text-muted-foreground">
+                  <Drawer.Description className="text-body-m text-muted-foreground">
                     {description}
                   </Drawer.Description>
                 ) : null}
-                <div className={cn("flex flex-col gap-4", className)}>
+                <div className={cn("flex flex-col gap-m", className)}>
                   {children}
                 </div>
               </Drawer.Content>
@@ -116,12 +138,12 @@ export function Confirm({
     <AlertDialog.Root open={open} onOpenChange={onOpenChange}>
       <AlertDialog.Portal>
         <AlertDialog.Backdrop />
-        <AlertDialog.Popup className={cn("gap-4", className)}>
-          <AlertDialog.Title className="font-heading text-h2 display-stretch">
+        <AlertDialog.Popup className={cn("gap-m", className)}>
+          <AlertDialog.Title className="text-body-l font-heavy text-balance">
             {title}
           </AlertDialog.Title>
           {description ? (
-            <AlertDialog.Description className="text-body text-muted-foreground">
+            <AlertDialog.Description className="text-body-m text-muted-foreground">
               {description}
             </AlertDialog.Description>
           ) : null}
@@ -161,8 +183,11 @@ export function SideSheet({
       <Drawer.Portal>
         <Drawer.Backdrop />
         <Drawer.Viewport className="side-drawer-viewport">
-          <Drawer.Popup className="side-drawer !gap-0 !p-0" aria-label={label}>
-            <Drawer.Content className="min-h-full !gap-0">
+          <Drawer.Popup
+            className="side-drawer !gap-zero !p-zero"
+            aria-label={label}
+          >
+            <Drawer.Content className="min-h-full !gap-zero">
               <Drawer.Title className={title ? "sr-only" : "sr-only"}>
                 {title ?? label}
               </Drawer.Title>

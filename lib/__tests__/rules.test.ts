@@ -15,8 +15,8 @@ import { seedState } from "./fixture"
 
 describe("time copy", () => {
   it("formats times with am and pm", () => {
-    expect(fmtTime(atTime(fromKey("2026-10-27"), "06:00"))).toBe("6:00 am")
-    expect(fmtTime(atTime(fromKey("2026-10-27"), "12:00"))).toBe("12:00 pm")
+    expect(fmtTime(atTime(fromKey("2026-10-27"), "06:00"))).toBe("6 am")
+    expect(fmtTime(atTime(fromKey("2026-10-27"), "12:00"))).toBe("12 pm")
   })
   it("endSentence never doubles the full stop", () => {
     expect(endSentence("Free to cancel until 4:00 am")).toBe(

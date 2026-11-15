@@ -189,7 +189,11 @@ function number(value: string, percentScale = 1, hue = false): number | null {
   return unit === '%' ? (n * percentScale) / 100 : !unit ? n : null;
 }
 
-/** Absolute hex, RGB, HSL, OKLCH and Display P3 colors; no browser/DOM dependency. */
+/**
+ * Absolute hex, RGB, HSL, OKLCH and `color()` colors in sRGB, linear sRGB and
+ * Display P3; no browser/DOM dependency. Browsers serialize a computed
+ * `color-mix(in srgb, …)` as `color(srgb r g b / a)`.
+ */
 export function parseColor(value: string): Color | null {
   const text = value.trim().toLowerCase();
   if (text === 'transparent') return { l: 0, c: 0, h: 0, a: 0 };
@@ -203,17 +207,24 @@ export function parseColor(value: string): Color | null {
     const bytes = hex.match(/../g)!.map((c) => parseInt(c, 16) / 255);
     return rgbToColor(bytes.slice(0, 3) as Triple, bytes[3] ?? 1);
   }
-  const match = text.match(/^(oklch|rgb|rgba|hsl|hsla|color)\(([^()]*)\)$/);
+  const match = text.match(
+    /^(oklch|oklab|rgb|rgba|hsl|hsla|color)\(([^()]*)\)$/,
+  );
   if (!match) return null;
   const kind = match[1];
   let body = match[2].trim();
-  const p3 = kind === 'color';
-  if (p3) {
-    if (!body.startsWith('display-p3 ')) return null;
-    body = body.slice(11).trim();
+  const space =
+    kind === 'color'
+      ? body.match(/^(srgb-linear|srgb|display-p3)\s/)?.[1]
+      : undefined;
+  if (kind === 'color') {
+    if (!space) return null;
+    body = body.slice(space.length).trim();
   }
+  const p3 = kind === 'color';
   const legacy = body.includes(',');
-  if (legacy && (p3 || kind === 'oklch' || body.includes('/'))) return null;
+  if (legacy && (p3 || kind.startsWith('ok') || body.includes('/')))
+    return null;
   const parts = legacy
     ? body.split(',').map((x) => x.trim())
     : body.split(/\s*\/\s*/);
@@ -234,6 +245,21 @@ export function parseColor(value: string): Color | null {
   const alphaText = legacy ? parts[3] : parts[1];
   const alpha = alphaText === undefined ? 1 : number(alphaText);
   if (alpha === null) return null;
+  // Tailwind 4's opacity utilities mix in OKLab, which browsers report as
+  // oklab(L a b / alpha).
+  if (kind === 'oklab') {
+    const l = number(channels[0]);
+    const a = number(channels[1], 0.4);
+    const b = number(channels[2], 0.4);
+    if (l === null || a === null || b === null) return null;
+    const c = Math.hypot(a, b);
+    return {
+      l: clamp(l),
+      c: c < 1e-7 ? 0 : c,
+      h: c < 1e-7 ? 0 : wrapHue((Math.atan2(b, a) * 180) / Math.PI),
+      a: clamp(alpha),
+    };
+  }
   if (kind === 'oklch') {
     const l = number(channels[0]);
     const c = number(channels[1], 0.4);
@@ -263,11 +289,14 @@ export function parseColor(value: string): Color | null {
     };
     return rgbToColor([f(0), f(8), f(4)], alpha);
   }
+  // `color()` channels run 0–1 (or 0–100%); rgb() channels run 0–255.
   const values = channels.map((c) => number(c, p3 ? 1 : 255));
   if (values.some((n) => n === null)) return null;
   return rgbToColor(
-    values.map((n) => (p3 ? n! : clamp(n! / 255))) as Triple,
+    values.map((n) =>
+      !p3 ? clamp(n! / 255) : space === 'srgb-linear' ? encode(n!) : n!,
+    ) as Triple,
     alpha,
-    p3 ? 'p3' : 'srgb',
+    space === 'display-p3' ? 'p3' : 'srgb',
   );
 }

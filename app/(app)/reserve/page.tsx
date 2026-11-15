@@ -1,7 +1,6 @@
-import type { Metadata } from "next"
-import ReserveHub from "@/components/reserve/hub-page"
+import { redirect } from "next/navigation"
 
-export const metadata: Metadata = { title: "Reserve" }
+// The Reserve hub is gone: courts, lanes and kids club are tabs of Book. Old links land on the first tab.
 export default function Page() {
-  return <ReserveHub />
+  redirect("/reserve/courts")
 }
