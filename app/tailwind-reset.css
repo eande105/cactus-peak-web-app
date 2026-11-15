@@ -1,0 +1,13 @@
+/* Clears Tailwind's default scales, so a palette class (bg-zinc-100), a default size (text-sm), a default radius
+   (rounded-lg) or a default shadow can't appear by accident. Imported after Tailwind and before Graphical's
+   tailwind-theme.css, which then adds Graphical's classes for the same namespaces. --spacing keeps Tailwind's
+   0.25rem: widths, heights and insets use it, while padding, margins and gaps use Graphical's steps (p-m, gap-l). */
+@theme {
+  --color-*: initial;
+  --font-*: initial;
+  --font-weight-*: initial;
+  --text-*: initial;
+  --radius-*: initial;
+  --shadow-*: initial;
+  --ease-*: initial;
+}

@@ -7,7 +7,7 @@ export default function Page() {
     <EmptyState
       title="You don't have access to this page."
       body="Your role on the plan can't open it."
-      action={<Button render={<Link href="/today" />}>Back to Today</Button>}
+      action={<Button render={<Link href="/today" />}>Back to Home</Button>}
     />
   )
 }

@@ -13,7 +13,6 @@ import {
   ToggleGroup,
 } from "@/components/graphical"
 import {
-  ArrowLeft,
   CheckCircle2,
   type IconComponent,
   Info,
@@ -26,93 +25,6 @@ import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { CATEGORIES, INSTRUCTOR_BY_ID } from "@/lib/data/catalog"
 import { cn } from "@/lib/utils"
-
-export function PageHeader({
-  eyebrow,
-  title,
-  description,
-  actions,
-  backHref,
-  backLabel,
-  className,
-  primaryFull,
-}: {
-  primaryFull?: boolean
-  eyebrow?: ReactNode
-  title: string
-  description?: string
-  actions?: ReactNode
-  backHref?: string
-  backLabel?: string
-  className?: string
-}) {
-  return (
-    <header
-      className={cn(
-        "flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between",
-        className
-      )}
-    >
-      <div className="flex min-w-0 flex-col gap-2">
-        {backHref ? (
-          <Link
-            href={backHref}
-            className="text-link inline-flex min-h-8 w-fit items-center gap-1 text-caption hover:underline"
-          >
-            <ArrowLeft className="size-4" aria-hidden="true" />
-            {backLabel ?? "Back"}
-          </Link>
-        ) : null}
-        {eyebrow ? (
-          <p className="eyebrow text-muted-foreground">{eyebrow}</p>
-        ) : null}
-        <h1
-          id="page-title"
-          tabIndex={-1}
-          className="font-heading text-h2 display-stretch outline-none md:text-h1"
-        >
-          {title}
-        </h1>
-        {description ? (
-          <p className="max-w-[70ch] text-body text-muted-foreground">
-            {description}
-          </p>
-        ) : null}
-      </div>
-      {actions ? (
-        <div
-          className={cn(
-            "flex flex-wrap items-center gap-2",
-            primaryFull && "max-sm:[&>*:first-child]:w-full"
-          )}
-        >
-          {actions}
-        </div>
-      ) : null}
-    </header>
-  )
-}
-
-export function SectionTitle({
-  children,
-  action,
-  id,
-  className,
-}: {
-  children: ReactNode
-  action?: ReactNode
-  id?: string
-  className?: string
-}) {
-  return (
-    <div className={cn("flex items-end justify-between gap-4", className)}>
-      <h2 id={id} className="font-heading text-h3 display-stretch">
-        {children}
-      </h2>
-      {action}
-    </div>
-  )
-}
 
 export function EmptyState({
   icon: Icon,
@@ -137,25 +49,29 @@ export function EmptyState({
   return (
     <div
       className={cn(
-        "flex max-w-[560px] flex-col items-start gap-3 py-6",
+        "gap-s px-m py-xl mx-auto flex max-w-[44ch] flex-col items-center text-center",
         className
       )}
     >
       {object ? (
-        <GymObject id={object} cut className="size-24" />
+        <GymObject id={object} cut className="size-16" />
       ) : Icon ? (
         <Icon
           className={cn(
-            "size-7",
+            "size-5",
             tone === "error" ? "text-warning" : "text-muted-foreground"
           )}
           aria-hidden="true"
         />
       ) : null}
-      <h2 className="font-heading text-h3 display-stretch">{title}</h2>
-      {body ? <p className="text-body text-muted-foreground">{body}</p> : null}
+      <h2 className="text-body-m font-heavy text-balance">{title}</h2>
+      {body ? (
+        <p className="text-body-m text-pretty text-muted-foreground sm:text-body-s">
+          {body}
+        </p>
+      ) : null}
       {action || secondary ? (
-        <div className="mt-1 flex flex-wrap items-center gap-3">
+        <div className="gap-xs flex flex-wrap items-center justify-center">
           {action}
           {secondary}
         </div>
@@ -174,25 +90,34 @@ export function ErrorState({
   return (
     <div
       role="alert"
-      className="flex max-w-[560px] flex-col items-start gap-3 py-4"
+      className="flex max-w-[560px] flex-col items-start gap-s py-m"
     >
       <TriangleAlert className="size-6 text-warning" aria-hidden="true" />
-      <h2 className="font-heading text-h3">We couldn&apos;t load {what}.</h2>
+      <h2 className="font-display-wide font-display-wide text-body-xl font-heavy">
+        We couldn&apos;t load {what}.
+      </h2>
       <p className="text-muted-foreground">
         Your bookings are safe. Try again.
       </p>
-      <div className="flex flex-wrap gap-2">
+      <div className="flex flex-wrap gap-xs">
         {onRetry ? <Button onClick={onRetry}>Try again</Button> : null}
         <Button variant="outline" render={<Link href="/inbox" />}>
           Message the front desk
         </Button>
       </div>
-      <p className="text-detail text-muted-foreground">Error code: NETWORK</p>
+      <p className="text-body-xs text-muted-foreground">Error code: NETWORK</p>
     </div>
   )
 }
 
-type Tone = "neutral" | "success" | "warning" | "danger" | "accent" | "outline"
+type Tone =
+  | "neutral"
+  | "success"
+  | "info"
+  | "warning"
+  | "danger"
+  | "accent"
+  | "outline"
 export function StatusPill({
   tone = "neutral",
   icon: Icon,
@@ -205,7 +130,7 @@ export function StatusPill({
   className?: string
 }) {
   return (
-    <Badge tone={tone} className={cn("rounded-full", className)}>
+    <Badge tone={tone} className={cn("corner-full", className)}>
       {Icon ? <Icon aria-hidden="true" /> : null}
       {children}
     </Badge>
@@ -245,7 +170,9 @@ export function Banner({
         ? "bg-warning-subtle"
         : tone === "success"
           ? "bg-success-subtle"
-          : "bg-muted"
+          : tone === "info"
+            ? "bg-color-3-transparent"
+            : "bg-muted"
   const ic =
     tone === "danger"
       ? "text-destructive"
@@ -253,63 +180,29 @@ export function Banner({
         ? "text-warning"
         : tone === "success"
           ? "text-success"
-          : "text-muted-foreground"
+          : tone === "info"
+            ? "text-color-3"
+            : "text-muted-foreground"
   return (
     <div
       role={role ?? (tone === "danger" ? "alert" : "status")}
       className={cn(
-        "flex flex-wrap items-center gap-x-4 gap-y-1 rounded-md px-3 py-2 md:px-4 md:py-3",
+        "flex flex-wrap items-center gap-x-m gap-y-xxs",
+        "corner-s px-s py-xs",
+        "md:px-m md:py-s",
         bg,
         className
       )}
     >
       <Icon className={cn("size-5 shrink-0", ic)} aria-hidden="true" />
-      <div className="min-w-0 flex-1 basis-48 text-caption max-md:[&>:not(:first-child)]:hidden">
-        {title ? <p className="text-label">{title}</p> : null}
+      <div className="min-w-0 flex-1 basis-48 text-body-s max-md:[&>:not(:first-child)]:hidden">
+        {title ? <p className="text-body-s font-heavy">{title}</p> : null}
         {children ? <p>{children}</p> : null}
       </div>
       {actions ? (
-        <div className="flex flex-wrap items-center gap-2">{actions}</div>
+        <div className="flex flex-wrap items-center gap-xs">{actions}</div>
       ) : null}
     </div>
-  )
-}
-
-export function StatRow({
-  cells,
-  className,
-}: {
-  cells: { label: string; value: ReactNode; hint?: ReactNode; big?: boolean }[]
-  className?: string
-}) {
-  return (
-    <dl
-      className={cn(
-        "grid grid-cols-2 lg:grid-cols-[repeat(var(--cols),minmax(0,1fr))] [&>div]:border-border lg:[&>div+div]:border-l max-lg:[&>div:nth-child(even)]:border-l max-lg:[&>div:nth-child(n+3)]:border-t",
-        className
-      )}
-      style={{ "--cols": cells.length } as React.CSSProperties}
-    >
-      {cells.map((c) => (
-        <div
-          key={c.label}
-          className="flex min-w-0 flex-col gap-1 px-4 py-3 first:pl-0 max-lg:odd:pl-0 lg:first:pl-0"
-        >
-          <dt className="eyebrow text-muted-foreground">{c.label}</dt>
-          <dd
-            className={cn(
-              "num",
-              c.big ? "text-h2 leading-tight" : "text-body-strong"
-            )}
-          >
-            {c.value}
-          </dd>
-          {c.hint ? (
-            <dd className="text-detail text-muted-foreground">{c.hint}</dd>
-          ) : null}
-        </div>
-      ))}
-    </dl>
   )
 }
 
@@ -375,7 +268,8 @@ export function SelectBox<V extends string>({
   return (
     <div
       className={cn(
-        "min-w-0 max-md:[&_.themed-select]:!min-h-11",
+        // The Graphical select renders its label and trigger as siblings; stack them with the same gap as `Field`.
+        "gap-xs flex min-w-0 flex-col max-md:[&_.themed-select]:!min-h-11",
         hideLabel && "[&_.field-label]:sr-only",
         className
       )}
@@ -467,7 +361,7 @@ export function FormField({
   // because Field.Label links only to a Field.Control, and callers pass their own controls with this id.
   return (
     <div className={cn("flex flex-col gap-(--space-xs)", className)}>
-      <label htmlFor={id} className="text-label text-foreground">
+      <label htmlFor={id} className="text-body-s font-heavy text-foreground">
         {label}
       </label>
       {children({
@@ -476,12 +370,16 @@ export function FormField({
         "aria-invalid": error ? true : undefined,
       })}
       {help ? (
-        <p id={`${id}-h`} className="text-caption text-muted-foreground">
+        <p id={`${id}-h`} className="text-body-s text-muted-foreground">
           {help}
         </p>
       ) : null}
       {error ? (
-        <p id={`${id}-e`} role="alert" className="text-detail text-destructive">
+        <p
+          id={`${id}-e`}
+          role="alert"
+          className="text-body-xs text-destructive"
+        >
           {error}
         </p>
       ) : null}
@@ -510,17 +408,19 @@ export function PersonAvatar({
   return (
     <Avatar.Root
       aria-hidden="true"
-      // The category tint tells family members apart, so it replaces the theme fill. Shape and type come from Avatar.
+      // The solid category colour tells family members apart and stands off every surface (4.4:1 or more against the
+      // Sand sidebar); the initials take the category's own text colour (`on-cat`, 4.9:1 or more in both modes).
+      // Shape and type come from Avatar.
       className={cn(
         `cat-${CAT_IDS[Math.abs(hue) % CAT_IDS.length]}`,
-        "bg-cat-tint",
+        "bg-cat",
         className
       )}
       // A set size also scales the initials. Without one, the theme sets both.
       style={size ? { width: size, height: size } : undefined}
     >
       <Avatar.Fallback
-        className="text-cat-text"
+        className="font-heavy text-on-cat"
         style={size ? { fontSize: Math.max(11, size * 0.38) } : undefined}
       >
         {initials}
@@ -543,12 +443,12 @@ export function InstructorChip({
   return (
     <span
       className={cn(
-        "inline-flex min-w-0 items-center gap-2",
+        "inline-flex min-w-0 items-center gap-xs",
         stacked && "flex-col items-start"
       )}
     >
       <CoachArt name={i.name} roles={[i.role]} size={px} />
-      <span className="min-w-0 truncate text-caption">{i.name}</span>
+      <span className="min-w-0 truncate text-body-s">{i.name}</span>
     </span>
   )
 }
@@ -572,19 +472,19 @@ export function LateCancelMeter({
       aria-valuemax={max}
       aria-valuenow={count}
       aria-valuetext={`${count} of ${max}`}
-      className="inline-flex gap-1"
+      className="inline-flex gap-xxs"
     >
       {Array.from({ length: max }).map((_, i) => (
         <span
           // biome-ignore lint/suspicious/noArrayIndexKey: fixed placeholders with no data identity that never reorder
           key={i}
           className={cn(
-            "rounded-xs h-3 w-6",
+            "h-3 w-6 corner-xs",
             i < count
               ? count >= max
                 ? "bg-destructive"
                 : "bg-warning"
-              : "edge ring-input"
+              : "hairline ring-input"
           )}
         />
       ))}
@@ -600,8 +500,8 @@ export function LoadingBlock({
   rows?: number
 }) {
   return (
-    <div className="flex flex-col gap-3" aria-busy="true">
-      <p role="status" className="text-caption text-muted-foreground">
+    <div className="flex flex-col gap-s" aria-busy="true">
+      <p role="status" className="text-body-s text-muted-foreground">
         {text}
       </p>
       {Array.from({ length: rows }).map((_, i) => (
@@ -614,7 +514,13 @@ export function LoadingBlock({
 
 export function Kbd({ children }: { children: ReactNode }) {
   return (
-    <kbd className="rounded-xs bg-muted px-1.5 py-0.5 font-sans text-detail font-semibold text-muted-foreground">
+    <kbd
+      className={cn(
+        "corner-xs px-xs py-xxs",
+        "font-body text-body-xs font-heavy",
+        "bg-muted text-muted-foreground"
+      )}
+    >
       {children}
     </kbd>
   )
@@ -653,7 +559,7 @@ export function RadioList<T extends string>({
           <RadioGroup.Label>
             {o.label}
             {o.help ? (
-              <span className="block text-caption font-normal text-muted-foreground">
+              <span className="block text-body-s font-regular text-muted-foreground">
                 {o.help}
               </span>
             ) : null}

@@ -7,7 +7,7 @@ export function FlowShell({ children }: { children: ReactNode }) {
     <HouseholdGate skeleton={<FlowSkeleton />}>
       <main
         id="main"
-        className="mx-auto min-h-dvh w-full max-w-[640px] px-4 pt-8 pb-32"
+        className="mx-auto min-h-dvh w-full max-w-[640px] px-m pt-xl pb-xxl"
       >
         {children}
         <div

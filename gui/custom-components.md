@@ -16,11 +16,11 @@ Use the existing application theme scope. Within it, custom CSS can consume name
 
 ```css
 .report-heading {
-  font-family: var(--font-brand);
-  font-weight: var(--weight-brand-heavy);
-  font-size: var(--size-xl);
-  line-height: var(--line-xl);
-  letter-spacing: var(--letter-spacing-xl);
+  font-family: var(--font-display);
+  font-weight: var(--weight-display-heavy);
+  font-size: var(--display-size-xl);
+  line-height: var(--display-line-xl);
+  letter-spacing: var(--display-letter-spacing-xl);
   color: var(--cte-text);
   margin-block: var(--space-zero) var(--space-l);
 }
@@ -34,7 +34,9 @@ Use the existing application theme scope. Within it, custom CSS can consume name
 
 Verify these names and their intended role in the receiving theme. The grid ratio is structure; the gap and typography are theme-controlled. A known snapshot value such as `20px` is still a hardcoded override when it substitutes for a live spacing token.
 
-Retain existing CSS modules, utility classes, or CSS-in-JS conventions. A utility or app alias is valid when it resolves to the active Graphical theme. Trace that mapping before replacing it. Do not add a parallel utility palette or new aliases that conceal arbitrary values. Use a direct token reference where an alias adds no useful application meaning.
+Retain existing CSS modules, utility classes, or CSS-in-JS conventions. A utility or app alias is valid when it resolves to the active Graphical theme. Trace that mapping before replacing it. Do not add a parallel utility palette or new aliases that conceal arbitrary values. Use a direct token reference where an alias adds no useful application meaning. Keep the path short: a component reads a Graphical token or an app alias of one, and the token reads the theme’s value.
+
+With utility classes, keep short class lists inline. Group long ones, one string each, in the app’s class helper: layout, then the box (spacing, corners and strokes), type, appearance (colors and effects), then states, conditional classes and the caller’s `className`. With a merging helper such as `cn`, keep classes that override each other in the same group and order. Prefer small maps of complete class names over names built from strings such as `` `text-${size}` ``, so each choice and its effect stay together. Keep shared recipes near the components that use them, and give a complicated state selector a readable CSS block rather than a long chain of variants. Extract styles when reuse or complexity justifies it. Format with the project’s formatter and configuration.
 
 For component parts, map the effective token assignments from the theme reference to the app’s shared styles, preserving state, mode, and theme-specific treatments. For new markup, use existing foundations without inventing catalog identifiers. Avoid copying only a resolved background while dropping the associated foreground, edge placement, elevation, or focus treatment.
 

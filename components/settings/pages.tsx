@@ -4,25 +4,22 @@ import { useTheme } from "next-themes"
 import { useState } from "react"
 import { useApp } from "@/components/app/use-app"
 import { Switch, Toggle } from "@/components/graphical"
-import {
-  Check,
-  Copy,
-  Eye,
-  KeyRound,
-  Laptop,
-  Smartphone,
-} from "@/components/icons"
-import { CategoryBadge } from "@/components/kit/category"
+import { Copy, Eye } from "@/components/icons"
+import { CategoryIcon } from "@/components/kit/icons"
 import { Confirm } from "@/components/kit/overlays"
 import {
   Banner,
-  CheckRow,
-  FormField,
-  RadioList,
+  PersonAvatar,
   Segmented,
   SelectBox,
-  SwitchRow,
+  StatusPill,
 } from "@/components/kit/ui"
+import {
+  SettingBlock,
+  SettingRow,
+  SettingSwitch,
+  SettingsSection,
+} from "@/components/settings/parts"
 import { Saved } from "@/components/settings/settings-shell"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -37,7 +34,6 @@ import {
   updateMember,
 } from "@/lib/actions"
 import { CATEGORIES, CLUBS } from "@/lib/data/catalog"
-import { fmtMoney } from "@/lib/time"
 import { toast } from "@/lib/toast"
 import type { CategoryId } from "@/lib/types"
 
@@ -63,24 +59,30 @@ export function ProfileSettings() {
   const [em, setEm] = useState(prefs.emergency)
   const [err, setErr] = useState("")
   return (
-    <div className="flex flex-col gap-5">
-      <div className="flex items-center gap-4">
-        <span className="grid size-16 place-items-center rounded-full bg-muted font-heading text-h3">
-          {me.firstName[0]}
-          {me.lastName[0]}
-        </span>
-        <div>
+    <>
+      <SettingsSection id="set-photo" title="Photo">
+        <SettingRow
+          lead={
+            <PersonAvatar
+              name={`${me.firstName} ${me.lastName}`}
+              size={48}
+              className="shrink-0"
+            />
+          }
+          label="Pass photo"
+          line="Needed for your pass. A clear face photo, at least 400 px wide."
+        >
           <Button variant="outline" size="sm" disabled>
             Upload a photo · Coming soon
           </Button>
-          <p className="mt-1 text-detail text-muted-foreground">
-            Needed for your pass. Use a photo of your face, at least 400 px
-            wide.
-          </p>
-        </div>
-      </div>
-      <div className="grid gap-4 sm:grid-cols-2">
-        <FormField label="First name">
+        </SettingRow>
+      </SettingsSection>
+      <SettingsSection
+        id="set-name"
+        title="Name"
+        action={<Saved show={["fn", "ln", "pn"].includes(k)} />}
+      >
+        <SettingRow label="First name" wide>
           {(p) => (
             <Input
               {...p}
@@ -93,8 +95,8 @@ export function ProfileSettings() {
               }}
             />
           )}
-        </FormField>
-        <FormField label="Last name">
+        </SettingRow>
+        <SettingRow label="Last name" wide>
           {(p) => (
             <Input
               {...p}
@@ -107,78 +109,99 @@ export function ProfileSettings() {
               }}
             />
           )}
-        </FormField>
-      </div>
-      <FormField label="Preferred name">
-        {(p) => (
-          <Input
-            {...p}
-            value={pref}
-            onChange={(e) => setPref(e.target.value)}
-            onBlur={() => {
-              setPrefs(me.id, { preferredName: pref })
-              mark("pn")
-            }}
-          />
-        )}
-      </FormField>
-      <FormField label="Date of birth" help="Read-only after it is set.">
-        {(p) => <Input {...p} readOnly value={me.dob} />}
-      </FormField>
-      <FormField label="Mobile number" error={err}>
-        {(p) => (
-          <Input
-            {...p}
-            type="tel"
-            autoComplete="tel"
-            value={phone}
-            onChange={(e) => setPhone(e.target.value)}
-            onBlur={() => {
-              if (phone.replace(/\D/g, "").length < 10)
-                return setErr("Check the mobile number. Use 10 digits.")
-              setErr("")
-              setPrefs(me.id, { phone })
-              mark("ph")
-            }}
-          />
-        )}
-      </FormField>
-      <FormField label="Email" help="We email a link to verify a change.">
-        {(p) => (
-          <Input
-            {...p}
-            type="email"
-            autoComplete="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            onBlur={() => {
-              updateMember(me.id, { email })
-              mark("em")
-            }}
-          />
-        )}
-      </FormField>
-      <FormField label="Emergency contact">
-        {(p) => (
-          <Input
-            {...p}
-            value={em}
-            onChange={(e) => setEm(e.target.value)}
-            placeholder="Name, phone"
-            onBlur={() => {
-              setPrefs(me.id, { emergency: em })
-              mark("ec")
-            }}
-          />
-        )}
-      </FormField>
-      <Saved show={!!k} />
-    </div>
+        </SettingRow>
+        <SettingRow label="Preferred name" wide>
+          {(p) => (
+            <Input
+              {...p}
+              value={pref}
+              onChange={(e) => setPref(e.target.value)}
+              onBlur={() => {
+                setPrefs(me.id, { preferredName: pref })
+                mark("pn")
+              }}
+            />
+          )}
+        </SettingRow>
+        <SettingRow
+          label="Date of birth"
+          line="Read-only after it is set."
+          wide
+        >
+          {(p) => <Input {...p} readOnly value={me.dob} />}
+        </SettingRow>
+      </SettingsSection>
+      <SettingsSection
+        id="set-contact"
+        title="Contact"
+        action={<Saved show={["ph", "em", "ec"].includes(k)} />}
+      >
+        <SettingRow label="Mobile number" error={err} wide>
+          {(p) => (
+            <Input
+              {...p}
+              type="tel"
+              autoComplete="tel"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              onBlur={() => {
+                if (phone.replace(/\D/g, "").length < 10)
+                  return setErr("Check the mobile number. Use 10 digits.")
+                setErr("")
+                setPrefs(me.id, { phone })
+                mark("ph")
+              }}
+            />
+          )}
+        </SettingRow>
+        <SettingRow
+          label="Email"
+          line="We email a link to verify a change."
+          wide
+        >
+          {(p) => (
+            <Input
+              {...p}
+              type="email"
+              autoComplete="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              onBlur={() => {
+                updateMember(me.id, { email })
+                mark("em")
+              }}
+            />
+          )}
+        </SettingRow>
+        <SettingRow label="Emergency contact" wide>
+          {(p) => (
+            <Input
+              {...p}
+              value={em}
+              onChange={(e) => setEm(e.target.value)}
+              placeholder="Name, phone"
+              onBlur={() => {
+                setPrefs(me.id, { emergency: em })
+                mark("ec")
+              }}
+            />
+          )}
+        </SettingRow>
+      </SettingsSection>
+    </>
   )
 }
 
+const GOALS = [
+  { value: "build-strength", label: "Build strength" },
+  { value: "move-more", label: "Move more" },
+  { value: "event", label: "Train for an event" },
+  { value: "stay-consistent", label: "Stay consistent" },
+  { value: "recover", label: "Recover well" },
+] as const
+
 export function PreferencesSettings() {
-  const { s, me, hh, prefs } = useApp()
+  const { me, hh, prefs } = useApp()
   const { k, mark } = useSaved()
   const [err, setErr] = useState("")
   const toggle = (id: CategoryId) => {
@@ -190,112 +213,126 @@ export function PreferencesSettings() {
     mark("i")
   }
   return (
-    <div className="flex flex-col gap-8">
-      <div className="flex flex-col gap-2">
-        <SelectBox
+    <>
+      <SettingsSection
+        id="set-club"
+        title="Home club"
+        action={<Saved show={k === "hc"} />}
+      >
+        <SettingRow
           label="Home club"
-          value={me.homeClub}
-          onChange={(v) => {
-            const r = changeHomeClub(me.id, v)
-            if (!r.ok) setErr(r.message)
-            else {
-              setErr("")
-              mark("hc")
-              toast({ title: "Home club updated" })
-            }
-          }}
-          options={CLUBS.map((c) => ({ value: c.slug, label: c.name }))}
-          className="max-w-xs"
-        />
-        <p className="text-detail text-muted-foreground">
-          We show this club first.{" "}
-          {hh.plan === "trailhead"
-            ? "Trailhead members can change home club once per billing cycle."
-            : "Ridge and Summit members can change it any time."}
-        </p>
-        {err ? (
-          <p
-            role="alert"
-            className="text-caption font-semibold text-destructive"
-          >
-            {err}
-          </p>
-        ) : null}
-      </div>
-      <fieldset className="flex flex-col gap-3">
-        <legend className="text-label">Interests</legend>
-        <ul className="flex flex-wrap gap-2">
-          {CATEGORIES.map((c) => (
-            <li key={c.id}>
-              <Toggle
-                pressed={prefs.interests.includes(c.id as CategoryId)}
-                onPressedChange={() => toggle(c.id as CategoryId)}
-                className="max-md:min-h-11"
-              >
-                <CategoryBadge id={c.id as CategoryId} size="md" />
-              </Toggle>
-            </li>
-          ))}
-        </ul>
-        <SwitchRow
+          line={
+            hh.plan === "trailhead"
+              ? "Trailhead members change it once per billing cycle."
+              : "Ridge and Summit members change it any time."
+          }
+          error={err}
+          wide
+        >
+          <SelectBox
+            label="Home club"
+            hideLabel
+            value={me.homeClub}
+            onChange={(v) => {
+              const r = changeHomeClub(me.id, v)
+              if (!r.ok) setErr(r.message)
+              else {
+                setErr("")
+                mark("hc")
+                toast({ title: "Home club updated" })
+              }
+            }}
+            options={CLUBS.map((c) => ({ value: c.slug, label: c.name }))}
+          />
+        </SettingRow>
+      </SettingsSection>
+      <SettingsSection
+        id="set-interests"
+        title="Interests"
+        action={<Saved show={k === "i"} />}
+      >
+        <SettingBlock>
+          <ul className="gap-xs flex flex-wrap" aria-label="Interests">
+            {CATEGORIES.map((c) => (
+              <li key={c.id}>
+                <Toggle
+                  pressed={prefs.interests.includes(c.id as CategoryId)}
+                  onPressedChange={() => toggle(c.id as CategoryId)}
+                  className="max-md:min-h-11"
+                >
+                  {/* Plain icon and name: a tinted badge has no contrast on the pressed (Night) fill. */}
+                  <CategoryIcon
+                    id={c.id as CategoryId}
+                    className="size-4 shrink-0"
+                  />
+                  {c.name}
+                </Toggle>
+              </li>
+            ))}
+          </ul>
+        </SettingBlock>
+      </SettingsSection>
+      <SettingsSection
+        id="set-goal"
+        title="Goal"
+        action={<Saved show={k === "g" || k === "w"} />}
+      >
+        <SettingRow label="Goal" wide>
+          <SelectBox
+            label="Goal"
+            hideLabel
+            value={prefs.goal}
+            onChange={(v) => {
+              setPrefs(me.id, { goal: v })
+              mark("g")
+            }}
+            options={[...GOALS]}
+          />
+        </SettingRow>
+        <SettingRow label="Visits per week">
+          <Segmented
+            label="Visits per week"
+            value={prefs.weeklyTarget}
+            onChange={(v) => {
+              setPrefs(me.id, { weeklyTarget: v })
+              mark("w")
+            }}
+            options={[1, 2, 3, 4, 5, 6, 7].map((n) => ({
+              value: n,
+              label: String(n),
+            }))}
+          />
+        </SettingRow>
+      </SettingsSection>
+      <SettingsSection
+        id="set-filters"
+        title="Schedule"
+        action={<Saved show={k === "ft"} />}
+      >
+        <SettingSwitch
+          label="Show first-timer classes first"
           checked={prefs.firstTimersFirst}
           onChange={(c) => {
             setPrefs(me.id, { firstTimersFirst: c })
             mark("ft")
           }}
-        >
-          Show first-timer classes first
-        </SwitchRow>
-      </fieldset>
-      <RadioList
-        label="Goal"
-        value={prefs.goal}
-        onChange={(v) => {
-          setPrefs(me.id, { goal: v })
-          mark("g")
-        }}
-        options={[
-          { value: "build-strength", label: "Build strength" },
-          { value: "move-more", label: "Move more" },
-          { value: "event", label: "Train for an event" },
-          { value: "stay-consistent", label: "Stay consistent" },
-          { value: "recover", label: "Recover well" },
-        ]}
-      />
-      <div className="flex flex-col gap-2">
-        <p className="text-label">Visits per week</p>
-        <Segmented
-          label="Visits per week"
-          value={prefs.weeklyTarget}
-          onChange={(v) => {
-            setPrefs(me.id, { weeklyTarget: v })
-            mark("w")
-          }}
-          options={[1, 2, 3, 4, 5, 6, 7].map((n) => ({
-            value: n,
-            label: String(n),
-          }))}
         />
-        <p className="text-detail text-muted-foreground">
-          Rest days count too.
-        </p>
-      </div>
-      <div className="flex items-center gap-3">
-        <Button
-          variant="outline"
-          size="sm"
-          disabled={!prefs.savedFilters}
-          onClick={() => {
-            setPrefs(me.id, { savedFilters: undefined })
-            toast({ title: "Saved filters cleared" })
-          }}
-        >
-          Clear saved schedule filters
-        </Button>
-      </div>
-      <Saved show={!!k} />
-      <span className="sr-only">{s.seq}</span>
-    </div>
+        <SettingRow label="Saved schedule filters">
+          {prefs.savedFilters ? null : <StatusPill>None</StatusPill>}
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={!prefs.savedFilters}
+            onClick={() => {
+              setPrefs(me.id, { savedFilters: undefined })
+              toast({ title: "Saved filters cleared" })
+            }}
+          >
+            Clear
+          </Button>
+        </SettingRow>
+      </SettingsSection>
+    </>
   )
 }
 
@@ -308,6 +345,9 @@ const TOPICS = [
   ["billing", "Billing"],
   ["marketing", "Marketing"],
 ] as const
+const TH =
+  "h-9 text-body-xs font-medium whitespace-nowrap text-muted-foreground"
+
 export function NotificationSettings() {
   const { me, prefs } = useApp()
   const { k, mark } = useSaved()
@@ -327,28 +367,38 @@ export function NotificationSettings() {
     mark("n")
   }
   return (
-    <div className="flex flex-col gap-6">
-      <table className="w-full text-left">
-        <caption className="sr-only">Notification topics and channels</caption>
-        <thead>
-          <tr className="text-caption text-muted-foreground">
-            <th scope="col" className="py-2 font-normal">
-              Topic
-            </th>
-            {["Push", "Email", "Text"].map((c) => (
-              <th key={c} scope="col" className="w-20 text-center font-normal">
-                {c}
+    <>
+      <SettingsSection
+        id="set-topics"
+        title="Topics"
+        action={<Saved show={k === "n" || k === "r"} />}
+      >
+        <table className="w-full text-left text-body-m sm:text-body-s">
+          <caption className="sr-only">
+            Notification topics and channels
+          </caption>
+          <thead>
+            <tr className="rule-b">
+              <th scope="col" className={TH}>
+                Topic
               </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {TOPICS.map(([t, label]) => (
-            <tr key={t} className="rule-b">
-              <th scope="row" className="py-3 pr-2 text-body font-normal">
-                {label}
-                {t === "reminders" ? (
-                  <span className="mt-1 flex items-center gap-2 text-detail text-muted-foreground">
+              {["Push", "Email", "Text"].map((c) => (
+                <th
+                  key={c}
+                  scope="col"
+                  className={`${TH} w-14 text-center sm:w-20`}
+                >
+                  {c}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody className="[&>tr+tr]:rule-t">
+            {TOPICS.map(([t, label]) => (
+              <tr key={t}>
+                <th scope="row" className="py-s pr-s font-medium">
+                  {label}
+                  {t === "reminders" ? (
                     <SelectBox
                       label="Time before"
                       hideLabel
@@ -362,81 +412,98 @@ export function NotificationSettings() {
                         { value: "60", label: "60 min before" },
                         { value: "120", label: "120 min before" },
                       ]}
-                      className="w-40"
+                      className="mt-xs w-36 font-regular"
                     />
-                  </span>
-                ) : null}
-                {t === "billing" ? (
-                  <span className="block text-detail text-muted-foreground">
-                    Email is always on.
-                  </span>
-                ) : null}
-              </th>
-              {(["push", "email", "text"] as const).map((c) => (
-                <td key={c} className="text-center">
-                  <Switch.Root
-                    aria-label={`${label}, ${c}`}
-                    checked={
-                      t === "billing" && c === "email"
-                        ? true
-                        : prefs.notif[t][c]
-                    }
-                    disabled={t === "billing" && c === "email"}
-                    onCheckedChange={(on) => {
-                      if (c === "push") {
-                        void ask(t, !!on)
-                        return
+                  ) : null}
+                  {t === "billing" ? (
+                    <span className="block font-regular text-muted-foreground">
+                      Email is always on.
+                    </span>
+                  ) : null}
+                </th>
+                {(["push", "email", "text"] as const).map((c) => (
+                  <td key={c} className="text-center">
+                    <Switch.Root
+                      aria-label={`${label}, ${c}`}
+                      checked={
+                        t === "billing" && c === "email"
+                          ? true
+                          : prefs.notif[t][c]
                       }
-                      setNotifCell(me.id, t, c, !!on)
-                      mark("n")
-                    }}
-                  >
-                    <Switch.Thumb />
-                  </Switch.Root>
-                </td>
-              ))}
-            </tr>
-          ))}
-        </tbody>
-      </table>
-      <div className="flex flex-col gap-2">
-        <SwitchRow
+                      disabled={t === "billing" && c === "email"}
+                      onCheckedChange={(on) => {
+                        if (c === "push") {
+                          void ask(t, !!on)
+                          return
+                        }
+                        setNotifCell(me.id, t, c, !!on)
+                        mark("n")
+                      }}
+                    >
+                      <Switch.Thumb />
+                    </Switch.Root>
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </SettingsSection>
+      <SettingsSection
+        id="set-quiet"
+        title="Delivery"
+        action={<Saved show={k === "q"} />}
+      >
+        <SettingSwitch
+          label="Quiet hours 9 pm – 5 am"
+          line="Held-spot alerts still come through."
           checked={prefs.quietHours}
           onChange={(c) => {
             setPrefs(me.id, { quietHours: c })
             mark("q")
           }}
-        >
-          Quiet hours 9:00 pm – 5:00 am
-        </SwitchRow>
-        <p className="text-detail text-muted-foreground">
-          Held-spot alerts still come through.
-        </p>
-      </div>
-      <p className="text-caption text-muted-foreground">
-        Browser push:{" "}
-        {push === "granted"
-          ? "On in this browser."
-          : push === "denied"
-            ? "Push is blocked in this browser. Use email or text."
-            : "Not asked yet. Turn on Push above and we'll ask."}
-      </p>
-      <div className="flex items-center gap-3">
-        <Button
-          variant="outline"
-          onClick={() =>
-            toast({
-              title: "Test notification",
-              description: "This is what an alert looks like.",
-              type: "info",
-            })
+        />
+        <SettingRow
+          label="Push in this browser"
+          line={
+            push === "denied"
+              ? "Use email or text."
+              : push === "default"
+                ? "Turn on a Push switch and the browser asks."
+                : undefined
           }
         >
-          Send test notification
-        </Button>
-        <Saved show={!!k} />
-      </div>
-    </div>
+          <StatusPill
+            tone={
+              push === "granted"
+                ? "success"
+                : push === "denied"
+                  ? "warning"
+                  : "neutral"
+            }
+          >
+            {push === "granted"
+              ? "On"
+              : push === "denied"
+                ? "Blocked"
+                : "Not asked"}
+          </StatusPill>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() =>
+              toast({
+                title: "Test notification",
+                description: "This is what an alert looks like.",
+                type: "info",
+              })
+            }
+          >
+            Send test
+          </Button>
+        </SettingRow>
+      </SettingsSection>
+    </>
   )
 }
 
@@ -445,10 +512,17 @@ export function CalendarSettings() {
   const [reveal, setReveal] = useState(false)
   const url = `webcal://my.cactuspeakathletic.example/api/calendar/${prefs.calendarToken}.ics`
   return (
-    <div className="flex flex-col gap-6">
-      <div className="flex flex-col gap-2">
-        <p className="text-label">Your calendar feed</p>
-        <div className="flex gap-2">
+    <>
+      <SettingsSection
+        id="set-feed"
+        title="Your calendar feed"
+        action={
+          <Button size="sm" render={<a href={url} />}>
+            Subscribe
+          </Button>
+        }
+      >
+        <SettingBlock className="gap-xs flex">
           <Input
             aria-label="Feed URL"
             readOnly
@@ -457,7 +531,7 @@ export function CalendarSettings() {
                 ? url
                 : "webcal://my.cactuspeakathletic.example/api/calendar/••••••••••.ics"
             }
-            className="num"
+            className="tabular min-w-0 flex-1"
           />
           <Button
             variant="outline"
@@ -477,10 +551,13 @@ export function CalendarSettings() {
             <Copy aria-hidden="true" data-icon="inline-start" />
             Copy
           </Button>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <Button render={<a href={url} />}>Subscribe</Button>
+        </SettingBlock>
+        <SettingRow
+          label="Reset link"
+          line="Update the link in your calendar app after a reset."
+        >
           <Button
+            size="sm"
             variant="outline"
             onClick={() => {
               resetCalendarToken()
@@ -492,175 +569,151 @@ export function CalendarSettings() {
           >
             Reset link
           </Button>
-        </div>
-      </div>
-      <div className="flex flex-col gap-3">
-        <SwitchRow
-          checked={prefs.calIncludeHousehold}
-          onChange={(c) => setPrefs(me.id, { calIncludeHousehold: c })}
-        >
-          Include my household
-        </SwitchRow>
-        <SwitchRow
-          checked={prefs.calIncludeKids}
-          onChange={(c) => setPrefs(me.id, { calIncludeKids: c })}
-        >
-          Include kids club
-        </SwitchRow>
-      </div>
-      <Banner tone="neutral" title="Arizona doesn't use daylight saving.">
+        </SettingRow>
+      </SettingsSection>
+      <Banner tone="info" title="Arizona doesn't use daylight saving.">
         Your calendar may shift times if it is set to another time zone.
         Cancelled bookings leave the feed. Held spots join it once you confirm.
       </Banner>
-    </div>
+      <SettingsSection id="set-feed-include" title="In the feed">
+        <SettingSwitch
+          label="Include my household"
+          checked={prefs.calIncludeHousehold}
+          onChange={(c) => setPrefs(me.id, { calIncludeHousehold: c })}
+        />
+        <SettingSwitch
+          label="Include kids club"
+          checked={prefs.calIncludeKids}
+          onChange={(c) => setPrefs(me.id, { calIncludeKids: c })}
+        />
+      </SettingsSection>
+    </>
   )
 }
 
 export function SecuritySettings() {
-  const { prefs, me } = useApp()
+  const { prefs } = useApp()
   const router = useRouter()
   const [all, setAll] = useState(false)
   const [pw, setPw] = useState(false)
   return (
-    <div className="flex flex-col gap-8">
-      <section className="flex flex-col gap-3">
-        <h3 className="text-label">Passkeys</h3>
+    <>
+      <SettingsSection
+        id="set-passkeys"
+        title="Passkeys"
+        line="A passkey signs you in with your fingerprint or face."
+        action={
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => {
+              addPasskey(`This device, ${new Date().getFullYear()}`)
+              toast({ title: "Passkey added" })
+            }}
+          >
+            Add a passkey
+          </Button>
+        }
+      >
         {prefs.passkeys.length ? (
-          <ul className="rule-rows">
-            {prefs.passkeys.map((p) => (
-              <li
-                key={p}
-                className="flex items-center justify-between gap-3 py-3"
+          prefs.passkeys.map((p) => (
+            <SettingRow key={p} label={p}>
+              <Button
+                variant="ghost"
+                size="sm"
+                aria-label={`Remove ${p}`}
+                onClick={() => {
+                  removePasskey(p)
+                  toast({ title: "Passkey removed" })
+                }}
               >
-                <span className="flex items-center gap-2">
-                  <KeyRound
-                    className="size-4 text-muted-foreground"
-                    aria-hidden="true"
-                  />
-                  {p}
-                </span>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => {
-                    removePasskey(p)
-                    toast({ title: "Passkey removed" })
-                  }}
-                >
-                  Remove
-                </Button>
-              </li>
-            ))}
-          </ul>
+                Remove
+              </Button>
+            </SettingRow>
+          ))
         ) : (
-          <p className="text-body text-muted-foreground">
-            No passkeys yet. A passkey signs you in with your fingerprint or
-            face.
-          </p>
+          <SettingBlock>
+            <p className="text-body-m text-muted-foreground sm:text-body-s">
+              No passkeys yet.
+            </p>
+          </SettingBlock>
         )}
-        <Button
-          variant="outline"
-          className="w-fit"
-          onClick={() => {
-            addPasskey(`This device, ${new Date().getFullYear()}`)
-            toast({ title: "Passkey added" })
-          }}
-        >
-          Add a passkey
-        </Button>
-      </section>
-      <section className="flex flex-col gap-3">
-        <h3 className="text-label">Password</h3>
-        <p className="text-body text-muted-foreground">
-          You sign in with an email code or a passkey. A password is optional.
-        </p>
-        <Button variant="outline" className="w-fit" onClick={() => setPw(true)}>
-          Set a password
-        </Button>
+      </SettingsSection>
+      <SettingsSection
+        id="set-password"
+        title="Password"
+        line="A password is optional. Use a passkey or an email code instead."
+      >
         {pw ? (
-          <div className="max-w-sm">
-            <FormField
+          <>
+            <SettingRow
               label="New password"
-              help="Paste is fine. A password manager works."
+              line="Paste is fine. A password manager works."
+              wide
             >
               {(p) => (
                 <Input {...p} type="password" autoComplete="new-password" />
               )}
-            </FormField>
-            <Button
-              className="mt-3"
-              onClick={() => {
-                setPw(false)
-                toast({ title: "Password saved" })
-              }}
-            >
-              Save password
-            </Button>
-          </div>
-        ) : null}
-      </section>
-      <section className="flex flex-col gap-3">
-        <h3 className="text-label">Signed-in devices</h3>
-        <ul className="rule-rows">
-          {[
-            ["This browser", "Chrome on Mac · Mesa, AZ · now", Laptop],
-            [
-              "iPhone",
-              "Cactus Peak app · Gilbert, AZ · 2 hours ago",
-              Smartphone,
-            ],
-          ].map(([a, b, Icon]) => {
-            const I = Icon as typeof Laptop
-            return (
-              <li
-                key={a as string}
-                className="flex items-center justify-between gap-3 py-3"
+            </SettingRow>
+            <SettingBlock className="gap-xs flex justify-end">
+              <Button size="sm" variant="ghost" onClick={() => setPw(false)}>
+                Cancel
+              </Button>
+              <Button
+                size="sm"
+                onClick={() => {
+                  setPw(false)
+                  toast({ title: "Password saved" })
+                }}
               >
-                <span className="flex items-center gap-3">
-                  <I
-                    className="size-5 text-muted-foreground"
-                    aria-hidden="true"
-                  />
-                  <span>
-                    <span className="block text-label">{a as string}</span>
-                    <span className="block text-caption text-muted-foreground">
-                      {b as string}
-                    </span>
-                  </span>
-                </span>
-                {a !== "This browser" ? (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => toast({ title: "Signed out on iPhone" })}
-                  >
-                    Sign out
-                  </Button>
-                ) : (
-                  <Check
-                    className="size-4 text-success"
-                    aria-label="Current device"
-                  />
-                )}
-              </li>
-            )
-          })}
-        </ul>
-        <Button
-          variant="outline"
-          className="w-fit"
-          onClick={() => setAll(true)}
-        >
-          Sign out everywhere
-        </Button>
-      </section>
+                Save password
+              </Button>
+            </SettingBlock>
+          </>
+        ) : (
+          <SettingRow label="Password">
+            <Button size="sm" variant="outline" onClick={() => setPw(true)}>
+              Set a password
+            </Button>
+          </SettingRow>
+        )}
+      </SettingsSection>
+      <SettingsSection
+        id="set-devices"
+        title="Signed-in devices"
+        action={
+          <Button size="sm" variant="outline" onClick={() => setAll(true)}>
+            Sign out everywhere
+          </Button>
+        }
+      >
+        {[
+          ["This browser", "Chrome on Mac · Mesa, AZ · now"],
+          ["iPhone", "Cactus Peak app · Gilbert, AZ · 2 hours ago"],
+        ].map(([a, b]) => (
+          <SettingRow key={a} label={a} line={b}>
+            {a !== "This browser" ? (
+              <Button
+                variant="ghost"
+                size="sm"
+                aria-label={`Sign out on ${a}`}
+                onClick={() => toast({ title: "Signed out on iPhone" })}
+              >
+                Sign out
+              </Button>
+            ) : (
+              <StatusPill tone="success">Current</StatusPill>
+            )}
+          </SettingRow>
+        ))}
+      </SettingsSection>
       <Confirm
         open={all}
         onOpenChange={setAll}
         title="Sign out on all devices?"
         description="You'll need to sign in again on each one."
       >
-        <div className="flex flex-col gap-2">
+        <div className="gap-xs flex flex-col">
           <Button
             variant="outline"
             className="w-full"
@@ -681,8 +734,7 @@ export function SecuritySettings() {
           </Button>
         </div>
       </Confirm>
-      <span className="sr-only">{me.id}</span>
-    </div>
+    </>
   )
 }
 
@@ -690,60 +742,70 @@ export function DisplaySettings() {
   const { me, prefs } = useApp()
   const { setTheme } = useTheme()
   return (
-    <div className="flex flex-col gap-8">
-      <RadioList
-        label="Theme"
-        value={prefs.theme}
-        onChange={(v) => {
-          setTheme(v)
-          setPrefs(me.id, { theme: v })
-        }}
-        options={[
-          { value: "system", label: "System" },
-          { value: "light", label: "Light" },
-          { value: "dark", label: "Dark" },
-        ]}
-      />
-      <RadioList
-        label="Motion"
-        value={prefs.motion}
-        onChange={(v) => {
-          setPrefs(me.id, { motion: v })
-          document.documentElement.dataset.motion =
-            v === "reduce" ? "reduce" : ""
-        }}
-        options={[
-          { value: "system", label: "Follow my device" },
-          { value: "reduce", label: "Reduce motion" },
-        ]}
-      />
-      <RadioList
-        label="Text size"
-        value={prefs.textSize}
-        onChange={(v) => {
-          setPrefs(me.id, { textSize: v })
-          document.documentElement.dataset.text = v === "large" ? "large" : ""
-        }}
-        options={[
-          { value: "default", label: "Default" },
-          {
-            value: "large",
-            label: "Large",
-            help: "Sets the base text to 18 px. Layouts reflow.",
-          },
-        ]}
-      />
-      <dl className="text-body rule-rows">
-        <div className="flex justify-between py-3">
-          <dt>Time format</dt>
-          <dd className="text-muted-foreground">12-hour</dd>
-        </div>
-        <div className="flex justify-between py-3">
-          <dt>Language</dt>
-          <dd className="text-muted-foreground">English</dd>
-        </div>
-      </dl>
-    </div>
+    <>
+      <SettingsSection id="set-theme" title="Appearance">
+        <SettingRow label="Theme" wide>
+          <SelectBox
+            label="Theme"
+            hideLabel
+            value={prefs.theme}
+            onChange={(v) => {
+              setTheme(v)
+              setPrefs(me.id, { theme: v })
+            }}
+            options={[
+              { value: "system", label: "System" },
+              { value: "light", label: "Light" },
+              { value: "dark", label: "Dark" },
+            ]}
+          />
+        </SettingRow>
+        <SettingRow label="Motion" wide>
+          <SelectBox
+            label="Motion"
+            hideLabel
+            value={prefs.motion}
+            onChange={(v) => {
+              setPrefs(me.id, { motion: v })
+              document.documentElement.dataset.motion =
+                v === "reduce" ? "reduce" : ""
+            }}
+            options={[
+              { value: "system", label: "Follow my device" },
+              { value: "reduce", label: "Reduce motion" },
+            ]}
+          />
+        </SettingRow>
+        <SettingRow
+          label="Text size"
+          line="Large sets the base text to 18 px."
+          wide
+        >
+          <SelectBox
+            label="Text size"
+            hideLabel
+            value={prefs.textSize}
+            onChange={(v) => {
+              setPrefs(me.id, { textSize: v })
+              document.documentElement.dataset.text =
+                v === "large" ? "large" : ""
+            }}
+            options={[
+              { value: "default", label: "Default" },
+              { value: "large", label: "Large" },
+            ]}
+          />
+        </SettingRow>
+      </SettingsSection>
+      <SettingsSection id="set-region" title="Time and language">
+        <SettingRow label="Time format">
+          <p className="text-muted-foreground">12-hour</p>
+        </SettingRow>
+        <SettingRow label="Language">
+          <p className="text-muted-foreground">English</p>
+        </SettingRow>
+      </SettingsSection>
+    </>
   )
 }
 
@@ -751,48 +813,52 @@ export function PrivacySettings() {
   const { me, prefs } = useApp()
   const [del, setDel] = useState(false)
   return (
-    <div className="flex flex-col gap-6">
+    <>
       {me.role === "teen" ? (
         <Banner
-          tone="neutral"
+          tone="info"
           title="Your parent can see your bookings and check-ins."
         />
       ) : null}
-      <div className="flex flex-col gap-2">
-        <Button
-          variant="outline"
-          className="w-fit"
-          onClick={() =>
-            toast({
-              title: "We'll email your data",
-              description: "A download link arrives within 24 hours.",
-            })
-          }
+      <SettingsSection id="set-email" title="Email">
+        <SettingSwitch
+          label="Send me offers and club news by email"
+          checked={prefs.marketing}
+          onChange={(c) => {
+            setPrefs(me.id, { marketing: c })
+            toast({ title: "Saved" })
+          }}
+        />
+      </SettingsSection>
+      <SettingsSection id="set-data" title="Your data">
+        <SettingRow
+          label="Download my data (ZIP)"
+          line="We email a link within 24 hours."
         >
-          Download my data (ZIP)
-        </Button>
-        <p className="text-detail text-muted-foreground">
-          We email a link within 24 hours.
-        </p>
-      </div>
-      <CheckRow
-        checked={prefs.marketing}
-        onChange={(c) => {
-          setPrefs(me.id, { marketing: c })
-          toast({ title: "Saved" })
-        }}
-      >
-        Send me offers and club news by email
-      </CheckRow>
-      <div className="flex flex-col gap-2 pt-4 rule-t">
-        <Button
-          variant="outline"
-          className="w-fit !text-destructive"
-          onClick={() => setDel(true)}
-        >
-          Delete my account
-        </Button>
-      </div>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() =>
+              toast({
+                title: "We'll email your data",
+                description: "A download link arrives within 24 hours.",
+              })
+            }
+          >
+            Request
+          </Button>
+        </SettingRow>
+        <SettingRow label="Delete account">
+          <Button
+            size="sm"
+            variant="outline"
+            className="!text-destructive"
+            onClick={() => setDel(true)}
+          >
+            Delete
+          </Button>
+        </SettingRow>
+      </SettingsSection>
       <Confirm
         open={del}
         onOpenChange={setDel}
@@ -803,7 +869,7 @@ export function PrivacySettings() {
             : "This removes your profile and bookings. It can't be undone."
         }
       >
-        <div className="flex flex-col gap-2">
+        <div className="gap-xs flex flex-col">
           {me.role === "primary" ? (
             <Button className="w-full" render={<a href="/membership/cancel" />}>
               Cancel membership first
@@ -832,7 +898,6 @@ export function PrivacySettings() {
           </Button>
         </div>
       </Confirm>
-      <span className="sr-only">{fmtMoney(0)}</span>
-    </div>
+    </>
   )
 }

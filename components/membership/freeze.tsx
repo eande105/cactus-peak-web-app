@@ -2,17 +2,34 @@
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
-import { StepUp } from "@/components/app/step-up"
 import { useApp } from "@/components/app/use-app"
 import { SuccessPanel } from "@/components/booking/success-panel"
-import { Pause } from "@/components/icons"
+import {
+  CheckList,
+  ChoiceList,
+  cardLabel,
+  FlowAside,
+  FlowError,
+  Highlight,
+  InfoLine,
+  RESULT_WIDTH,
+  StepFooter,
+} from "@/components/flows/parts"
+import {
+  AppPage,
+  Card,
+  Facts,
+  Group,
+  Row,
+  Rows,
+  Task,
+} from "@/components/kit/app"
 import {
   Banner,
   EmptyState,
   LoadingBlock,
-  PageHeader,
-  Segmented,
   SelectBox,
+  StatusPill,
 } from "@/components/kit/ui"
 import { Button } from "@/components/ui/button"
 import { cancelFreeze, scheduleFreeze } from "@/lib/actions"
@@ -33,6 +50,10 @@ import {
 } from "@/lib/time"
 import { toast } from "@/lib/toast"
 import { openDialog } from "@/lib/ui-state"
+
+const BACK = { href: "/membership", label: "Membership" }
+const LENGTHS = [1, 2, 3] as const
+const monthsText = (n: number) => `${n} ${n === 1 ? "month" : "months"}`
 
 export default function FreezePage() {
   const { s, me, hh, now } = useApp()
@@ -64,55 +85,70 @@ export default function FreezePage() {
       b.start >= st &&
       b.start < resume
   )
+  const undo = () => {
+    cancelFreeze()
+    toast({
+      title: "Freeze cancelled",
+      description: "You're active as usual.",
+    })
+  }
   if (hh.status === "freeze_scheduled" && hh.freeze && !done)
     return (
-      <div>
-        <PageHeader
-          backHref="/membership"
-          backLabel="Membership"
-          title="Freeze membership"
-        />
-        <Banner
-          tone="neutral"
-          icon={Pause}
-          title={`You already have a freeze scheduled: ${fmtDayShort(hh.freeze.start)} – ${fmtDayShort(hh.freeze.end)}`}
-          actions={
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => {
-                cancelFreeze()
-                toast({
-                  title: "Freeze cancelled",
-                  description: "You're active as usual.",
-                })
-              }}
-            >
+      <AppPage
+        title="Freeze membership"
+        back={BACK}
+        width="narrow"
+        meta={<StatusPill tone="info">Freeze scheduled</StatusPill>}
+      >
+        <Card
+          title="Scheduled freeze"
+          footer={
+            <Button size="sm" variant="outline" onClick={undo}>
               Cancel freeze
             </Button>
           }
-        />
-      </div>
+        >
+          <Facts
+            items={[
+              {
+                label: "Frozen",
+                value: (
+                  <span className="tabular">
+                    {fmtDayShort(hh.freeze.start)} –{" "}
+                    {fmtDayShort(hh.freeze.end)}
+                  </span>
+                ),
+              },
+              {
+                label: "Resumes",
+                value: (
+                  <span className="tabular">
+                    {fmtDayShort(hh.freeze.resume)}
+                  </span>
+                ),
+              },
+            ]}
+          />
+        </Card>
+      </AppPage>
     )
   if (hh.status === "frozen" && !done)
     return (
-      <div>
-        <PageHeader
-          backHref="/membership"
-          backLabel="Membership"
-          title="Freeze membership"
-        />
-        <EmptyState
-          object="key"
-          title="You're frozen right now."
-          body="Resume from Membership if you want to book again."
-          action={
-            <Button render={<Link href="/membership" />}>
-              Back to Membership
-            </Button>
-          }
-        />
-      </div>
+      <AppPage title="Freeze membership" back={BACK} width="narrow">
+        <Card>
+          <EmptyState
+            className="py-zero"
+            object="key"
+            title="You're frozen right now."
+            body="Resume from Membership to book again."
+            action={
+              <Button size="sm" render={<Link href="/membership" />}>
+                Back to Membership
+              </Button>
+            }
+          />
+        </Card>
+      </AppPage>
     )
   const blocked = paymentDaysLate(s, me.id, now) >= 0
   const confirm = async () => {
@@ -127,259 +163,268 @@ export default function FreezePage() {
   }
   if (done)
     return (
-      <div className="max-w-[560px]">
-        <SuccessPanel
-          headline={`Freeze set: ${fmtDayShort(st)} – ${fmtDayShort(end)}`}
-          pill="Freeze scheduled"
-          summary={[
-            {
-              label: "Length",
-              value: `${months} ${months === 1 ? "month" : "months"} · ${fmtMoney(10 * months)}`,
+      <SuccessPanel
+        className={RESULT_WIDTH}
+        headline={`Freeze set: ${fmtDayShort(st)} – ${fmtDayShort(end)}`}
+        pill="Freeze scheduled"
+        summary={[
+          {
+            label: "Length",
+            value: `${monthsText(months)} · ${fmtMoney(10 * months)}`,
+          },
+          { label: "Starts", value: fmtDay(st) },
+          { label: "Resumes", value: fmtDay(resume) },
+          {
+            label: "Normal price after",
+            value: `${fmtMoney(total)} per month`,
+          },
+          {
+            label: "Cancel the freeze",
+            value: `Any time before ${fmtDay(st)}`,
+          },
+        ]}
+        rows={[
+          { label: "Back to Membership", href: "/membership" },
+          {
+            label: "Cancel freeze",
+            onClick: () => {
+              undo()
+              router.push("/membership")
             },
-            { label: "Starts", value: fmtDay(st) },
-            { label: "Resumes", value: fmtDay(resume) },
-            {
-              label: "Normal price after",
-              value: `${fmtMoney(total)} per month`,
-            },
-          ]}
-          rows={[{ label: "Back to membership", href: "/membership" }]}
-          extra={
-            <p className="text-caption text-muted-foreground">
-              You can cancel it any time before {fmtDay(st)}.{" "}
-              <button
-                type="button"
-                className="text-link underline"
-                onClick={() => {
-                  cancelFreeze()
-                  toast({
-                    title: "Freeze cancelled",
-                    description: "You're active as usual.",
-                  })
-                  router.push("/membership")
-                }}
-              >
-                Cancel freeze
-              </button>
-            </p>
-          }
-          onDone={() => router.push("/membership")}
-        />
-      </div>
-    )
-  const summary = (
-    <aside
-      aria-label="Freeze summary"
-      className="flex flex-col gap-1 rounded-lg bg-muted p-4 text-caption"
-    >
-      <p className="eyebrow text-muted-foreground">Freeze summary</p>
-      <p className="num text-body-strong">
-        {months} {months === 1 ? "month" : "months"} · {fmtMoney(10 * months)}
-      </p>
-      <p className="num">
-        Starts {fmtDayShort(st)} · resumes {fmtDayShort(resume)}
-      </p>
-      <p className="num text-muted-foreground">
-        Normal price after: {fmtMoney(total)} per month
-      </p>
-    </aside>
-  )
-  return (
-    <div className="flex flex-col gap-6">
-      <StepUp />
-      <PageHeader
-        backHref="/membership"
-        backLabel="Membership"
-        title="Freeze membership"
-        description="Pause for 1 to 3 months at $10 per month."
+          },
+        ]}
       />
-      {blocked ? (
-        <p role="status" className="text-caption font-semibold text-warning">
-          Card declined. Update your card to freeze.{" "}
-          <button
-            type="button"
-            className="underline"
-            onClick={() => openDialog("card")}
-          >
-            Update card
-          </button>
-        </p>
-      ) : null}
-      <div className="grid gap-8 lg:grid-cols-[minmax(0,640px)_320px]">
-        <div className="flex flex-col gap-6">
-          <div className="flex flex-col gap-2">
-            <p role="status" className="text-caption text-muted-foreground">
-              Step {step} of 3
-            </p>
-            <div
-              className="h-1.5 overflow-hidden rounded-full bg-muted"
-              aria-hidden="true"
+    )
+  const changes = [
+    { label: "Pass", text: "Pauses for everyone on your plan." },
+    {
+      label: "Bookings",
+      text: affected.length
+        ? "Bookings inside the freeze are cancelled with no late-cancel strike."
+        : "You have no bookings in this time.",
+    },
+    {
+      label: "Kids club, courts, lanes",
+      text: "Reservations in this time are cancelled.",
+    },
+    {
+      label: "Guest passes",
+      text: "Guest passes pause. Passes you sent for these dates are cancelled and returned.",
+    },
+    {
+      label: "Training",
+      text: "Sessions in this time are cancelled. Your credits come back and your pack dates move out by the length of the freeze.",
+    },
+    {
+      label: "Billing",
+      text: `You pay $10.00 on ${fmtDayShort(st)}. Your normal price of ${fmtMoney(total)} returns on ${fmtDayShort(resume)}.`,
+    },
+  ]
+  // The date a freeze of `n` months ends, for the start the member picked.
+  const resumeFor = (n: number) => Date.UTC(p.y, p.m + n, p.d, 7, 0)
+  return (
+    <Task
+      title="Freeze membership"
+      step={step}
+      of={3}
+      close={BACK}
+      aside={
+        <FlowAside title="Freeze summary">
+          <Facts
+            items={[
+              {
+                label: "Length",
+                value: <span className="tabular">{monthsText(months)}</span>,
+              },
+              {
+                label: "Frozen",
+                value: (
+                  <span className="tabular">
+                    {fmtDayShort(st)} – {fmtDayShort(end)}
+                  </span>
+                ),
+              },
+              {
+                label: "Resumes",
+                value: <span className="tabular">{fmtDayShort(resume)}</span>,
+              },
+              {
+                label: "Freeze price",
+                value: <span className="tabular">{fmtMoney(10 * months)}</span>,
+                hint: "$10 per month",
+              },
+              {
+                label: "Price after",
+                value: (
+                  <span className="tabular">{fmtMoney(total)} per month</span>
+                ),
+              },
+            ]}
+          />
+        </FlowAside>
+      }
+      footer={
+        <StepFooter
+          back={
+            step > 1
+              ? { label: "Back", onClick: () => setStep(step - 1) }
+              : { label: "Cancel", href: "/membership" }
+          }
+        >
+          {step < 3 ? (
+            <Button disabled={blocked} onClick={() => setStep(step + 1)}>
+              Continue
+            </Button>
+          ) : (
+            <Button
+              loading={busy}
+              disabled={blocked}
+              onClick={() => void confirm()}
             >
-              <div
-                className="h-full rounded-full bg-night dark:bg-on-night"
-                style={{ width: `${(step / 3) * 100}%` }}
-              />
-            </div>
-          </div>
-          {step === 1 ? (
-            <div className="flex flex-col gap-5">
-              <div className="flex flex-col gap-2">
-                <p className="text-label">How long?</p>
-                <Segmented
-                  label="Length"
-                  value={months}
-                  onChange={setMonths}
-                  options={[
-                    { value: 1, label: "1 month" },
-                    { value: 2, label: "2 months" },
-                    { value: 3, label: "3 months" },
-                  ]}
-                />
-              </div>
-              <SelectBox
-                label="Start on"
-                value={start}
-                onChange={setStart}
-                options={dates.map((d) => ({
-                  value: String(d),
-                  label: fmtDay(d),
-                }))}
-                className="max-w-xs"
-              />
-              <p className="text-caption text-muted-foreground">
-                We need 30 days&apos; notice, so the earliest start is{" "}
-                {fmtDayShort(dates[0])}.
-              </p>
-              <p className="rounded-md bg-muted px-4 py-3 num text-body">
-                Frozen {fmtDayShort(st)} – {fmtDayShort(end)}. Resumes{" "}
-                {fmtDayShort(resume)}. You pay $10 per month while frozen.
-              </p>
-              <p className="text-caption text-muted-foreground">
-                Need to freeze sooner?{" "}
-                <Link href="/inbox" className="text-link underline">
-                  Message the front desk
-                </Link>
-                .
-              </p>
-            </div>
-          ) : null}
-          {step === 2 ? (
-            <div className="flex flex-col gap-3">
-              <h2 className="font-heading text-h3 display-stretch">
-                What changes
-              </h2>
-              <dl className="rule-rows">
-                {[
-                  ["Pass", "Your pass pauses for everyone on your plan."],
-                  [
-                    "Bookings",
-                    affected.length
-                      ? "Bookings inside the freeze are cancelled with no late-cancel strike."
-                      : "You have no bookings in this time.",
-                  ],
-                  [
-                    "Kids club, courts, lanes",
-                    "Reservations in this time are cancelled.",
-                  ],
-                  [
-                    "Guest passes",
-                    "Guest passes pause. Passes you sent for these dates are cancelled and returned.",
-                  ],
-                  [
-                    "Training",
-                    "Sessions in this time are cancelled. Your credits come back and your pack dates move out by the length of the freeze.",
-                  ],
-                  [
-                    "Billing",
-                    `You pay $10.00 on ${fmtDayShort(st)}. Your normal price of ${fmtMoney(total)} returns on ${fmtDayShort(resume)}.`,
-                  ],
-                  ["Family", "The freeze applies to everyone on your plan."],
-                ].map(([k, v]) => (
-                  <div
-                    key={k}
-                    className="grid gap-1 py-3 sm:grid-cols-[11rem_1fr]"
-                  >
-                    <dt className="text-label">{k}</dt>
-                    <dd className="text-body text-muted-foreground">{v}</dd>
-                  </div>
+              Freeze membership
+            </Button>
+          )}
+        </StepFooter>
+      }
+    >
+      {blocked ? (
+        <Banner
+          tone="warning"
+          role="status"
+          title="Card declined. Update your card to freeze."
+          actions={
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => openDialog("card")}
+            >
+              Update card
+            </Button>
+          }
+        />
+      ) : null}
+      {step === 1 ? (
+        <>
+          <Group label="How long do you want to freeze?">
+            <ChoiceList
+              label="Length"
+              value={String(months)}
+              onChange={(v) => setMonths(Number(v) as 1 | 2 | 3)}
+              options={LENGTHS.map((n) => ({
+                value: String(n),
+                label: monthsText(n),
+                line: (
+                  <span className="tabular">
+                    Resumes {fmtDayShort(resumeFor(n))}
+                  </span>
+                ),
+                end: fmtMoney(10 * n, false),
+              }))}
+            />
+          </Group>
+          <SelectBox
+            label="Start on"
+            value={start}
+            onChange={setStart}
+            options={dates.map((d) => ({
+              value: String(d),
+              label: fmtDay(d),
+            }))}
+            className="max-w-xs"
+          />
+          <InfoLine>
+            A freeze needs 30 days&apos; notice. To freeze sooner,{" "}
+            <Link href="/inbox" className="text-link underline">
+              message the front desk
+            </Link>
+            .
+          </InfoLine>
+        </>
+      ) : null}
+      {step === 2 ? (
+        <>
+          <Group
+            label="What changes"
+            hint={
+              <span className="tabular">
+                {fmtDayShort(st)} – {fmtDayShort(end)}
+              </span>
+            }
+          >
+            <CheckList items={changes} />
+          </Group>
+          {affected.length ? (
+            <Group label="Bookings in this time">
+              <Rows label="Bookings in this time" className="rule-t">
+                {affected.slice(0, 6).map((b) => (
+                  <Row
+                    key={b.id}
+                    className="px-zero!"
+                    title={b.title}
+                    line={
+                      <span className="tabular">
+                        {fmtDowTime(b.start)} ·{" "}
+                        {s.members[b.memberId].firstName}
+                      </span>
+                    }
+                    end={
+                      <StatusPill tone="warning">Will be cancelled</StatusPill>
+                    }
+                  />
                 ))}
-              </dl>
-              {affected.length ? (
-                <ul className="rounded-md bg-muted p-3 text-caption">
-                  {affected.slice(0, 6).map((b) => (
-                    <li key={b.id} className="py-0.5 num">
-                      {fmtDowTime(b.start)} · {b.title} ·{" "}
-                      {s.members[b.memberId].firstName} (will be cancelled)
-                    </li>
-                  ))}
-                </ul>
-              ) : null}
-            </div>
-          ) : null}
-          {step === 3 ? (
-            <div className="flex flex-col gap-4">
-              <h2 className="font-heading text-h3 display-stretch">
-                Freeze your membership?
-              </h2>
-              <p className="text-caption text-muted-foreground">
-                {hh.card.brand[0].toUpperCase() + hh.card.brand.slice(1)} ending{" "}
-                {hh.card.last4}
-              </p>
-              <p className="num text-body">
-                Your plan pauses {fmtDayShort(st)} and returns{" "}
-                {fmtDayShort(resume)} at {fmtMoney(total)} per month.
-              </p>
-              {error ? (
-                <p
-                  role="alert"
-                  className="text-caption font-semibold text-destructive"
-                >
-                  {error}
+              </Rows>
+              {affected.length > 6 ? (
+                <p className="tabular text-muted-foreground">
+                  And {affected.length - 6} more.
                 </p>
               ) : null}
-              <Button
-                size="lg"
-                className="w-full"
-                loading={busy}
-                disabled={blocked}
-                onClick={() => void confirm()}
-              >
-                Freeze membership
-              </Button>
-              <Button
-                variant="link"
-                className="self-start"
-                render={<Link href="/membership" />}
-              >
-                Not now
-              </Button>
-            </div>
+            </Group>
           ) : null}
-          {step < 3 ? (
-            <div className="flex gap-3 pt-4 rule-t">
-              {step > 1 ? (
-                <Button variant="outline" onClick={() => setStep(step - 1)}>
-                  Back
-                </Button>
-              ) : (
-                <Button variant="outline" render={<Link href="/membership" />}>
-                  Cancel
-                </Button>
-              )}
-              <Button disabled={blocked} onClick={() => setStep(step + 1)}>
-                Continue
-              </Button>
-            </div>
-          ) : (
-            <div className="pt-4 rule-t">
-              <Button variant="outline" onClick={() => setStep(2)}>
-                Back
-              </Button>
-            </div>
-          )}
-        </div>
-        <div className="lg:sticky lg:top-24 lg:self-start">{summary}</div>
-      </div>
-    </div>
+        </>
+      ) : null}
+      {step === 3 ? (
+        <>
+          <Group label="Review and pay">
+            <Highlight
+              label={`Freeze for ${monthsText(months)}`}
+              value={fmtMoney(10, false)}
+              unit="per month"
+            >
+              <InfoLine>
+                <span className="tabular">
+                  Your pass pauses on {fmtDay(st)}. Your normal price of{" "}
+                  {fmtMoney(total)} returns on {fmtDay(resume)}.
+                </span>
+              </InfoLine>
+            </Highlight>
+          </Group>
+          <Facts
+            items={[
+              {
+                label: "First charge",
+                value: (
+                  <span className="tabular">
+                    {fmtMoney(10)} on {fmtDayShort(st)}
+                  </span>
+                ),
+              },
+              {
+                label: "Card",
+                value: <span className="tabular">{cardLabel(hh.card)}</span>,
+              },
+              {
+                label: "Cancel the freeze",
+                value: (
+                  <span className="tabular">
+                    Any time before {fmtDayShort(st)}
+                  </span>
+                ),
+              },
+            ]}
+          />
+          {error ? <FlowError>{error}</FlowError> : null}
+        </>
+      ) : null}
+    </Task>
   )
 }

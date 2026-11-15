@@ -1,28 +1,40 @@
 "use client"
 import Link from "next/link"
 import { notFound } from "next/navigation"
-import { useEffect, useState } from "react"
+import { type ReactNode, useEffect, useState } from "react"
+import { FactGrid } from "@/components/app/screen-parts"
 import { useApp } from "@/components/app/use-app"
-import { CompactClass } from "@/components/booking/class-row"
 import {
-  type ClubId,
-  ClubSet,
-  clubObjects,
   GymObject,
+  type ObjectId,
   spaceObjects,
 } from "@/components/brand/graphics"
 import { ClubMap } from "@/components/clubs/club-map"
 import { PopularTimesChart } from "@/components/clubs/popular-times"
-import { Copy, MapPin, Phone } from "@/components/icons"
+import { Check, ChevronRight, Copy, MapPin, Phone } from "@/components/icons"
+import {
+  AppPage,
+  Card,
+  CardFooterLink,
+  Row,
+  Rows,
+  TabButtons,
+} from "@/components/kit/app"
 import { CoachArt } from "@/components/kit/brand-art"
-import { BusynessMeter } from "@/components/kit/ribs"
-import { LoadingBlock, PageHeader, SectionTitle } from "@/components/kit/ui"
+import { CapacityIndicator } from "@/components/kit/ribs"
+import { EmptyState, LoadingBlock, StatusPill } from "@/components/kit/ui"
 import { Button } from "@/components/ui/button"
 import { setPrefs } from "@/lib/actions"
-import { CLUB_BY_SLUG, COACHES } from "@/lib/data/catalog"
+import {
+  BUSY_WORDS,
+  CLUB_BY_SLUG,
+  COACHES,
+  INSTRUCTOR_BY_ID,
+} from "@/lib/data/catalog"
 import { clubSpaces } from "@/lib/data/club-spaces"
 import { sessionsForDay } from "@/lib/data/sessions"
 import {
+  bookingOf,
   busyHint,
   clubOpen,
   courtBlocks,
@@ -32,6 +44,8 @@ import {
   kidsLeft,
   laneSwimmers,
   liveBusyness,
+  sessionLeft,
+  waitCount,
 } from "@/lib/engine"
 import {
   atTime,
@@ -46,60 +60,117 @@ import { toast } from "@/lib/toast"
 import { useOffline } from "@/lib/ui-state"
 import { cn } from "@/lib/utils"
 
-const isClubId = (slug: string): slug is ClubId => slug in clubObjects
+type Tab = "overview" | "classes" | "amenities"
 
-const SECTIONS = [
-  ["now", "Now"],
-  ["classes", "Today's classes"],
-  ["hours", "Hours"],
-  ["amenities", "Amenities"],
-  ["facilities", "Courts and pool"],
-  ["kids", "Kids club"],
-  ["coaches", "Coaches"],
-  ["map", "Getting here"],
-] as const
+/** A pill with a leading icon. The icon side has less padding, so the icon sits optically in the pill. */
+const ICON_PILL = "pl-xxs"
 
+const chevron = (
+  <ChevronRight
+    className="size-4 shrink-0 text-muted-foreground"
+    aria-hidden="true"
+  />
+)
+
+/** The line a list shows when it has no rows. It lines up with the rows of a bare card. */
+function NoRows({
+  children,
+  className,
+}: {
+  children: ReactNode
+  className?: string
+}) {
+  return (
+    <p
+      className={cn(
+        "px-m py-m text-body-m text-muted-foreground sm:text-body-s",
+        className
+      )}
+    >
+      {children}
+    </p>
+  )
+}
+
+/** One space of the club as a small tile: the gym object, the name, and one line of what is there. */
+function SpaceTile({
+  object,
+  name,
+  line,
+  className,
+}: {
+  object: ObjectId
+  name: string
+  line?: string
+  className?: string
+}) {
+  return (
+    <li
+      className={cn(
+        "gap-s p-m flex min-w-0 flex-col corner-m raised",
+        className
+      )}
+    >
+      {/* The space's object in a cut tile; a hub is too busy at this size. */}
+      <GymObject id={object} cut className="size-12 shrink-0" />
+      <div className="min-w-0 text-body-m sm:text-body-s">
+        <h3 className="font-heavy">{name}</h3>
+        {line ? (
+          <p className="text-pretty text-muted-foreground">{line}</p>
+        ) : null}
+      </div>
+    </li>
+  )
+}
+
+/** A row with one button that starts a reservation: courts, the lap pool. */
+function ReserveRow({
+  title,
+  line,
+  href,
+  action,
+}: {
+  title: string
+  line: ReactNode
+  href: string
+  action: string
+}) {
+  return (
+    <Row
+      title={title}
+      line={<span className="tabular whitespace-normal">{line}</span>}
+      end={
+        <Button size="sm" variant="outline" render={<Link href={href} />}>
+          {action}
+        </Button>
+      }
+    />
+  )
+}
+
+/**
+ * One club as a workspace with three tabs. Overview is what a member checks before the drive: how busy now and the
+ * typical hours in one block, the details as a grid of facts, and the way there. Classes is today's list.
+ * Amenities is what the club has.
+ */
 export default function ClubDetail({ slug }: { slug: string }) {
   const { s, me, now, club: viewing } = useApp()
   const offline = useOffline()
   const club = CLUB_BY_SLUG[slug]
   const [loading, setLoading] = useState(false)
-  const [active, setActive] = useState("now")
+  const [tab, setTab] = useState<Tab>("overview")
   // biome-ignore lint/correctness/useExhaustiveDependencies: slug restarts the fake load delay when the club changes
   useEffect(() => {
     const t = setTimeout(() => setLoading(false), 300)
     return () => clearTimeout(t)
   }, [slug])
-  // biome-ignore lint/correctness/useExhaustiveDependencies: loading re-runs the observer once the section elements exist
-  useEffect(() => {
-    const els = SECTIONS.map(([id]) => document.getElementById(id)).filter(
-      Boolean
-    ) as HTMLElement[]
-    const io = new IntersectionObserver(
-      (es) => {
-        const v = es
-          .filter((e) => e.isIntersecting)
-          .sort(
-            (a, b) => a.boundingClientRect.top - b.boundingClientRect.top
-          )[0]
-        if (v) setActive(v.target.id)
-      },
-      { rootMargin: "-120px 0px -60% 0px" }
-    )
-    els.forEach((e) => {
-      io.observe(e)
-    })
-    return () => io.disconnect()
-  }, [loading])
   if (!club) notFound()
   if (loading) return <LoadingBlock text="Loading club…" rows={5} />
   const o = clubOpen(now)
   const b = liveBusyness(slug, now)
   const today = dayStart(now)
   const p = parts(now)
-  const classes = sessionsForDay(slug, today)
-    .filter((x) => x.start > now)
-    .slice(0, 6)
+  const classes = sessionsForDay(slug, today).filter((x) => x.start > now)
   const coaches = COACHES.filter((c) => c.clubs.includes(slug))
   const spaces = clubSpaces(club)
   const isViewing = viewing === slug
@@ -135,407 +206,156 @@ export default function ClubDetail({ slug }: { slug: string }) {
       }
     }
   }
-  const hoursRows = [
-    ["Mon–Fri", "4:30 am–10:00 pm", p.dow >= 1 && p.dow <= 5],
-    ["Sat–Sun", "6:00 am–8:00 pm", p.dow === 0 || p.dow === 6],
-    ["Staffed hours", "6:00 am–8:00 pm", false],
-    [
-      "Kids club",
-      club.kidsClub
-        ? "Mon–Sat 8:00 am–12:00 pm and 4:00–8:00 pm"
-        : "No kids club at this club",
-      false,
-    ],
-    [
-      "Pools",
-      club.pool ? "Close 30 minutes before the club" : "No pool at this club",
-      false,
-    ],
-  ] as const
+  const tel = `tel:${club.phone.replace(/\D/g, "")}`
+  const maps = `https://maps.google.com/?q=${encodeURIComponent(club.address)}`
+  const live = o.open && !offline
+
   return (
-    <div className="flex flex-col gap-8">
-      <PageHeader
-        backHref="/clubs"
-        backLabel="Clubs"
-        title={club.name}
-        className="sr-only"
-      />
-      {/* The club's name and facts on the page, with its Set. A Rack picture adds nothing a member needs here. */}
-      <header>
-        <div className="flex flex-wrap items-end justify-between gap-4">
-          <div className="flex min-w-0 flex-col gap-1">
-            <h1
-              id="page-title"
-              tabIndex={-1}
-              className="font-heading text-h2 display-stretch outline-none md:text-h1"
-            >
-              {club.name}
-            </h1>
-            <p className="max-w-[48ch]">{club.personality}</p>
-            {isClubId(club.slug) ? (
-              <ClubSet
-                club={club.slug}
-                className="mt-1 h-8 w-auto self-start"
-              />
-            ) : null}
-            <p className="num text-caption text-muted-foreground">
-              {club.address} ·{" "}
-              {o.open
-                ? `Open now · closes ${fmtTime(o.closeAt)}`
-                : `Closed now · opens ${fmtTime(o.openAt)}`}
-            </p>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            {isViewing ? (
-              <span className="inline-flex min-h-11 items-center rounded-md border border-border px-4 text-label">
-                Viewing this club
-              </span>
-            ) : (
-              <Button
-                onClick={() => {
-                  setPrefs(me.id, { viewingClub: slug })
-                }}
-              >
-                Set as my club
-              </Button>
-            )}
-            <Button
-              variant="outline"
-              render={
-                <a
-                  href={`https://maps.google.com/?q=${encodeURIComponent(club.address)}`}
-                  target="_blank"
-                  rel="noreferrer"
-                />
-              }
-            >
-              <MapPin aria-hidden="true" data-icon="inline-start" />
-              Directions
-            </Button>
-            <Button
-              variant="outline"
-              render={<a href={`tel:${club.phone.replace(/\D/g, "")}`} />}
-            >
-              <Phone aria-hidden="true" data-icon="inline-start" />
-              Call
-            </Button>
-          </div>
-        </div>
-      </header>
-      <nav
-        aria-label="On this page"
-        className="sticky top-14 z-20 -mx-4 overflow-x-auto bg-background px-4 md:top-16 md:mx-0 md:px-0"
-      >
-        <ul className="flex gap-1 border-b border-border">
-          {SECTIONS.map(([id, label]) => (
-            <li key={id}>
-              <a
-                href={`#${id}`}
-                aria-current={active === id ? "true" : undefined}
-                className={cn(
-                  "inline-flex min-h-11 items-center border-b-2 px-3 text-label whitespace-nowrap",
-                  active === id
-                    ? "border-primary"
-                    : "border-transparent text-muted-foreground hover:text-foreground"
-                )}
-              >
-                {label}
-              </a>
-            </li>
-          ))}
-        </ul>
-      </nav>
-      <div className="grid gap-x-10 gap-y-10 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">
-        <section id="now" className="scroll-mt-32" aria-labelledby="now-h">
-          <p id="now-h" className="mb-3 eyebrow text-muted-foreground">
-            Now
-          </p>
-          {!o.open ? (
-            <p className="font-heading text-h2 display-stretch">
-              Closed now · opens {fmtTime(o.openAt)}
-            </p>
-          ) : offline ? (
-            <p className="text-body">
-              Offline: live count unavailable. Showing typical hours.
-            </p>
+    <AppPage
+      back={{ href: "/clubs", label: "Clubs" }}
+      title={club.name}
+      actions={
+        <>
+          <Button
+            size="sm"
+            variant="outline"
+            render={<a href={maps} target="_blank" rel="noreferrer" />}
+          >
+            <MapPin aria-hidden="true" data-icon="inline-start" />
+            Directions
+          </Button>
+          <Button size="sm" variant="outline" render={<a href={tel} />}>
+            <Phone aria-hidden="true" data-icon="inline-start" />
+            Call
+          </Button>
+          {isViewing ? (
+            <StatusPill tone="outline" icon={Check} className={ICON_PILL}>
+              Your club
+            </StatusPill>
           ) : (
-            <BusynessMeter
-              level={b.level}
-              variant="hero"
-              updated={fmtTime(b.updatedAt)}
-              hint={busyHint(slug, now)}
-            />
+            <Button
+              size="sm"
+              onClick={() => {
+                setPrefs(me.id, { viewingClub: slug })
+                toast({ title: `${club.name} is your club now` })
+              }}
+            >
+              Set as my club
+            </Button>
           )}
-          <p className="mt-3 text-detail text-muted-foreground">
-            Updates every 5 minutes. Levels only, no head count.
-          </p>
-        </section>
-        <section id="popular" className="scroll-mt-32" aria-labelledby="pop-h">
-          <p id="pop-h" className="mb-3 eyebrow text-muted-foreground">
-            Popular times
-          </p>
-          <PopularTimesChart
-            slug={slug}
-            nowDow={p.dow}
-            nowHour={p.h}
-            live={o.open && !offline}
-          />
-        </section>
-      </div>
-      <section id="classes" className="scroll-mt-32" aria-labelledby="cl-h">
-        <SectionTitle
-          id="cl-h"
-          action={
-            <Link
-              href={`/schedule?club=${slug}`}
-              className="text-link text-label hover:underline"
-            >
-              Full schedule
-            </Link>
-          }
-        >
-          Today&apos;s classes
-        </SectionTitle>
-        {classes.length ? (
-          <ul className="-mx-4 mt-3 flex snap-x gap-6 overflow-x-auto px-4 pb-2 md:mx-0 md:px-0">
-            {classes.map((x) => (
-              <li key={x.id} className="snap-start">
-                <CompactClass se={x} />
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p className="mt-3 text-muted-foreground">
-            No more classes today.{" "}
-            <Link
-              className="text-link underline"
-              href={`/schedule?club=${slug}`}
-            >
-              See the full schedule
-            </Link>
-          </p>
-        )}
-      </section>
-      <div className="grid gap-x-10 gap-y-10 lg:grid-cols-2">
-        <section id="hours" className="scroll-mt-32" aria-labelledby="h-h">
-          <SectionTitle id="h-h">Hours</SectionTitle>
-          <dl className="mt-3 rule-rows">
-            {hoursRows.map(([k, v, today]) => (
-              <div
-                key={k}
-                className="grid grid-cols-[8rem_1fr] gap-3 py-2.5 text-body"
-              >
-                <dt className="text-muted-foreground">{k}</dt>
-                <dd className="num">
-                  {v}
-                  {today ? (
-                    <span className="rounded-xs ml-2 bg-accent px-1.5 text-detail font-semibold">
-                      Today
-                    </span>
-                  ) : null}
-                </dd>
-              </div>
-            ))}
-          </dl>
-          <p className="mt-2 text-detail text-muted-foreground">
-            Arizona time (no daylight saving). Main desk{" "}
-            <a
-              href={`tel:${club.phone.replace(/\D/g, "")}`}
-              className="text-link num underline"
-            >
-              {club.phone}
-            </a>
-          </p>
-        </section>
-        <section id="amenities" className="scroll-mt-32" aria-labelledby="a-h">
-          <SectionTitle id="a-h">Amenities</SectionTitle>
-          <ul className="mt-3 flex flex-col gap-4">
-            {spaces.primary.map((sp) => (
-              <li
-                key={sp.id}
-                className="grid grid-cols-[96px_minmax(0,1fr)] items-start gap-4"
-              >
-                {/* The space's object in a cut tile; a hub is too busy at this size. */}
-                <GymObject
-                  id={spaceObjects[sp.graphic].lead}
-                  cut
-                  className="size-24"
-                />
-                <div className="min-w-0">
-                  <h3 className="text-label">{sp.name}</h3>
-                  <p className="text-caption text-muted-foreground">
-                    {sp.line}
-                  </p>
-                  <p className="mt-1 text-detail text-muted-foreground">
-                    {sp.amenities.join(" · ")}
+        </>
+      }
+      tabs={
+        <TabButtons<Tab>
+          label="Club sections"
+          value={tab}
+          onChange={setTab}
+          items={[
+            { value: "overview", label: "Overview" },
+            { value: "classes", label: "Classes", count: classes.length },
+            { value: "amenities", label: "Amenities" },
+          ]}
+        />
+      }
+    >
+      {tab === "overview" ? (
+        <>
+          {/* Open or closed, how busy now, and the typical hours: the one thing a member checks before the drive. The
+              state sits top left and the hours top right, the same corners as the club card on Home. */}
+          <Card title="Busyness" id="now">
+            <div className="gap-l grid lg:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]">
+              <div className="gap-m lg:pr-l flex min-w-0 flex-col text-body-m sm:text-body-s lg:rule-r">
+                <div className="gap-m grid grid-cols-[minmax(0,1fr)_auto]">
+                  <div className="gap-xxs flex min-w-0 flex-col">
+                    {!o.open ? (
+                      <p className="font-display-wide text-body-xl font-heavy">
+                        Closed now
+                      </p>
+                    ) : offline ? (
+                      <p className="text-pretty">
+                        Offline: the live count is unavailable.
+                      </p>
+                    ) : (
+                      <p className="gap-s flex items-baseline">
+                        <span className="font-display-wide text-body-xl font-heavy">
+                          {BUSY_WORDS[b.level]}
+                        </span>
+                        <span className="tabular text-muted-foreground">
+                          <span className="sr-only">Busyness </span>
+                          {b.level} of 5
+                        </span>
+                      </p>
+                    )}
+                  </div>
+                  <p className="tabular text-right whitespace-nowrap text-muted-foreground">
+                    {o.open ? "Open until " : "Opens "}
+                    {fmtTime(o.open ? o.closeAt : o.openAt)}
                   </p>
                 </div>
-              </li>
-            ))}
-          </ul>
-          {spaces.amenities.length ? (
-            <ul className="mt-5 flex flex-wrap gap-x-6 gap-y-3 border-t border-border pt-4">
-              {spaces.amenities.map((a) => (
-                <li key={a.id} className="flex items-center gap-2 text-body">
-                  <GymObject
-                    id={spaceObjects[a.graphic].lead}
-                    className="size-8 shrink-0"
-                  />
-                  {a.name}
-                </li>
-              ))}
-            </ul>
-          ) : null}
-        </section>
-      </div>
-      <section id="facilities" className="scroll-mt-32" aria-labelledby="f-h">
-        <SectionTitle id="f-h">Courts and pool</SectionTitle>
-        {club.courts.length || club.pool ? (
-          <div className="mt-3 grid gap-x-10 gap-y-6 sm:grid-cols-2">
-            {club.courts.length ? (
-              <div className="flex flex-col items-start gap-2 pt-3 rule-t">
-                <h3 className="text-body-strong">Courts</h3>
-                <p className="text-caption text-muted-foreground">
-                  {club.courts.map((c) => `${c.count} ${c.sport}`).join(", ")}
-                </p>
-                <p className="num text-body">
-                  Next open: {nextCourt || "see the grid"}
-                </p>
-                <Button
-                  variant="outline"
-                  render={<Link href={`/reserve/courts?club=${slug}`} />}
-                >
-                  Reserve a court
-                </Button>
+                {o.open && !offline ? (
+                  <div className="gap-xxs flex flex-col">
+                    <p className="text-pretty">{busyHint(slug, now)}</p>
+                    <p className="tabular text-muted-foreground">
+                      Updated {fmtTime(b.updatedAt)}
+                    </p>
+                  </div>
+                ) : null}
               </div>
-            ) : null}
-            {club.pool ? (
-              <div className="flex flex-col items-start gap-2 pt-3 rule-t">
-                <h3 className="text-body-strong">Lap pool</h3>
-                <p className="text-caption text-muted-foreground">
-                  {club.pool.label} · {club.pool.lanes} lanes
-                  {club.pool.therapy
-                    ? " · warm-water therapy pool, 90–92°F"
-                    : ""}
-                </p>
-                <p className="num text-body">
-                  {nextLane || "Lanes open tomorrow"}
-                </p>
-                <Button
-                  variant="outline"
-                  render={<Link href={`/reserve/lanes?club=${slug}`} />}
-                >
-                  Reserve a lane
-                </Button>
+              <div id="popular" className="gap-s flex min-w-0 flex-col">
+                <h3 className="text-body-m font-heavy sm:text-body-s">
+                  Popular times
+                </h3>
+                <PopularTimesChart
+                  slug={slug}
+                  nowDow={p.dow}
+                  nowHour={p.h}
+                  live={live}
+                />
               </div>
-            ) : null}
-          </div>
-        ) : (
-          <p className="mt-3 text-muted-foreground">
-            No pool or courts at this club.
-          </p>
-        )}
-      </section>
-      <div className="grid gap-x-10 gap-y-10 lg:grid-cols-2">
-        <section id="kids" className="scroll-mt-32" aria-labelledby="k-h">
-          <SectionTitle id="k-h">Kids club</SectionTitle>
-          {club.kidsClub ? (
-            <div className="mt-3 flex flex-col items-start gap-3">
-              <p className="text-body">
-                Ages 6 months to 12 years. Mon–Sat 8:00 am–12:00 pm and
-                4:00–8:00 pm. Parents check in at the club and stay in the
-                building.
-              </p>
-              <ul className="w-full rule-rows">
-                {KIDS_BLOCKS.map((k) => {
-                  const l = kidsLeft(s, slug, today, k)
-                  const past = atTime(today, k.from) < now
-                  return (
-                    <li
-                      key={k.id}
-                      className="flex justify-between py-2 text-caption"
-                    >
-                      <span className="num">
-                        {fmtRange(atTime(today, k.from), atTime(today, k.to))}
-                      </span>
-                      <span
-                        className={cn(
-                          "num",
-                          past
-                            ? "text-muted-foreground"
-                            : l < 3 && "text-warning"
-                        )}
-                      >
-                        {p.dow === 0
-                          ? "Closed Sundays"
-                          : past
-                            ? "Started"
-                            : l === 0
-                              ? "Full"
-                              : `${l} spots left`}
-                      </span>
-                    </li>
-                  )
-                })}
-              </ul>
-              <Button render={<Link href="/reserve/kids-club" />}>
-                Book kids club
-              </Button>
             </div>
-          ) : (
-            <p className="mt-3 text-muted-foreground">
-              No kids club at this club.
-            </p>
-          )}
-        </section>
-        <section id="coaches" className="scroll-mt-32" aria-labelledby="c-h">
-          <SectionTitle id="c-h">Coaches</SectionTitle>
-          {coaches.length ? (
-            <ul className="mt-3 rule-rows">
-              {coaches.map((c) => (
-                <li key={c.id}>
-                  <Link
-                    href={`/training/coaches/${c.slug}`}
-                    className="hover:text-link flex items-center gap-3 py-3"
-                  >
-                    <CoachArt name={c.name} roles={c.specialties} size={48} />
-                    <span>
-                      <span className="block text-label">{c.name}</span>
-                      <span className="block text-caption text-muted-foreground">
-                        {c.specialties.join(" · ")}
-                      </span>
-                    </span>
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p className="mt-3 text-muted-foreground">
-              Coach profiles are coming soon.
-            </p>
-          )}
-        </section>
-      </div>
-      <section id="map" className="scroll-mt-32" aria-labelledby="m-h">
-        <SectionTitle id="m-h">Getting here</SectionTitle>
-        <div className="mt-3 grid gap-6 md:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]">
-          <div className="flex flex-col gap-2">
-            <p className="text-body-strong">{club.address}</p>
-            <p className="text-caption text-muted-foreground">{club.parking}</p>
-            <div className="flex flex-wrap gap-2">
+          </Card>
+          <Card title="Details" id="hours">
+            <FactGrid
+              items={[
+                {
+                  label: "Mon–Fri",
+                  value: "4:30 am–10 pm",
+                  hint: p.dow >= 1 && p.dow <= 5 ? "Today" : undefined,
+                },
+                {
+                  label: "Sat–Sun",
+                  value: "6 am–8 pm",
+                  hint: p.dow === 0 || p.dow === 6 ? "Today" : undefined,
+                },
+                { label: "Staffed", value: "6 am–8 pm" },
+                {
+                  label: "Kids club",
+                  value: club.kidsClub ? "Mon–Sat 8 am–12 pm, 4–8 pm" : "None",
+                },
+                {
+                  label: "Pools",
+                  value: club.pool ? "Close 30 min before the club" : "None",
+                },
+                { label: "Time zone", value: "Arizona, no daylight saving" },
+                { label: "Address", value: club.address },
+                { label: "Parking", value: club.parking },
+                {
+                  label: "Main desk",
+                  value: (
+                    <a href={tel} className="text-link underline">
+                      {club.phone}
+                    </a>
+                  ),
+                },
+              ]}
+            />
+          </Card>
+          <Card
+            title="Getting here"
+            id="map"
+            action={
               <Button
-                variant="outline"
-                render={
-                  <a
-                    href={`https://maps.google.com/?q=${encodeURIComponent(club.address)}`}
-                    target="_blank"
-                    rel="noreferrer"
-                  />
-                }
-              >
-                Open in Maps
-              </Button>
-              <Button
+                size="sm"
                 variant="ghost"
                 onClick={() => {
                   void navigator.clipboard?.writeText(club.address)
@@ -545,17 +365,258 @@ export default function ClubDetail({ slug }: { slug: string }) {
                 <Copy aria-hidden="true" data-icon="inline-start" />
                 Copy address
               </Button>
-            </div>
-          </div>
-          {offline ? (
-            <p className="text-caption text-muted-foreground">
-              Map unavailable offline.
-            </p>
+            }
+          >
+            {offline ? (
+              <p className="text-body-m text-muted-foreground sm:text-body-s">
+                Map unavailable offline.
+              </p>
+            ) : (
+              // The ratio is wider from 640 px, where the block is wide and a 4:3 map would be too tall.
+              <ClubMap
+                now={now}
+                only={slug}
+                selected={slug}
+                ratio="4/3"
+                className="sm:!aspect-[16/6]"
+              />
+            )}
+          </Card>
+        </>
+      ) : null}
+
+      {tab === "classes" ? (
+        <Card
+          tone="bare"
+          title="Today"
+          id="classes"
+          footer={
+            <CardFooterLink href={`/schedule?club=${slug}`}>
+              Full schedule
+            </CardFooterLink>
+          }
+        >
+          {classes.length ? (
+            <Rows label="Today's classes">
+              {classes.map((x) => {
+                const bk = bookingOf(s, me.id, x.id)
+                return (
+                  <Row
+                    key={x.id}
+                    href={`/schedule/${x.id}`}
+                    lead={fmtTime(x.start)}
+                    title={x.name}
+                    line={[
+                      x.studio,
+                      INSTRUCTOR_BY_ID[x.instructorId]?.name,
+                      `${x.duration} min`,
+                    ]
+                      .filter(Boolean)
+                      .join(" · ")}
+                    end={
+                      <>
+                        {bk?.status === "booked" ? (
+                          <StatusPill
+                            tone="success"
+                            icon={Check}
+                            className={ICON_PILL}
+                          >
+                            Booked
+                          </StatusPill>
+                        ) : bk?.status === "waitlisted" ? (
+                          <StatusPill tone="neutral">
+                            Waitlist{" "}
+                            {bk.position === 2 ? "2nd" : `#${bk.position}`}
+                          </StatusPill>
+                        ) : bk?.status === "held" ? (
+                          <StatusPill tone="warning">Spot held</StatusPill>
+                        ) : (
+                          <CapacityIndicator
+                            variant="text"
+                            left={sessionLeft(s, x)}
+                            capacity={x.capacity}
+                            unit={x.unit}
+                            waiting={waitCount(s, x)}
+                          />
+                        )}
+                        {chevron}
+                      </>
+                    }
+                  />
+                )
+              })}
+            </Rows>
           ) : (
-            <ClubMap now={now} only={slug} selected={slug} ratio="16/7" />
+            <EmptyState title="No more classes today" />
           )}
-        </div>
-      </section>
-    </div>
+        </Card>
+      ) : null}
+
+      {tab === "amenities" ? (
+        <>
+          <div className="@container">
+            <ul
+              id="amenities"
+              aria-label="Spaces"
+              className="gap-m grid grid-cols-1 @md:grid-cols-2 @3xl:grid-cols-3 @5xl:grid-cols-4"
+            >
+              {spaces.primary.map((sp) => (
+                <SpaceTile
+                  key={sp.id}
+                  object={spaceObjects[sp.graphic].lead}
+                  name={sp.name}
+                  line={sp.amenities.join(" · ")}
+                />
+              ))}
+            </ul>
+          </div>
+          {spaces.amenities.length ? (
+            <Card tone="plain" title="Also here">
+              <ul className="gap-x-m gap-y-s flex flex-wrap text-body-m sm:text-body-s">
+                {spaces.amenities.map((a) => (
+                  <li key={a.id} className="gap-xs flex items-center">
+                    <GymObject
+                      id={spaceObjects[a.graphic].lead}
+                      className="size-6 shrink-0"
+                    />
+                    {a.name}
+                  </li>
+                ))}
+              </ul>
+            </Card>
+          ) : null}
+          <div className="gap-l grid items-start lg:grid-cols-2">
+            <Card tone="bare" title="Courts and pool" id="facilities">
+              {club.courts.length || club.pool ? (
+                <Rows>
+                  {club.courts.length ? (
+                    <ReserveRow
+                      title="Courts"
+                      line={
+                        <>
+                          {club.courts
+                            .map((c) => `${c.count} ${c.sport}`)
+                            .join(", ")}{" "}
+                          · Next open: {nextCourt || "see the grid"}
+                        </>
+                      }
+                      href={`/reserve/courts?club=${slug}`}
+                      action="Reserve a court"
+                    />
+                  ) : null}
+                  {club.pool ? (
+                    <ReserveRow
+                      title="Lap pool"
+                      line={
+                        <>
+                          {club.pool.label} · {club.pool.lanes} lanes
+                          {club.pool.therapy
+                            ? " · warm-water therapy pool, 90–92°F"
+                            : ""}{" "}
+                          · {nextLane || "Lanes open tomorrow"}
+                        </>
+                      }
+                      href={`/reserve/lanes?club=${slug}`}
+                      action="Reserve a lane"
+                    />
+                  ) : null}
+                </Rows>
+              ) : (
+                <NoRows>No pool or courts at this club.</NoRows>
+              )}
+            </Card>
+            <Card
+              tone="bare"
+              title="Kids club"
+              id="kids"
+              footer={
+                club.kidsClub ? (
+                  <CardFooterLink href="/reserve/kids-club">
+                    Book kids club
+                  </CardFooterLink>
+                ) : undefined
+              }
+            >
+              {club.kidsClub ? (
+                <>
+                  <Rows label="Kids club blocks today">
+                    {KIDS_BLOCKS.map((k) => {
+                      const l = kidsLeft(s, slug, today, k)
+                      const past = atTime(today, k.from) < now
+                      return (
+                        <Row
+                          key={k.id}
+                          title={
+                            <span className="tabular">
+                              {fmtRange(
+                                atTime(today, k.from),
+                                atTime(today, k.to)
+                              )}
+                            </span>
+                          }
+                          end={
+                            p.dow === 0 ? (
+                              <StatusPill tone="neutral">
+                                Closed Sundays
+                              </StatusPill>
+                            ) : past ? (
+                              <StatusPill tone="neutral">Started</StatusPill>
+                            ) : l === 0 ? (
+                              <StatusPill tone="danger">Full</StatusPill>
+                            ) : (
+                              <StatusPill
+                                tone={l < 3 ? "warning" : "success"}
+                                className="tabular"
+                              >
+                                {l} {l === 1 ? "spot" : "spots"} left
+                              </StatusPill>
+                            )
+                          }
+                        />
+                      )
+                    })}
+                  </Rows>
+                  <NoRows className="py-s rule-t">
+                    Ages 6 months to 12 years. Parents stay in the building.
+                  </NoRows>
+                </>
+              ) : (
+                <NoRows>No kids club at this club.</NoRows>
+              )}
+            </Card>
+          </div>
+          <Card tone="bare" title="Coaches" id="coaches">
+            {coaches.length ? (
+              <Rows>
+                {coaches.map((c) => (
+                  <Row
+                    key={c.id}
+                    href={`/training/coaches/${c.slug}`}
+                    title={
+                      <span className="gap-s flex items-center">
+                        <CoachArt
+                          name={c.name}
+                          roles={c.specialties}
+                          size={36}
+                        />
+                        <span className="min-w-0">
+                          <span className="block truncate">{c.name}</span>
+                          <span className="block truncate font-regular text-muted-foreground">
+                            {c.specialties.join(" · ")}
+                          </span>
+                        </span>
+                      </span>
+                    }
+                    end={chevron}
+                  />
+                ))}
+              </Rows>
+            ) : (
+              <NoRows>Coach profiles are coming soon.</NoRows>
+            )}
+          </Card>
+        </>
+      ) : null}
+    </AppPage>
   )
 }

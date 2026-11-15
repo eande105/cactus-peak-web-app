@@ -86,11 +86,11 @@ function SignIn() {
   }
 
   return (
-    <div className="flex flex-col gap-6">
-      <div className="flex flex-col gap-2">
+    <div className="flex flex-col gap-l">
+      <div className="flex flex-col gap-xs">
         <h1
           id="page-title"
-          className="font-heading text-h1 display-stretch md:text-display"
+          className="font-display-wide text-display-s font-heavy md:text-display-xl"
         >
           Welcome back
         </h1>
@@ -98,11 +98,11 @@ function SignIn() {
           Sign in to book classes, courts and more.
         </p>
       </div>
-      <form onSubmit={submit} className="flex flex-col gap-4" noValidate>
+      <form onSubmit={submit} className="flex flex-col gap-m" noValidate>
         {errors.form ? (
           <p
             role="alert"
-            className="rounded-md bg-muted p-3 text-detail text-destructive"
+            className="corner-s bg-muted p-s text-body-xs text-destructive"
           >
             {errors.form}
           </p>
@@ -137,11 +137,11 @@ function SignIn() {
           {busy ? "Signing in…" : "Sign in"}
         </Button>
       </form>
-      <p className="text-caption text-muted-foreground">
+      <p className="text-body-s text-muted-foreground">
         Forgot your password? Call the front desk and we&apos;ll reset it.
       </p>
       {demo ? (
-        <p className="rounded-md bg-muted p-3 text-detail text-muted-foreground">
+        <p className="corner-s bg-muted p-s text-body-xs text-muted-foreground">
           Demo logins: maya@, chris@, alicia@, jordan@, daniel@, ron@ and
           linda@example.com. They share one demo password, which the project
           owner keeps.

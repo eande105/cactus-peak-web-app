@@ -1,17 +1,12 @@
 "use client"
 import Link from "next/link"
 import { useEffect, useState } from "react"
+import { capital, FactRow, IconPill, Section } from "@/components/account/parts"
 import { useApp } from "@/components/app/use-app"
-import { Collapsible } from "@/components/graphical"
-import { Check, ChevronDown, Pause, X } from "@/components/icons"
+import { Check, ChevronRight, Pause } from "@/components/icons"
+import { AppPage, Card, Facts } from "@/components/kit/app"
 import { Confirm } from "@/components/kit/overlays"
-import {
-  Banner,
-  LoadingBlock,
-  PageHeader,
-  SectionTitle,
-  StatusPill,
-} from "@/components/kit/ui"
+import { Banner, LoadingBlock, StatusPill } from "@/components/kit/ui"
 import { Button } from "@/components/ui/button"
 import {
   cancelFreeze,
@@ -29,6 +24,11 @@ import {
 import { DAY, fmtDateFull, fmtDay, fmtDayShort, fmtMoney } from "@/lib/time"
 import { toast } from "@/lib/toast"
 
+/**
+ * Membership: the two plan actions in the page bar, the plan as one row of facts, what the plan includes, the fees,
+ * one offer for the next plan, and the way out as a quiet row at the end. A scheduled freeze, a freeze, an end date
+ * and a plan change each show as a banner with the action that reverses it.
+ */
 export default function MembershipPage() {
   const { s, me, hh, now } = useApp()
   const [loading, setLoading] = useState(false)
@@ -45,40 +45,66 @@ export default function MembershipPage() {
   const late = paymentDaysLate(s, me.id, now)
   const pill =
     hh.status === "frozen" ? (
-      <StatusPill tone="neutral" icon={Pause}>
+      <IconPill tone="info" icon={Pause}>
         Frozen
-      </StatusPill>
+      </IconPill>
     ) : hh.status === "freeze_scheduled" ? (
-      <StatusPill tone="neutral" icon={Pause}>
+      <IconPill tone="info" icon={Pause}>
         Freeze scheduled
-      </StatusPill>
+      </IconPill>
     ) : late >= 0 ? (
       <StatusPill tone="danger">Payment failed</StatusPill>
     ) : hh.status === "cancel_scheduled" ? (
       <StatusPill tone="warning">Ends {fmtDayShort(hh.cancelOn!)}</StatusPill>
     ) : hh.pendingPlan ? (
-      <StatusPill tone="neutral">
+      <StatusPill tone="info">
         Changing on {fmtDayShort(hh.pendingPlan.on)}
       </StatusPill>
     ) : (
-      <StatusPill tone="success" icon={Check}>
+      // The usual state is quiet: a green check and the word, as in the household and invoice tables.
+      <span className="gap-xxs inline-flex items-center">
+        <Check className="size-3.5 shrink-0 text-success" aria-hidden="true" />
         Active
-      </StatusPill>
+      </span>
     )
   const rc = resumeCost(s, hh, now)
+  // A banner with a primary action (resume, keep) takes the screen's one primary button.
+  const bannerLeads =
+    primary &&
+    ((hh.status === "frozen" && !!hh.freeze) ||
+      (hh.status === "cancel_scheduled" && !!hh.cancelOn))
   return (
-    <div className="flex flex-col gap-8">
-      <PageHeader
-        title="Membership"
-        description={
-          primary
-            ? "One view of your plan, status and every plan action."
-            : `Managed by ${s.members[hh.primaryId].firstName}.`
-        }
-      />
+    <AppPage
+      title="Membership"
+      meta={
+        primary ? undefined : (
+          <p className="text-body-m text-muted-foreground sm:text-body-s">
+            Managed by {s.members[hh.primaryId].firstName}
+          </p>
+        )
+      }
+      actions={
+        primary ? (
+          <>
+            <Button
+              variant="outline"
+              render={<Link href="/membership/freeze" />}
+            >
+              Freeze
+            </Button>
+            <Button
+              variant={bannerLeads ? "outline" : "primary"}
+              render={<Link href="/membership/change-plan" />}
+            >
+              Change plan
+            </Button>
+          </>
+        ) : undefined
+      }
+    >
       {hh.status === "freeze_scheduled" && hh.freeze && primary ? (
         <Banner
-          tone="neutral"
+          tone="info"
           icon={Pause}
           title={`Freeze scheduled: ${fmtDayShort(hh.freeze.start)} – ${fmtDayShort(hh.freeze.end)}`}
           actions={
@@ -102,7 +128,7 @@ export default function MembershipPage() {
       ) : null}
       {hh.status === "frozen" && hh.freeze && primary ? (
         <Banner
-          tone="neutral"
+          tone="info"
           icon={Pause}
           title={`Frozen until ${fmtDay(hh.freeze.resume - DAY)}`}
           actions={
@@ -138,7 +164,7 @@ export default function MembershipPage() {
       ) : null}
       {hh.pendingPlan && primary ? (
         <Banner
-          tone="neutral"
+          tone="info"
           title={`Changing to ${PLANS[hh.pendingPlan.plan].name} on ${fmtDayShort(hh.pendingPlan.on)}`}
           actions={
             <Button
@@ -154,132 +180,120 @@ export default function MembershipPage() {
           }
         />
       ) : null}
-      <div className="grid gap-x-12 gap-y-8 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
-        <section aria-labelledby="yp" className="flex flex-col gap-4">
-          <div className="flex items-center justify-between gap-3">
-            <p id="yp" className="eyebrow text-muted-foreground">
-              Your plan
-            </p>
-            {pill}
-          </div>
-          <h2 className="font-heading text-display leading-none display-stretch">
-            {plan.name}
-          </h2>
-          <p className="num text-body">
-            <span className="text-body-strong">
-              {fmtMoney(plan.price, false)} per month
-            </span>
-            {primary && money.adults + money.kids > 0 ? (
-              <>
-                {" "}
-                + family add-ons{" "}
-                {fmtMoney(money.adultTotal + money.kidTotal, false)} per month
-              </>
-            ) : null}
-          </p>
-          {primary ? (
-            <p className="num text-body">
-              Next charge: {fmtDayShort(next)} · {fmtMoney(money.total)}
-            </p>
-          ) : (
-            <p className="num text-body">Renews {fmtDayShort(next)}</p>
-          )}
-          <p className="text-caption text-muted-foreground">
-            Home club: {CLUB_BY_SLUG[me.homeClub].name} · Member since{" "}
-            {fmtDateFull(hh.memberSince)}
-          </p>
-          {primary ? (
-            <div className="flex flex-wrap gap-2">
-              <Button render={<Link href="/membership/change-plan" />}>
-                Change plan
-              </Button>
-              <Button
-                variant="outline"
-                render={<Link href="/membership/freeze" />}
-              >
-                Freeze membership
-              </Button>
-            </div>
-          ) : null}
-        </section>
-        <section
-          aria-labelledby="inc"
-          className="flex flex-col gap-3 lg:border-l lg:border-border lg:pl-10"
-        >
-          <h2 id="inc" className="eyebrow text-muted-foreground">
-            Included
-          </h2>
-          <ul className="flex flex-col rule-rows">
+
+      <Section id="yp" title="Your plan">
+        <FactRow
+          className="py-m rule-b rule-t"
+          items={[
+            {
+              label: "Plan",
+              value: (
+                <span className="gap-xs flex flex-wrap items-center">
+                  {plan.name}
+                  {pill}
+                </span>
+              ),
+            },
+            { label: "Price", value: `${fmtMoney(plan.price, false)} a month` },
+            ...(primary && money.adults + money.kids > 0
+              ? [
+                  {
+                    label: "Family add-ons",
+                    value: `${fmtMoney(money.adultTotal + money.kidTotal, false)} a month`,
+                  },
+                ]
+              : []),
+            primary
+              ? {
+                  label: "Next charge",
+                  value: `${fmtMoney(money.total)} on ${fmtDayShort(next)}`,
+                }
+              : { label: "Renews", value: fmtDayShort(next) },
+            { label: "Home club", value: CLUB_BY_SLUG[me.homeClub].name },
+            { label: "Member since", value: fmtDateFull(hh.memberSince) },
+          ]}
+        />
+      </Section>
+
+      <Section id="inc" title="Included">
+        <div className="@container">
+          <ul className="gap-x-l gap-y-xs grid text-body-m sm:text-body-s @lg:grid-cols-2">
             {plan.perks.map((p) => (
-              <li key={p} className="flex items-center gap-3 py-2.5 text-body">
-                <Check className="size-4 text-success" aria-hidden="true" />
+              <li key={p} className="gap-xs flex items-start">
+                <Check
+                  className="size-4 h-lh shrink-0 text-success"
+                  aria-hidden="true"
+                />
                 {p}
               </li>
             ))}
           </ul>
-        </section>
-      </div>
+        </div>
+      </Section>
+
       {primary ? (
-        <section aria-labelledby="fees">
-          <SectionTitle id="fees">Fees</SectionTitle>
-          <ul className="mt-2 max-w-xl text-body rule-rows">
-            {[
-              "Annual facility fee: $49, charged in March.",
-              "Enrollment: $0 during Fall climb.",
-              "Freeze: $10 per month, 1–3 months.",
-              "Cancel: 30 days' notice.",
-            ].map((x) => (
-              <li key={x} className="py-2.5">
-                {x}
-              </li>
-            ))}
-          </ul>
-        </section>
+        <Section id="fees" title="Fees">
+          <Facts
+            className="rule-t"
+            items={[
+              { label: "Annual facility fee", value: "$49, charged in March" },
+              { label: "Enrollment", value: "$0 during Fall climb" },
+              { label: "Freeze", value: "$10 a month, 1–3 months" },
+              { label: "Cancel", value: "30 days' notice" },
+            ]}
+          />
+        </Section>
       ) : null}
+
       {hh.plan !== "summit" && primary ? (
-        <section className="flex flex-wrap items-center justify-between gap-4 rounded-lg bg-night px-6 py-5 text-on-night">
-          <p className="max-w-[48ch] font-heading text-h3 display-stretch">
-            Summit adds the recovery suite, 9-day booking and 4 guest passes.
-          </p>
-          <Button
-            className="!bg-dawn !text-night hover:!bg-on-night"
-            render={<Link href="/membership/change-plan" />}
-          >
-            Compare plans
-          </Button>
-        </section>
-      ) : null}
-      {primary && hh.status !== "cancel_scheduled" ? (
-        <Collapsible.Root className="max-w-xl pt-4 rule-t">
-          <Collapsible.Trigger className="group flex min-h-11 w-full items-center justify-between !bg-transparent !p-0 text-label text-destructive !shadow-none">
-            Cancel membership
-            <ChevronDown
-              className="size-4 transition-transform group-data-[panel-open]:rotate-180"
-              aria-hidden="true"
-            />
-          </Collapsible.Trigger>
-          <Collapsible.Content className="pt-2">
-            <p className="mb-3 text-body">
-              Cancel with 30 days&apos; notice. You keep full access until your
-              end date.
+        <Card tone="night" as="aside">
+          <div className="gap-m flex flex-wrap items-center justify-between">
+            <p className="max-w-[44ch] text-body-m font-heavy text-pretty sm:text-body-s">
+              Summit adds the recovery suite, 9-day booking and 4 guest passes.
             </p>
             <Button
+              size="sm"
               variant="outline"
-              className="!text-destructive"
-              render={<Link href="/membership/cancel" />}
+              className="!text-night-foreground !ring-night-foreground/40 hover:!bg-night-foreground/10"
+              render={<Link href="/membership/change-plan" />}
             >
-              Cancel membership
+              Compare plans
             </Button>
-          </Collapsible.Content>
-        </Collapsible.Root>
+          </div>
+        </Card>
       ) : null}
+
+      {primary && hh.status !== "cancel_scheduled" ? (
+        <Link
+          id="end"
+          href="/membership/cancel"
+          className="gap-s py-s flex min-h-11 items-center justify-between text-body-m font-medium text-muted-foreground rule-t hover:text-foreground sm:text-body-s"
+        >
+          Cancel membership
+          <ChevronRight className="size-4 shrink-0" aria-hidden="true" />
+        </Link>
+      ) : null}
+
       <Confirm
         open={resume}
         onOpenChange={setResume}
         title="Resume today?"
-        description={`You'll pay ${fmtMoney(rc.amount)} for the rest of this cycle. Your pass works right away.`}
+        description="Your pass works right away."
       >
-        <div className="flex flex-col gap-2">
+        <Facts
+          items={[
+            {
+              label: "Charge today",
+              value: <span className="tabular">{fmtMoney(rc.amount)}</span>,
+              hint: `${rc.left} of ${rc.days} days left in this cycle`,
+            },
+            {
+              label: "Card",
+              value: `${capital(hh.card.brand)} ending ${hh.card.last4}`,
+            },
+          ]}
+        />
+        <div className="gap-xs flex flex-col">
           <Button
             className="w-full"
             onClick={() => {
@@ -303,9 +317,6 @@ export default function MembershipPage() {
           </Button>
         </div>
       </Confirm>
-      <span className="sr-only">
-        <X />
-      </span>
-    </div>
+    </AppPage>
   )
 }

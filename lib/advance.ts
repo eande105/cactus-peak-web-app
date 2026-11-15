@@ -159,7 +159,7 @@ export function promote(
       memberId: w.memberId,
       type: "hold",
       title: `Spot held: ${se.name}, ${fmtDowTime(se.start)}`,
-      body: "A spot opened. It's yours for 30 minutes. Tap Confirm spot.",
+      body: "A spot opened. It's yours for 30 minutes.",
       at: now,
       needsAction: true,
       actionLabel: "Confirm spot",

@@ -1,6 +1,6 @@
 "use client"
 import { useRouter } from "next/navigation"
-import { useEffect, useMemo, useState } from "react"
+import { Fragment, useEffect, useMemo, useState } from "react"
 import { CheckInPass } from "@/components/app/check-in-pass"
 import { canSee, NAV } from "@/components/app/nav"
 import { useApp } from "@/components/app/use-app"
@@ -17,6 +17,15 @@ import {
   Ticket,
   User,
 } from "@/components/icons"
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+  CommandSeparator,
+} from "@/components/kit/command"
 import { Modal } from "@/components/kit/overlays"
 import { CheckRow, FormField, Kbd, Segmented } from "@/components/kit/ui"
 import { Button } from "@/components/ui/button"
@@ -37,7 +46,6 @@ import { householdOf } from "@/lib/engine"
 import { addDays, DOW, dayStart, fmtDowTime, MONTHS, parts } from "@/lib/time"
 import { toast } from "@/lib/toast"
 import { closeDialog, openDialog, useDialog } from "@/lib/ui-state"
-import { cn } from "@/lib/utils"
 
 function PassDialog() {
   const open = useDialog("pass")
@@ -54,8 +62,6 @@ function PassDialog() {
       open={!!open}
       onOpenChange={(o) => !o && closeDialog("pass")}
       title="Check-in pass"
-      hideTitle
-      className="!w-[min(392px,calc(100vw-24px))] !p-3"
     >
       {people.length > 1 ? (
         <Segmented
@@ -140,6 +146,7 @@ function CardDialog() {
   }
   return (
     <Modal
+      wide
       open={!!open}
       onOpenChange={(o) => {
         if (!o) {
@@ -151,7 +158,7 @@ function CardDialog() {
       description={`Now on file: ${hh.card.brand[0].toUpperCase()}${hh.card.brand.slice(1)} ending ${hh.card.last4}. Card details go straight to our payment provider.`}
     >
       <form
-        className="flex flex-col gap-3"
+        className="flex flex-col gap-s"
         onSubmit={(ev) => {
           ev.preventDefault()
           void submit()
@@ -161,7 +168,7 @@ function CardDialog() {
         {err.form ? (
           <p
             role="alert"
-            className="rounded-md bg-danger-subtle px-3 py-2 text-caption font-semibold"
+            className="corner-s bg-danger-subtle px-s py-xs text-body-s font-heavy"
           >
             {err.form}
           </p>
@@ -182,7 +189,7 @@ function CardDialog() {
             />
           )}
         </FormField>
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-3 gap-s">
           <FormField label="Expiry" error={err.exp}>
             {(p) => (
               <Input
@@ -222,7 +229,7 @@ function CardDialog() {
         <CheckRow checked={use} onChange={setUse}>
           Use for membership, training and guest passes
         </CheckRow>
-        <div className="flex flex-wrap justify-end gap-2 pt-2">
+        <div className="flex flex-wrap justify-end gap-xs pt-xs">
           <Button
             type="button"
             variant="outline"
@@ -267,7 +274,7 @@ function FeedbackDialog() {
           />
         )}
       </FormField>
-      <div className="flex flex-wrap gap-2">
+      <div className="flex flex-wrap gap-xs">
         <Button onClick={() => pick("great")}>Great</Button>
         <Button variant="outline" onClick={() => pick("fine")}>
           Fine
@@ -306,7 +313,7 @@ function AskParentDialog() {
           />
         )}
       </FormField>
-      <div className="flex justify-end gap-2">
+      <div className="flex justify-end gap-xs">
         <Button variant="outline" onClick={() => closeDialog("askParent")}>
           Cancel
         </Button>
@@ -347,7 +354,7 @@ function ApproveDialog() {
           : undefined
       }
     >
-      <div className="flex flex-col gap-2">
+      <div className="flex flex-col gap-xs">
         <Button
           className="w-full"
           onClick={() => {
@@ -399,7 +406,7 @@ function ShortcutsDialog() {
     >
       <dl className="rule-rows">
         {rows.map(([a, k]) => (
-          <div key={a} className="flex items-center justify-between gap-4 py-3">
+          <div key={a} className="flex items-center justify-between gap-m py-s">
             <dt>{a}</dt>
             <dd>
               <Kbd>{k}</Kbd>
@@ -428,8 +435,10 @@ function CommandMenu() {
       onOpenChange={(o) => !o && closeDialog("command")}
       title="Search"
       hideTitle
+      hideClose
       wide
-      className="!top-[18%] !translate-y-0 !gap-0 !p-0"
+      // The modal centres itself (top and left 50%, translated back by half its size).
+      className="gap-zero p-xs"
     >
       <CommandBody />
     </Modal>
@@ -440,7 +449,6 @@ function CommandBody() {
   const router = useRouter()
   const { me, club, now, hh } = useApp()
   const [q, setQ] = useState("")
-  const [idx, setIdx] = useState(0)
   const items = useMemo<Cmd[]>(() => {
     const query = q.trim().toLowerCase()
     const out: Cmd[] = []
@@ -593,103 +601,58 @@ function CommandBody() {
     if (c.run) c.run()
     else if (c.href) router.push(c.href)
   }
-  let lastGroup = ""
+  // The items in their groups, in the order they were added.
+  const groups: [string, Cmd[]][] = []
+  for (const c of items) {
+    const g = groups.find(([name]) => name === c.group)
+    if (g) g[1].push(c)
+    else groups.push([c.group, [c]])
+  }
   return (
-    <>
-      <div className="flex items-center gap-2 px-4 pt-3 pb-2">
-        <Search className="size-5 text-muted-foreground" aria-hidden="true" />
-        <input
-          // biome-ignore lint/a11y/noAutofocus: the command palette opens ready to type, so focus on the field is intended
-          autoFocus
-          role="combobox"
-          aria-expanded="true"
-          aria-controls="cmd-list"
-          aria-activedescendant={
-            items[idx] ? `cmd-${items[idx].id}` : undefined
-          }
-          aria-label="Search classes, clubs, coaches"
-          className="h-11 flex-1 bg-transparent text-body outline-none placeholder:text-muted-foreground"
-          placeholder="Search classes, clubs, coaches"
-          value={q}
-          onChange={(e) => {
-            setQ(e.target.value)
-            setIdx(0)
-          }}
-          onKeyDown={(e) => {
-            if (e.key === "ArrowDown") {
-              e.preventDefault()
-              setIdx((i) => Math.min(items.length - 1, i + 1))
-            } else if (e.key === "ArrowUp") {
-              e.preventDefault()
-              setIdx((i) => Math.max(0, i - 1))
-            } else if (e.key === "Enter" && items[idx]) {
-              e.preventDefault()
-              choose(items[idx])
-            }
-          }}
-        />
-      </div>
-      <ul
-        id="cmd-list"
-        // biome-ignore lint/a11y/noNoninteractiveElementToInteractiveRole: list markup and divider styling are kept, the role names the widget
-        role="listbox"
-        aria-label="Results"
-        className="max-h-[55vh] overflow-y-auto pb-2 rule-t"
-      >
-        {items.map((c, i) => {
-          const head = c.group !== lastGroup
-          lastGroup = c.group
-          const Icon = c.icon ?? Search
-          return (
-            <li key={c.id + c.group} role="presentation">
-              {head ? (
-                <p
-                  className="px-4 pt-3 pb-1 eyebrow text-muted-foreground"
-                  role="presentation"
-                >
-                  {c.group}
-                </p>
-              ) : null}
-              {/* biome-ignore lint/a11y/useFocusableInteractive: focus stays on the combobox input, the option is chosen through aria-activedescendant */}
-              {/* biome-ignore lint/a11y/useKeyWithClickEvents: the combobox input handles arrows and Enter, options are driven by aria-activedescendant */}
-              <div
-                id={`cmd-${c.id}`}
-                role="option"
-                aria-selected={i === idx}
-                onMouseMove={() => setIdx(i)}
-                onClick={() => choose(c)}
-                className={cn(
-                  "mx-2 flex min-h-11 cursor-pointer items-center gap-3 rounded-md px-3 py-2",
-                  i === idx && "bg-accent"
-                )}
-              >
-                <Icon
-                  className="size-4 shrink-0 text-muted-foreground"
-                  aria-hidden="true"
-                />
-                <span className="min-w-0 flex-1">
-                  <span className="block truncate text-label">{c.label}</span>
-                  {c.secondary ? (
-                    <span className="block truncate text-detail text-muted-foreground">
-                      {c.secondary}
+    <Command>
+      <CommandInput
+        label="Search classes, clubs, coaches"
+        placeholder="Search classes, clubs, coaches"
+        value={q}
+        onValueChange={setQ}
+      />
+      <CommandList label="Results">
+        <CommandEmpty>
+          <p className="font-heavy">No results for &ldquo;{q}&rdquo;.</p>
+          <p className="text-muted-foreground">
+            Try &ldquo;cycle&rdquo;, &ldquo;sat yoga&rdquo; or a club name.
+          </p>
+        </CommandEmpty>
+        {groups.map(([name, cmds], gi) => (
+          <Fragment key={name}>
+            {gi > 0 ? <CommandSeparator /> : null}
+            <CommandGroup heading={name}>
+              {cmds.map((c) => {
+                const Icon = c.icon ?? Search
+                return (
+                  <CommandItem key={c.id + c.group} onSelect={() => choose(c)}>
+                    <Icon
+                      className="size-4 text-muted-foreground"
+                      aria-hidden="true"
+                    />
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate text-body-s font-heavy">
+                        {c.label}
+                      </span>
+                      {c.secondary ? (
+                        <span className="block truncate text-body-xs text-muted-foreground">
+                          {c.secondary}
+                        </span>
+                      ) : null}
                     </span>
-                  ) : null}
-                </span>
-                <span className="text-detail text-muted-foreground">Open</span>
-              </div>
-            </li>
-          )
-        })}
-        {!items.length ? (
-          <li className="px-4 py-6">
-            <p className="text-label">No results for &ldquo;{q}&rdquo;.</p>
-            <p className="text-caption text-muted-foreground">
-              Try &ldquo;cycle&rdquo;, &ldquo;sat yoga&rdquo; or a club name.
-            </p>
-          </li>
-        ) : null}
-      </ul>
-    </>
+                  </CommandItem>
+                )
+              })}
+            </CommandGroup>
+          </Fragment>
+        ))}
+      </CommandList>
+    </Command>
   )
 }
 

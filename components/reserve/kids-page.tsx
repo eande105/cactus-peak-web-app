@@ -3,28 +3,39 @@ import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useState } from "react"
 import { useApp } from "@/components/app/use-app"
+import { BookPage } from "@/components/book/book-tabs"
 import { SuccessPanel } from "@/components/booking/success-panel"
 import { Toggle } from "@/components/graphical"
 import {
   Check,
+  ChildHead,
   Moon,
   Sun,
   Sunrise,
   Sunset,
   TriangleAlert,
 } from "@/components/icons"
+import {
+  Card,
+  Facts,
+  Group,
+  Panel,
+  PanelEmpty,
+  Split,
+} from "@/components/kit/app"
 import { Modal } from "@/components/kit/overlays"
 import {
   Banner,
   CheckRow,
   EmptyState,
-  PageHeader,
   PersonAvatar,
   RadioList,
 } from "@/components/kit/ui"
-import { StickyBar } from "@/components/reserve/common"
+import { BookingList } from "@/components/reserve/booking-list"
+import { PanelError, QuietLine } from "@/components/reserve/parts"
 import { DayStrip } from "@/components/schedule/day-strip"
 import { Button } from "@/components/ui/button"
+import { useMedia } from "@/hooks/use-media"
 import { bookKidsClub, joinKidsWaitlist } from "@/lib/actions"
 import { announce } from "@/lib/announce"
 import { CLUB_BY_SLUG, CLUBS } from "@/lib/data/catalog"
@@ -36,9 +47,7 @@ import {
   windowDays,
 } from "@/lib/engine"
 import {
-  addDays,
   atTime,
-  dateKey,
   dayStart,
   fmtDay,
   fmtDayLong,
@@ -52,37 +61,145 @@ import type { Booking } from "@/lib/types"
 import { useOffline } from "@/lib/ui-state"
 import { cn } from "@/lib/utils"
 
-const blockLabel = (from: string, to: string) =>
-  fmtRange(atTime(0, from), atTime(0, to)).replace(/\s?([ap])\.m\./, " $1.m.")
-
 const BLOCK_ICON = { k1: Sunrise, k2: Sun, k3: Sunset, k4: Moon } as const
 function BlockIcon({ id }: { id: string }) {
   const I = BLOCK_ICON[id as keyof typeof BLOCK_ICON]
-  return <I className="size-5 shrink-0" aria-hidden="true" />
+  return <I className="size-4 shrink-0" aria-hidden="true" />
+}
+
+/**
+ * One zone of the booking block: a title, one short fact at the right, and the choice.
+ * The zone stays visible but cannot be used until the choice before it is set.
+ */
+function Zone({
+  title,
+  need,
+  hint,
+  id,
+  children,
+  className,
+}: {
+  title: string
+  /** What the member must set first. When it is given, the zone content is inert. */
+  need?: string
+  hint?: string
+  id?: string
+  children: React.ReactNode
+  className?: string
+}) {
+  const side = need ?? hint
+  return (
+    <section
+      id={id}
+      aria-label={title}
+      className={cn("gap-s p-m flex min-w-0 flex-col", className)}
+    >
+      <div className="gap-s flex items-baseline justify-between">
+        <h2 className="shrink-0 text-body-m font-heavy sm:text-body-s">
+          {title}
+        </h2>
+        {side ? (
+          <p className="min-w-0 text-right text-body-m text-muted-foreground sm:text-body-s">
+            {side}
+          </p>
+        ) : null}
+      </div>
+      <div
+        inert={!!need}
+        className={cn("gap-s flex min-w-0 flex-col", need && "opacity-50")}
+      >
+        {children}
+      </div>
+    </section>
+  )
+}
+
+/** One kids club block as a full-width time button: the time at the left, the spots left at the right. */
+function BlockButton({
+  id,
+  time,
+  left,
+  need,
+  on,
+  past,
+  onPress,
+  className,
+}: {
+  id: string
+  time: string
+  left: number
+  /** How many children need a spot. */
+  need: number
+  on: boolean
+  past: boolean
+  onPress: () => void
+  className?: string
+}) {
+  const short = left < need
+  return (
+    <Toggle
+      pressed={on}
+      disabled={past}
+      onPressedChange={onPress}
+      className={cn(
+        "gap-s flex min-h-11 w-full items-center justify-between text-left text-body-m whitespace-normal sm:text-body-s",
+        className
+      )}
+    >
+      <span className="gap-xs flex min-w-0 items-center">
+        <BlockIcon id={id} />
+        <span className="tabular font-medium">{time}</span>
+        {on ? (
+          <Check className="size-4 shrink-0" aria-label="Selected" />
+        ) : null}
+      </span>
+      <span
+        className={cn(
+          "tabular gap-xs flex shrink-0 items-center",
+          left < 3 && !on && "text-warning"
+        )}
+      >
+        {left === 0 ? (
+          "Full"
+        ) : short ? (
+          `${left} left. Need ${need}.`
+        ) : left < 3 ? (
+          <>
+            <TriangleAlert className="size-4 shrink-0" aria-hidden="true" />
+            Only {left} left
+          </>
+        ) : (
+          `${left} spots left`
+        )}
+        {short ? <span className="underline">Join waitlist</span> : null}
+      </span>
+    </Toggle>
+  )
 }
 
 export default function KidsClubPage() {
   const { s, hh, now, club: viewing } = useApp()
   const router = useRouter()
   const offline = useOffline()
+  const wide = useMedia("(min-width: 1024px)")
+  // The pass is scanned at the front desk from a phone, so it is offered on a touch device only.
+  const onTouch = useMedia("(pointer: coarse)")
   const kidsClubs = CLUBS.filter((c) => c.kidsClub)
   const [clubSlug, setClubSlug] = useState(
     CLUB_BY_SLUG[viewing].kidsClub ? viewing : kidsClubs[0].slug
   )
   const members = householdMembers(s, hh.id)
   const children = members.filter((m) => m.role === "child")
-  const teens = members.filter((m) => m.role === "teen")
+  const adults = members.filter(
+    (m) => m.role === "primary" || m.role === "adult"
+  )
   const [kids, setKids] = useState<string[]>(
     children.filter((c) => !!c.allergyNotes).map((c) => c.id)
   )
   const today = dayStart(now)
   const [day, setDay] = useState(today)
   const [blocks, setBlocks] = useState<string[]>([])
-  const [pickup, setPickup] = useState<string[]>(
-    members
-      .filter((m) => m.role === "primary" || m.role === "adult")
-      .map((m) => m.id)
-  )
+  const [pickup, setPickup] = useState<string[]>(adults.map((m) => m.id))
   const [notesOk, setNotesOk] = useState(false)
   const [wl, setWl] = useState<string | null>(null)
   const [wlOk, setWlOk] = useState(false)
@@ -90,7 +207,8 @@ export default function KidsClubPage() {
     null
   )
   const [error, setError] = useState("")
-  const [step, setStep] = useState(1)
+  // On a phone the summary is a sheet. It opens when the member picks a block or selects Review.
+  const [review, setReview] = useState(false)
   const [busy, setBusy] = useState(false)
   const win = windowDays(hh.plan)
   const sunday = parts(day).dow === 0
@@ -99,32 +217,28 @@ export default function KidsClubPage() {
   const club = CLUB_BY_SLUG[clubSlug]
   if (!children.length)
     return (
-      <div>
-        <PageHeader
-          eyebrow="Reserve"
-          title="Kids club"
-          backHref="/reserve"
-          backLabel="Reserve"
-        />
-        <EmptyState
-          object="playground"
-          title="No children on your plan yet."
-          body="Add a child to book kids club."
-          action={
-            <Button render={<Link href="/family/add" />}>Add a child</Button>
-          }
-        />
-      </div>
+      <BookPage>
+        <Card>
+          <EmptyState
+            object="playground"
+            title="No children on your plan yet."
+            action={
+              <Button size="sm" render={<Link href="/family/add" />}>
+                Add a child
+              </Button>
+            }
+          />
+        </Card>
+      </BookPage>
     )
   const chosen = children.filter((c) => kids.includes(c.id))
-  const toggleBlock = (id: string) =>
-    setBlocks((b) =>
-      b.includes(id)
-        ? b.filter((x) => x !== id)
-        : b.length >= 2
-          ? b
-          : [...b, id]
-    )
+  const toggleBlock = (id: string) => {
+    setError("")
+    if (blocks.includes(id)) return setBlocks(blocks.filter((x) => x !== id))
+    if (blocks.length >= 2) return
+    setBlocks([...blocks, id])
+    setReview(true)
+  }
   const book = async () => {
     setBusy(true)
     await new Promise((r) => setTimeout(r, 450))
@@ -140,420 +254,315 @@ export default function KidsClubPage() {
       announce(r.message)
     }
   }
+  const blockTimes = (sep: string) =>
+    blocks
+      .map((b) => {
+        const k = KIDS_BLOCKS.find((x) => x.id === b)!
+        return fmtRange(atTime(day, k.from), atTime(day, k.to))
+      })
+      .join(sep)
   if (done) {
     const first = done.bookings[0]
     return (
-      <div className="max-w-[560px]">
-        <SuccessPanel
-          pill="Kids club booked"
-          headline={`${chosen.map((c) => c.firstName).join(" and ")}, ${fmtDay(first.start)}`}
-          summary={[
-            {
-              label: "When",
-              value: `${fmtDay(first.start)} · ${blocks
-                .map((b) => {
-                  const k = KIDS_BLOCKS.find((x) => x.id === b)!
-                  return fmtRange(atTime(day, k.from), atTime(day, k.to))
-                })
-                .join(", ")}`,
-            },
-            { label: "Where", value: club.name },
-            {
-              label: "Children",
-              value: chosen.map((c) => c.firstName).join(", "),
-            },
-            { label: "Reference", value: done.ref },
-          ]}
-          event={{
-            title: `Kids club: ${chosen.map((c) => c.firstName).join(", ")}`,
-            start: first.start,
-            end: first.end,
-            location: club.address,
-          }}
-          extra={
-            <p className="text-caption text-muted-foreground">
-              Check in at {club.name} before drop-off and stay in the club. An
-              unclaimed block is released 15 minutes after it starts.
-            </p>
-          }
-          rows={[
-            { label: "Show passes", href: "/pass" },
-            {
-              label: "Call the club",
-              href: `tel:${club.phone.replace(/\D/g, "")}`,
-            },
-          ]}
-          onDone={() => router.push("/bookings")}
-          doneLabel="See my bookings"
-        />
-      </div>
+      <BookPage>
+        <div className="max-w-xl">
+          <SuccessPanel
+            pill="Kids club booked"
+            headline={chosen.map((c) => c.firstName).join(" and ")}
+            summary={[
+              {
+                label: "When",
+                value: `${fmtDay(first.start)} · ${blockTimes(", ")}`,
+              },
+              { label: "Where", value: club.name },
+              { label: "Reference", value: done.ref },
+            ]}
+            event={{
+              title: `Kids club: ${chosen.map((c) => c.firstName).join(", ")}`,
+              start: first.start,
+              end: first.end,
+              location: club.address,
+            }}
+            extra={
+              <QuietLine>
+                Check in at {club.name} before drop-off and stay in the club.
+                Unclaimed blocks release 15 minutes after they start.
+              </QuietLine>
+            }
+            rows={[
+              ...(onTouch ? [{ label: "Show pass", href: "/pass" }] : []),
+              {
+                label: "Call the club",
+                href: `tel:${club.phone.replace(/\D/g, "")}`,
+              },
+            ]}
+            onDone={() => router.push("/bookings")}
+            doneLabel="See my bookings"
+          />
+        </div>
+      </BookPage>
     )
   }
-  const sum = (n: number, text: string, edit: () => void) => (
-    <div className="flex items-center justify-between gap-3 py-3 rule-t">
-      <p className="text-body">
-        <span className="mr-3 num text-body text-muted-foreground">{n}</span>
-        {text}
-      </p>
-      <Button variant="ghost" size="sm" onClick={edit}>
-        Change
-      </Button>
-    </div>
+  // The four rules, in order: a club, a child or more, a day with a block or two, then the pick-up and notes checks.
+  const ready = kids.length > 0 && blocks.length > 0
+  const valid = ready && notesOk && pickup.length > 0 && !offline
+  // The household's coming kids club blocks, at every club.
+  const upcoming = s.bookings.filter(
+    (b) =>
+      b.kind === "kids" &&
+      b.status === "booked" &&
+      b.end > now &&
+      s.members[b.memberId]?.householdId === hh.id
   )
-  return (
-    <div className="flex flex-col gap-6 pb-28">
-      <PageHeader
-        eyebrow="Reserve"
-        title="Kids club"
-        description="2-hour blocks, Monday to Saturday. Ages 6 months to 12 years. You check in at the same club."
-        backHref="/reserve"
-        backLabel="Reserve"
+  const clear = () => {
+    setBlocks([])
+    setReview(false)
+    setError("")
+  }
+  const panel = ready ? (
+    <Panel
+      title="Kids club"
+      onClose={wide ? undefined : () => setReview(false)}
+      footer={
+        <>
+          <PanelError>{error}</PanelError>
+          <Button
+            className="w-full"
+            disabled={!valid}
+            loading={busy}
+            onClick={() => void book()}
+          >
+            Book kids club
+          </Button>
+          <Button className="w-full" variant="ghost" onClick={clear}>
+            Clear
+          </Button>
+        </>
+      }
+    >
+      <Facts
+        items={[
+          { label: "Club", value: club.name },
+          {
+            label: "Children",
+            value: chosen.map((c) => `${c.firstName} (${c.age})`).join(", "),
+          },
+          { label: "Day", value: fmtDayLong(day) },
+          {
+            label: blocks.length > 1 ? "Blocks" : "Block",
+            value: <span className="tabular">{blockTimes(", ")}</span>,
+          },
+        ]}
       />
-      {/* 1 Club */}
-      <section aria-labelledby="k1">
-        {step > 1 ? (
-          sum(1, `Club: ${club.name}`, () => setStep(1))
-        ) : (
-          <div className="flex flex-col gap-3">
-            <h2 id="k1" className="font-heading text-h3 display-stretch">
-              <span className="mr-3 num text-body text-muted-foreground">
-                1
-              </span>
-              Which club?
-            </h2>
-            {/* biome-ignore lint/a11y/noNoninteractiveElementToInteractiveRole: list markup and divider styling are kept, the role names the widget */}
-            <ul className="rule-rows" role="radiogroup" aria-label="Club">
-              {CLUBS.map((c) => (
-                <li key={c.slug}>
-                  {/* biome-ignore lint/a11y/useSemanticElements: radio row with custom layout, a native radio input cannot wrap this content */}
-                  <button
-                    type="button"
-                    role="radio"
-                    aria-checked={clubSlug === c.slug}
-                    disabled={!c.kidsClub}
-                    onClick={() => setClubSlug(c.slug)}
-                    className={cn(
-                      "flex min-h-14 w-full items-center justify-between gap-3 py-3 text-left",
-                      !c.kidsClub && "opacity-60"
-                    )}
-                  >
-                    <span>
-                      <span className="block text-label">{c.name}</span>
-                      <span className="block text-caption text-muted-foreground">
+      <Group label="Pick-up adults">
+        {adults.map((m) => (
+          <CheckRow
+            key={m.id}
+            checked={pickup.includes(m.id)}
+            onChange={(on) =>
+              setPickup((p) =>
+                on ? [...p, m.id] : p.filter((x) => x !== m.id)
+              )
+            }
+          >
+            {m.firstName} {m.lastName}
+          </CheckRow>
+        ))}
+      </Group>
+      <CheckRow checked={notesOk} onChange={setNotesOk}>
+        Allergy and medical notes are up to date
+      </CheckRow>
+      <QuietLine>
+        {offline
+          ? "Reconnect to book."
+          : `Check in at ${club.name} before drop-off and stay in the club. Free to cancel with 2 hours' notice.`}
+      </QuietLine>
+    </Panel>
+  ) : null
+  return (
+    <BookPage>
+      <Split
+        label="Your kids club booking"
+        open={ready && (wide || review)}
+        onClose={() => setReview(false)}
+        panel={panel}
+        empty={
+          <PanelEmpty icon={ChildHead}>
+            {kids.length ? "Pick a day and a block." : "Choose a child first."}
+          </PanelEmpty>
+        }
+      >
+        <div className="@container">
+          <div className="grid corner-m raised @2xl:grid-cols-[minmax(0,5fr)_minmax(0,6fr)]">
+            <div className="flex min-w-0 flex-col [&>*+*]:rule-t">
+              <Zone id="k1" title="Club">
+                <RadioList
+                  label="Club"
+                  value={clubSlug}
+                  onChange={(v) => {
+                    if (v === clubSlug) return
+                    setClubSlug(v)
+                    setBlocks([])
+                  }}
+                  options={CLUBS.map((c) => ({
+                    value: c.slug,
+                    label: c.name,
+                    disabled: !c.kidsClub,
+                    help: (
+                      <span className="tabular">
                         {c.kidsClub
-                          ? `Kids club here · ${kidsLeft(s, c.slug, day, KIDS_BLOCKS[0])} spots left ${fmtTime(atTime(day, "08:00"))}`
-                          : "No kids club here"}
+                          ? `${kidsLeft(s, c.slug, day, KIDS_BLOCKS[0])} spots left at ${fmtTime(atTime(day, "08:00"))}`
+                          : "No kids club"}
                       </span>
-                    </span>
-                    <span
-                      aria-hidden="true"
-                      className={cn(
-                        "grid size-5 place-items-center rounded-full border-2 border-input",
-                        clubSlug === c.slug && "border-foreground"
-                      )}
+                    ),
+                  }))}
+                />
+              </Zone>
+
+              <Zone id="k2" title="Children">
+                <ul className="gap-s flex flex-col" aria-label="Children">
+                  {children.map((c) => (
+                    <li
+                      key={c.id}
+                      className="gap-s flex min-w-0 items-center justify-between"
                     >
-                      {clubSlug === c.slug ? (
-                        <span className="size-2.5 rounded-full bg-foreground" />
-                      ) : null}
-                    </span>
-                  </button>
-                </li>
-              ))}
-            </ul>
-            <Button className="w-fit" onClick={() => setStep(2)}>
-              Continue
-            </Button>
-          </div>
-        )}
-      </section>
-      {/* 2 Children */}
-      {step >= 2 ? (
-        <section aria-labelledby="k2">
-          {step > 2 ? (
-            sum(
-              2,
-              `Children: ${chosen.map((c) => `${c.firstName} (${c.age})`).join(", ")}`,
-              () => setStep(2)
-            )
-          ) : (
-            <div className="flex flex-col gap-3">
-              <h2 id="k2" className="font-heading text-h3 display-stretch">
-                <span className="mr-3 num text-body text-muted-foreground">
-                  2
-                </span>
-                Who is going?
-              </h2>
-              <ul className="flex flex-col rule-rows">
-                {children.map((c) => (
-                  <li key={c.id} className="flex items-center gap-3 py-3">
-                    <CheckRow
-                      checked={kids.includes(c.id)}
-                      disabled={!c.allergyNotes}
-                      onChange={(on) =>
-                        setKids((k) =>
-                          on ? [...k, c.id] : k.filter((x) => x !== c.id)
-                        )
-                      }
-                    >
-                      <span className="flex items-center gap-3">
-                        <PersonAvatar
-                          name={c.firstName}
-                          hue={c.hue}
-                          size={40}
-                        />
-                        <span>
-                          <span className="block text-label">
-                            {c.firstName}, {c.age}
-                          </span>
-                          <span className="block text-caption text-muted-foreground">
-                            {c.allergyNotes ? (
-                              "Ready"
-                            ) : (
-                              <>
-                                Add allergy notes first.{" "}
-                                <Link
-                                  href={`/family/${c.id}`}
-                                  className="text-link underline"
-                                >
-                                  Add notes
-                                </Link>
-                              </>
-                            )}
+                      <CheckRow
+                        className="min-w-0"
+                        checked={kids.includes(c.id)}
+                        disabled={!c.allergyNotes}
+                        onChange={(on) => {
+                          const next = on
+                            ? [...kids, c.id]
+                            : kids.filter((x) => x !== c.id)
+                          setKids(next)
+                          // A block stays chosen only while it has a spot for each child.
+                          setBlocks((b) =>
+                            b.filter((id) => {
+                              const k = KIDS_BLOCKS.find((x) => x.id === id)!
+                              return (
+                                next.length > 0 &&
+                                kidsLeft(s, clubSlug, day, k) >= next.length
+                              )
+                            })
+                          )
+                        }}
+                      >
+                        <span className="gap-s flex min-w-0 items-center">
+                          <PersonAvatar
+                            name={c.firstName}
+                            hue={c.hue}
+                            size={28}
+                            className="shrink-0"
+                          />
+                          <span className="min-w-0">
+                            <span className="block truncate font-medium">
+                              {c.firstName}, {c.age}
+                            </span>
+                            <span className="block text-body-m font-regular text-muted-foreground sm:text-body-s">
+                              {c.allergyNotes
+                                ? "Allergy notes on file"
+                                : "Needs allergy notes"}
+                            </span>
                           </span>
                         </span>
-                      </span>
-                    </CheckRow>
-                  </li>
-                ))}
-              </ul>
-              {teens.map((t) => (
-                <p key={t.id} className="text-caption text-muted-foreground">
-                  {t.firstName}, {t.age}, can book Teen Strength instead.
-                </p>
-              ))}
-              <Button
-                className="w-fit"
-                disabled={!kids.length}
-                onClick={() => setStep(3)}
-              >
-                Continue
-              </Button>
-            </div>
-          )}
-        </section>
-      ) : null}
-      {/* 3 Day and block */}
-      {step >= 3 ? (
-        <section aria-labelledby="k3">
-          {step > 3 ? (
-            sum(
-              3,
-              `${fmtDayLong(day)} · ${blocks
-                .map((b) => {
-                  const k = KIDS_BLOCKS.find((x) => x.id === b)!
-                  return fmtRange(atTime(day, k.from), atTime(day, k.to))
-                })
-                .join(", ")}`,
-              () => setStep(3)
-            )
-          ) : (
-            <div className="flex flex-col gap-3">
-              <h2 id="k3" className="font-heading text-h3 display-stretch">
-                <span className="mr-3 num text-body text-muted-foreground">
-                  3
-                </span>
-                Day and block
-              </h2>
-              <DayStrip
-                selected={day}
-                onSelect={(d) => {
-                  setDay(d)
-                  setBlocks([])
-                }}
-                now={now}
-                windowDays={win}
-                label="Choose a day"
-              />
-              <p className="text-detail text-muted-foreground">
-                <span className="rounded-xs bg-muted px-2 py-0.5">
-                  Arizona time (no daylight saving)
-                </span>
-              </p>
-              {sunday ? (
-                <Banner tone="neutral" title="Closed Sundays">
-                  Kids club runs Monday to Saturday. Pick another day.
-                </Banner>
-              ) : notOpen ? (
-                <Banner
-                  tone="neutral"
-                  title={`${fmtDay(day)} kids club opens ${fmtDay(opens)} at ${fmtTime(opens)}`}
-                />
-              ) : (
-                // biome-ignore lint/a11y/useSemanticElements: labelled list of toggle cards, a fieldset would change the list markup and styles
-                <ul
-                  className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4"
-                  role="group"
-                  aria-label="Kids club blocks"
-                >
-                  {KIDS_BLOCKS.map((k) => {
-                    const left = kidsLeft(s, clubSlug, day, k)
-                    const start = atTime(day, k.from)
-                    const past = start < now
-                    const need = kids.length
-                    const short = left < need
-                    const on = blocks.includes(k.id)
-                    return (
-                      <li key={k.id}>
-                        <Toggle
-                          pressed={on}
-                          disabled={past}
-                          onPressedChange={() =>
-                            short ? setWl(k.id) : toggleBlock(k.id)
-                          }
-                          className="flex min-h-24 w-full flex-col items-start justify-between gap-2 text-left whitespace-normal"
+                      </CheckRow>
+                      {c.allergyNotes ? null : (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          render={<Link href={`/family/${c.id}`} />}
                         >
-                          <span className="flex items-center gap-2">
-                            <BlockIcon id={k.id} />
-                            <span className="num text-body-strong">
-                              {fmtRange(atTime(day, k.from), atTime(day, k.to))}
-                            </span>
-                          </span>
-                          <span
-                            className={cn(
-                              "text-caption",
-                              left < 3 && !on && "text-warning"
-                            )}
-                          >
-                            {left === 0 ? (
-                              "Full"
-                            ) : short ? (
-                              `${left} left. Need ${need}.`
-                            ) : left < 3 ? (
-                              <span className="inline-flex items-center gap-1">
-                                <TriangleAlert
-                                  className="size-3.5"
-                                  aria-hidden="true"
-                                />
-                                Only {left} left
-                              </span>
-                            ) : (
-                              `${left} spots left`
-                            )}
-                            {on ? (
-                              <Check
-                                className="ml-2 inline size-4"
-                                aria-label="Selected"
-                              />
-                            ) : null}
-                          </span>
-                          {short ? (
-                            <span className="text-detail underline">
-                              Join waitlist
-                            </span>
-                          ) : null}
-                        </Toggle>
-                      </li>
-                    )
-                  })}
+                          Add notes
+                        </Button>
+                      )}
+                    </li>
+                  ))}
                 </ul>
-              )}
-              <p className="text-detail text-muted-foreground">
-                Up to 2 blocks per child per day.
-              </p>
-              <Button
-                className="w-fit"
-                disabled={!blocks.length}
-                onClick={() => setStep(4)}
-              >
-                Continue
-              </Button>
+              </Zone>
             </div>
-          )}
-        </section>
-      ) : null}
-      {step >= 4 ? (
-        <section aria-labelledby="k4" className="flex flex-col gap-4">
-          <h2 id="k4" className="font-heading text-h3 display-stretch">
-            <span className="mr-3 num text-body text-muted-foreground">4</span>
-            Review
-          </h2>
-          <ul className="rule-rows">
-            {chosen.map((c) => (
-              <li
-                key={c.id}
-                className="flex items-center justify-between gap-3 py-3"
+
+            <div className="flex min-w-0 flex-col rule-t @2xl:rule-l @2xl:rule-t-0 [&>*+*]:rule-t">
+              <Zone
+                id="k3"
+                title="Day"
+                need={kids.length ? undefined : "Choose a child first"}
+                hint={fmtDay(day)}
               >
-                <span className="flex items-center gap-3">
-                  <PersonAvatar name={c.firstName} hue={c.hue} size={32} />
-                  <span className="text-label">
-                    {c.firstName}, {c.age}
-                  </span>
-                </span>
-                <span className="num text-caption text-muted-foreground">
-                  {blocks
-                    .map((b) => {
-                      const k = KIDS_BLOCKS.find((x) => x.id === b)!
-                      return fmtRange(atTime(day, k.from), atTime(day, k.to))
-                    })
-                    .join(" and ")}
-                </span>
-              </li>
-            ))}
-          </ul>
-          <fieldset className="flex flex-col gap-2">
-            <legend className="text-label">Authorised pick-up adults</legend>
-            {members
-              .filter((m) => m.role === "primary" || m.role === "adult")
-              .map((m) => (
-                <CheckRow
-                  key={m.id}
-                  checked={pickup.includes(m.id)}
-                  onChange={(on) =>
-                    setPickup((p) =>
-                      on ? [...p, m.id] : p.filter((x) => x !== m.id)
-                    )
-                  }
-                >
-                  {m.firstName} {m.lastName}
-                </CheckRow>
-              ))}
-          </fieldset>
-          <CheckRow checked={notesOk} onChange={setNotesOk}>
-            Allergy and medical notes are up to date
-          </CheckRow>
-          <p className="text-caption text-muted-foreground">
-            You check in at {club.name} before drop-off and stay in the club.
-            Free to cancel. Please give 2 hours&apos; notice. Included with your
-            membership.
-          </p>
-          {error ? (
-            <p
-              role="alert"
-              className="text-caption font-semibold text-destructive"
-            >
-              {error}
-            </p>
-          ) : null}
-        </section>
-      ) : null}
-      {step >= 4 ? (
-        <StickyBar>
-          <div className="mx-auto flex max-w-[1200px] flex-wrap items-center justify-between gap-3 lg:px-8">
-            <p className="min-w-0 flex-1 basis-64 text-caption">
-              {chosen.map((c) => c.firstName).join(", ")} ·{" "}
-              <span className="num">{fmtDay(day)}</span> · {club.name}
-            </p>
-            <Button
-              size="lg"
-              disabled={!notesOk || !pickup.length || offline}
-              loading={busy}
-              onClick={() => void book()}
-            >
-              Book kids club
-            </Button>
+                <DayStrip
+                  selected={day}
+                  onSelect={(d) => {
+                    setDay(d)
+                    setBlocks([])
+                  }}
+                  now={now}
+                  windowDays={win}
+                  label="Choose a day"
+                />
+              </Zone>
+
+              <Zone
+                id="k4"
+                title="Block"
+                need={kids.length ? undefined : "Choose a child first"}
+                hint="Up to 2 blocks for each child"
+                className="flex-1"
+              >
+                {sunday ? (
+                  <Banner tone="neutral" title="Closed Sundays">
+                    Kids club runs Monday to Saturday.
+                  </Banner>
+                ) : notOpen ? (
+                  <Banner
+                    tone="neutral"
+                    title={`${fmtDay(day)} kids club opens ${fmtDay(opens)} at ${fmtTime(opens)}`}
+                  />
+                ) : (
+                  // biome-ignore lint/a11y/useSemanticElements: labelled list of toggle buttons, a fieldset would change the list markup and styles
+                  <ul
+                    className="gap-xs flex flex-col"
+                    role="group"
+                    aria-label="Kids club blocks"
+                  >
+                    {KIDS_BLOCKS.map((k) => (
+                      <li key={k.id}>
+                        <BlockButton
+                          id={k.id}
+                          time={fmtRange(
+                            atTime(day, k.from),
+                            atTime(day, k.to)
+                          )}
+                          left={kidsLeft(s, clubSlug, day, k)}
+                          need={kids.length}
+                          on={blocks.includes(k.id)}
+                          past={atTime(day, k.from) < now}
+                          onPress={() =>
+                            kidsLeft(s, clubSlug, day, k) < kids.length
+                              ? setWl(k.id)
+                              : toggleBlock(k.id)
+                          }
+                        />
+                      </li>
+                    ))}
+                  </ul>
+                )}
+                {ready && !wide ? (
+                  <Button className="w-full" onClick={() => setReview(true)}>
+                    Review booking
+                  </Button>
+                ) : null}
+              </Zone>
+            </div>
           </div>
-        </StickyBar>
-      ) : null}
+        </div>
+
+        <BookingList
+          id="your-kids-club"
+          label="Your kids club blocks"
+          list={upcoming}
+          empty="No kids club block booked."
+        />
+      </Split>
+
       <Modal
         open={!!wl}
         onOpenChange={(o) => {
@@ -568,11 +577,12 @@ export default function KidsClubPage() {
         <CheckRow checked={wlOk} onChange={setWlOk}>
           I understand the hold lasts 30 minutes.
         </CheckRow>
-        <div className="flex justify-end gap-2">
-          <Button variant="outline" onClick={() => setWl(null)}>
+        <div className="gap-s flex justify-end">
+          <Button size="sm" variant="outline" onClick={() => setWl(null)}>
             Pick another block
           </Button>
           <Button
+            size="sm"
             disabled={!wlOk}
             onClick={() => {
               joinKidsWaitlist({ clubSlug, childIds: kids, day, blockId: wl! })
@@ -588,16 +598,6 @@ export default function KidsClubPage() {
           </Button>
         </div>
       </Modal>
-      <RadioList
-        label=""
-        value=""
-        onChange={() => {}}
-        options={[]}
-        className="hidden"
-      />
-    </div>
+    </BookPage>
   )
 }
-void blockLabel
-void addDays
-void dateKey

@@ -20,21 +20,21 @@ export default function GlobalError({
         <title>We couldn't load Cactus Peak</title>
         <main
           id="main"
-          className="mx-auto flex min-h-dvh max-w-[560px] flex-col items-start justify-center gap-4 px-4"
+          className="mx-auto flex min-h-dvh max-w-[560px] flex-col items-start justify-center gap-m px-m"
         >
-          <h1 className="font-heading text-h1">
+          <h1 className="font-display-wide font-display-wide text-display-s font-heavy">
             We couldn&apos;t load the club schedule.
           </h1>
           <p className="text-muted-foreground">
             Check your connection, then try again. Your bookings are safe. Need
             help now? Call{" "}
-            <a className="text-link num underline" href="tel:4805550142">
+            <a className="tabular text-link underline" href="tel:4805550142">
               (480) 555-0142
             </a>
             .
           </p>
           {digest ? (
-            <p className="num text-detail text-muted-foreground">
+            <p className="tabular text-body-xs text-muted-foreground">
               Error id: {digest}
             </p>
           ) : null}

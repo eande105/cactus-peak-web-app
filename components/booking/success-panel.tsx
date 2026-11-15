@@ -2,12 +2,18 @@
 import Link from "next/link"
 import type { ReactNode } from "react"
 import { AddToCalendar } from "@/components/booking/calendar-menu"
-import { ChevronRight } from "@/components/icons"
+import { GymObject, type ObjectId } from "@/components/brand/graphics"
+import { Check } from "@/components/icons"
+import { Facts } from "@/components/kit/app"
+import { StatusPill } from "@/components/kit/ui"
+import { Button } from "@/components/ui/button"
 import type { CalEvent } from "@/lib/ics"
 import { toast } from "@/lib/toast"
+import { cn } from "@/lib/utils"
 
-// A confirmation is a page about the thing that happened: the fact as the title, the rule that applies, the details as
-// hairline rows, one next step in copper (only when there is one), then plain links. No box, no check, no Done button.
+// The result of a flow, as one compact card: a small check (in the status pill when there is one), the fact as the
+// headline, the details as facts, then the next actions as buttons. One action is primary: `primary`, the calendar
+// menu, or the first row.
 export function SuccessPanel({
   headline,
   pill,
@@ -20,6 +26,7 @@ export function SuccessPanel({
   onDone,
   doneLabel = "Back",
   extra,
+  object,
   className,
 }: {
   headline: string
@@ -33,84 +40,87 @@ export function SuccessPanel({
   onDone?: () => void
   doneLabel?: string
   extra?: ReactNode
+  /** The gym object for what was booked, small. Without a pill it replaces the check. */
+  object?: ObjectId
   className?: string
 }) {
-  const row =
-    "flex min-h-12 w-full items-center justify-between text-left text-body hover:text-link"
+  const lead =
+    primary ??
+    (event ? <AddToCalendar event={event} variant="primary" /> : null)
+  const hasActions = !!lead || !!rows?.length || !!shareText || !!onDone
   return (
     <div
-      className={`flex flex-col items-start gap-4 ${className ?? ""}`}
       role="status"
+      className={cn(
+        "flex min-w-0 flex-col corner-m raised text-body-m sm:text-body-s",
+        className
+      )}
     >
-      <div className="flex flex-col gap-1">
-        {pill ? <p className="eyebrow text-success">{pill}</p> : null}
-        <h2 className="font-heading text-h2 display-stretch">{headline}</h2>
+      <div className="gap-xs p-m flex flex-col items-start">
+        {object ? (
+          <GymObject id={object} cut className="size-10 shrink-0" />
+        ) : null}
+        {pill ? (
+          <StatusPill tone="success" icon={Check} className="pl-xxs">
+            {pill}
+          </StatusPill>
+        ) : object ? null : (
+          <Check className="size-4 shrink-0 text-success" aria-hidden="true" />
+        )}
+        <h2 className="font-display-wide text-body-xl font-heavy text-balance">
+          {headline}
+        </h2>
       </div>
-      {extra}
-      <dl className="w-full rule-rows rule-t">
-        {summary.map((r) => (
-          <div
-            key={r.label}
-            className="flex justify-between gap-4 py-2.5 text-caption"
-          >
-            <dt className="text-muted-foreground">{r.label}</dt>
-            <dd className="min-w-0 text-right num">{r.value}</dd>
-          </div>
-        ))}
-      </dl>
-      {primary ??
-        (event ? <AddToCalendar event={event} variant="primary" /> : null)}
-      {rows?.length || shareText ? (
-        <ul className="w-full rule-rows rule-t">
-          {rows?.map((r) => (
-            <li key={r.label}>
-              {r.href ? (
-                <Link href={r.href} className={row}>
-                  {r.label}
-                  <ChevronRight
-                    className="size-4 text-muted-foreground"
-                    aria-hidden="true"
-                  />
-                </Link>
-              ) : (
-                <button type="button" onClick={r.onClick} className={row}>
-                  {r.label}
-                  <ChevronRight
-                    className="size-4 text-muted-foreground"
-                    aria-hidden="true"
-                  />
-                </button>
-              )}
-            </li>
-          ))}
-          {shareText ? (
-            <li>
-              <button
-                type="button"
-                className={row}
-                onClick={() => {
-                  void navigator.clipboard?.writeText(shareText)
-                  toast({ title: "Link copied" })
-                }}
-              >
-                {shareLabel}
-                <ChevronRight
-                  className="size-4 text-muted-foreground"
-                  aria-hidden="true"
-                />
-              </button>
-            </li>
+      {summary.length || extra ? (
+        <div className="gap-s px-m pb-m flex flex-col">
+          {summary.length ? (
+            <Facts
+              className="rule-t"
+              items={summary.map((r) => ({
+                label: r.label,
+                value: <span className="tabular">{r.value}</span>,
+              }))}
+            />
           ) : null}
-        </ul>
+          {extra}
+        </div>
       ) : null}
-      {onDone ? (
-        <button
-          type="button"
-          onClick={onDone}
-          className="text-link min-h-11 text-label underline underline-offset-4"
-        >
-          {doneLabel}
-        </button>
+      {hasActions ? (
+        <div className="gap-xs p-m flex flex-wrap items-center rule-t">
+          {lead}
+          {rows?.map((r, i) => {
+            const variant = !lead && i === 0 ? "primary" : "outline"
+            return r.href ? (
+              <Button
+                key={r.label}
+                variant={variant}
+                render={<Link href={r.href} />}
+              >
+                {r.label}
+              </Button>
+            ) : (
+              <Button key={r.label} variant={variant} onClick={r.onClick}>
+                {r.label}
+              </Button>
+            )
+          })}
+          {shareText ? (
+            <Button
+              variant="outline"
+              onClick={() => {
+                void navigator.clipboard?.writeText(shareText)
+                toast({ title: "Link copied" })
+              }}
+            >
+              {shareLabel}
+            </Button>
+          ) : null}
+          {onDone ? (
+            <Button variant="ghost" onClick={onDone}>
+              {doneLabel}
+            </Button>
+          ) : null}
+        </div>
       ) : null}
     </div>
   )

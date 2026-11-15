@@ -1,0 +1,360 @@
+{
+  "format": "graphical-install-report-v1",
+  "dryRun": true,
+  "project": "graphical",
+  "inputs": {
+    "inventory": "graphical/install/style-inventory.json",
+    "input": "graphical/install/import.json",
+    "keep": []
+  },
+  "totals": [
+    {
+      "label": "Colors",
+      "before": 19,
+      "after": 16,
+      "derived": 0,
+      "kept": 0
+    },
+    {
+      "label": "Text sizes",
+      "before": 3,
+      "after": 3,
+      "derived": 0,
+      "kept": 0
+    },
+    {
+      "label": "Font weights",
+      "before": 4,
+      "after": 3,
+      "derived": 0,
+      "kept": 0
+    },
+    {
+      "label": "Letter spacing",
+      "before": 3,
+      "after": 3,
+      "derived": 0,
+      "kept": 0
+    },
+    {
+      "label": "Corners",
+      "before": 4,
+      "after": 4,
+      "derived": 0,
+      "kept": 0
+    }
+  ],
+  "families": {
+    "color": {
+      "rewritten": 0,
+      "removed": 0,
+      "skipped": 0,
+      "tokens": 4,
+      "kept": 14,
+      "preserved": 514
+    },
+    "shadow": {
+      "rewritten": 0,
+      "removed": 0,
+      "skipped": 0,
+      "tokens": 0,
+      "kept": 5,
+      "preserved": 10
+    },
+    "font-family": {
+      "rewritten": 0,
+      "removed": 0,
+      "skipped": 0,
+      "tokens": 0,
+      "kept": 0,
+      "preserved": 6
+    },
+    "font-weight": {
+      "rewritten": 3,
+      "removed": 0,
+      "skipped": 0,
+      "tokens": 76,
+      "kept": 0,
+      "preserved": 2
+    },
+    "font-size": {
+      "rewritten": 3,
+      "removed": 0,
+      "skipped": 0,
+      "tokens": 0,
+      "kept": 0,
+      "preserved": 4
+    },
+    "line-height": {
+      "rewritten": 0,
+      "removed": 0,
+      "skipped": 0,
+      "tokens": 0,
+      "kept": 3,
+      "preserved": 5
+    },
+    "letter-spacing": {
+      "rewritten": 6,
+      "removed": 0,
+      "skipped": 0,
+      "tokens": 0,
+      "kept": 0,
+      "preserved": 0
+    },
+    "radius": {
+      "rewritten": 2,
+      "removed": 0,
+      "skipped": 0,
+      "tokens": 0,
+      "kept": 0,
+      "preserved": 0
+    },
+    "spacing": {
+      "rewritten": 1,
+      "removed": 0,
+      "skipped": 0,
+      "tokens": 0,
+      "kept": 0,
+      "preserved": 4
+    },
+    "token": {
+      "rewritten": 2,
+      "removed": 0,
+      "skipped": 0,
+      "tokens": 0,
+      "kept": 0,
+      "preserved": 0
+    },
+    "border-width": {
+      "rewritten": 0,
+      "removed": 0,
+      "skipped": 0,
+      "tokens": 0,
+      "kept": 0,
+      "preserved": 6
+    }
+  },
+  "files": ["app/globals.css"],
+  "written": [
+    "graphical/project.json",
+    "graphical/themes/graphical.json",
+    "graphical/role-map.json",
+    "graphical/generated/theme.css",
+    "graphical/README.md",
+    "graphical/generated/tailwind-theme.css",
+    "graphical/install/install-report.json",
+    "graphical/install/install-report.md"
+  ],
+  "fonts": {},
+  "changes": [
+    {
+      "path": "app/globals.css",
+      "line": 409,
+      "text": " {font-weight:var(--weight-body-heavy)}",
+      "family": "font-weight",
+      "after": "var(--weight-body-heavy)"
+    },
+    {
+      "path": "app/globals.css",
+      "line": 410,
+      "text": " {font-size:var(--size-s)}",
+      "family": "font-size",
+      "after": "var(--size-s)"
+    },
+    {
+      "path": "app/globals.css",
+      "line": 412,
+      "text": " {letter-spacing:var(--tracking-l)}",
+      "family": "letter-spacing",
+      "after": "var(--tracking-l)"
+    },
+    {
+      "path": "app/globals.css",
+      "line": 490,
+      "text": ".font-display-wide {letter-spacing:var(--tracking-s)}",
+      "family": "letter-spacing",
+      "after": "var(--tracking-s)"
+    },
+    {
+      "path": "app/globals.css",
+      "line": 503,
+      "text": ".lede {font-size:var(--size-l)}",
+      "family": "font-size",
+      "after": "var(--size-l)"
+    },
+    {
+      "path": "app/globals.css",
+      "line": 504,
+      "text": ".lede {letter-spacing:var(--tracking-s)}",
+      "family": "letter-spacing",
+      "after": "var(--tracking-s)"
+    },
+    {
+      "path": "app/globals.css",
+      "line": 511,
+      "text": ".display-hero {font-weight:var(--weight-display-heavy)}",
+      "family": "font-weight",
+      "after": "var(--weight-display-heavy)"
+    },
+    {
+      "path": "app/globals.css",
+      "line": 515,
+      "text": ".display-hero {letter-spacing:var(--tracking-xs)}",
+      "family": "letter-spacing",
+      "after": "var(--tracking-xs)"
+    },
+    {
+      "path": "app/globals.css",
+      "line": 520,
+      "text": ".display-lead {font-weight:var(--weight-display-heavy)}",
+      "family": "font-weight",
+      "after": "var(--weight-display-heavy)"
+    },
+    {
+      "path": "app/globals.css",
+      "line": 524,
+      "text": ".display-lead {letter-spacing:var(--tracking-xs)}",
+      "family": "letter-spacing",
+      "after": "var(--tracking-xs)"
+    },
+    {
+      "path": "app/globals.css",
+      "line": 531,
+      "text": ".display-quiet {font-size:var(--display-size-xxs)}",
+      "family": "font-size",
+      "after": "var(--display-size-xxs)"
+    },
+    {
+      "path": "app/globals.css",
+      "line": 532,
+      "text": ".display-quiet {letter-spacing:var(--tracking-s)}",
+      "family": "letter-spacing",
+      "after": "var(--tracking-s)"
+    },
+    {
+      "path": "app/globals.css",
+      "line": 556,
+      "text": ".side-drawer {border-radius:var(--radius-zero)}",
+      "family": "radius",
+      "after": "var(--radius-zero)"
+    },
+    {
+      "path": "app/globals.css",
+      "line": 572,
+      "text": ".nav-drawer {border-radius:var(--radius-zero)}",
+      "family": "radius",
+      "after": "var(--radius-zero)"
+    },
+    {
+      "path": "app/globals.css",
+      "line": 573,
+      "text": ".nav-drawer {padding:var(--space-zero)}",
+      "family": "spacing",
+      "after": "var(--space-zero)"
+    },
+    {
+      "path": "app/globals.css",
+      "line": 162,
+      "text": "--color-muted: var(--muted)",
+      "family": "token",
+      "after": "var(--neutral-4)"
+    },
+    {
+      "path": "app/globals.css",
+      "line": 187,
+      "text": "--color-sheet: var(--sheet)",
+      "family": "token",
+      "after": "var(--neutral-2)"
+    }
+  ],
+  "skipped": [],
+  "kept": [],
+  "overrides": [
+    {
+      "path": "app/globals.css",
+      "line": 412,
+      "text": "letter-spacing: var(--tracking-l);",
+      "style": "Body S",
+      "kind": "letter-spacing",
+      "reason": "kept",
+      "existing": true
+    },
+    {
+      "path": "app/globals.css",
+      "line": 504,
+      "text": "letter-spacing: var(--tracking-s);",
+      "style": "Body L",
+      "kind": "letter-spacing",
+      "reason": "kept",
+      "existing": true
+    },
+    {
+      "path": "app/globals.css",
+      "line": 532,
+      "text": "letter-spacing: var(--tracking-s);",
+      "style": "Display XXS",
+      "kind": "letter-spacing",
+      "reason": "kept",
+      "existing": true
+    },
+    {
+      "path": "components/kit/ribs.tsx",
+      "line": 233,
+      "text": "leading-none",
+      "style": "Body XL",
+      "kind": "line-height",
+      "reason": "edge"
+    },
+    {
+      "path": "components/kit/ribs.tsx",
+      "line": 259,
+      "text": "leading-none",
+      "style": "Display S",
+      "kind": "line-height",
+      "reason": "edge"
+    },
+    {
+      "path": "components/kit/ribs.tsx",
+      "line": 304,
+      "text": "leading-none",
+      "style": "Display S",
+      "kind": "line-height",
+      "reason": "edge"
+    }
+  ],
+  "choices": [],
+  "tidied": [],
+  "multiples": [],
+  "scales": [],
+  "warnings": [],
+  "coverage": [
+    {
+      "path": "lib/fonts.ts",
+      "line": 13,
+      "kind": "unresolved-class-source",
+      "detail": "Cannot resolve class helper Inter. Include its source or convert and review this class expression manually.",
+      "reviewed": "next/font loader calls, not class lists. (line 13)"
+    },
+    {
+      "path": "lib/fonts.ts",
+      "line": 7,
+      "kind": "unresolved-class-source",
+      "detail": "Cannot resolve class helper Archivo. Include its source or convert and review this class expression manually.",
+      "reviewed": "next/font loader calls, not class lists. (line 7)"
+    },
+    {
+      "path": "lib/utils.ts",
+      "line": 27,
+      "kind": "unresolved-class-source",
+      "detail": "Cannot resolve class helper merge. Include its source or convert and review this class expression manually.",
+      "reviewed": "The merge call inside cn(); cn's own arguments are traced. (line 27)"
+    },
+    {
+      "path": "components/kit/ui.tsx",
+      "line": 389,
+      "kind": "unresolved-class-source",
+      "detail": "Cannot resolve class helper CATEGORIES.map. Include its source or convert and review this class expression manually.",
+      "reviewed": "CATEGORIES.map() lists the category ids for a hue lookup, not a class list. (line 389)"
+    }
+  ]
+}

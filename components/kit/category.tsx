@@ -19,8 +19,10 @@ export function CategoryBadge({
     <span
       className={cn(
         `cat-${id}`,
-        "inline-flex items-center gap-1 rounded-sm bg-cat-tint font-semibold text-cat-text",
-        size === "sm" ? "px-1.5 py-0.5 text-detail" : "px-2 py-1 text-caption",
+        "inline-flex items-center gap-xxs corner-xs bg-cat-tint font-heavy text-cat-text",
+        size === "sm"
+          ? "px-xs py-xxs text-body-xs"
+          : "px-xs py-xxs text-body-s",
         className
       )}
     >

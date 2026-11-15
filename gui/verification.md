@@ -2,7 +2,7 @@
 
 Follow the receiving app’s verification policy and check behavior affected by the change. Type checking establishes compile compatibility; interaction tests check specific behavior; visual review assesses appearance and interaction feel. Report these separately. Small styling edits do not require a full application test suite.
 
-Assess the result at its consumers. For simplification, confirm the affected roles retain their values, dependencies, and relevant responsive/mode/state behavior with fewer duplicate definitions or unnecessary overrides. For conversion, compare the actual scoped typography, controls, surfaces, and states with the agreed assignments and exceptions. Include independently styled headings, navigation, repeated containers, and popups where relevant; a changed token with no effective consumers is not evidence of completion.
+Assess the result at its consumers. For cleanup-only work, confirm the affected roles retain their values, dependencies, and relevant responsive/mode/state behavior with fewer duplicate definitions or unnecessary overrides. For conversion or app-to-Graphical import, compare the actual scoped typography, controls, surfaces, and states with the agreed target mappings and exceptions. Include independently styled headings, navigation, repeated containers, and popups where relevant; a changed token with no effective consumers is not evidence of completion. Preserve the conversion workflow's required coverage and unresolved-site reporting.
 
 | Symptom | First checks |
 | --- | --- |

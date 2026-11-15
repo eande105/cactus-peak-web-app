@@ -3,6 +3,7 @@ import Link from "next/link"
 import { useEffect, useId, useRef, useState } from "react"
 import { NumberField } from "@/components/graphical"
 import { Lock, Minus, Plus } from "@/components/icons"
+import { Card } from "@/components/kit/app"
 import { Modal } from "@/components/kit/overlays"
 import { Button } from "@/components/ui/button"
 import { fmtCountdown, MIN } from "@/lib/time"
@@ -15,6 +16,7 @@ export function SlotHoldTimer({
   onExtend,
   canExtend,
   what,
+  className,
 }: {
   holdUntil: number
   now: number
@@ -22,6 +24,7 @@ export function SlotHoldTimer({
   onExtend: () => void
   canExtend: boolean
   what: string
+  className?: string
 }) {
   const left = holdUntil - now
   const fired = useRef(false)
@@ -41,23 +44,25 @@ export function SlotHoldTimer({
   }, [left])
   const pct = Math.max(0, Math.min(100, (left / (5 * MIN)) * 100))
   return (
-    <div className="flex flex-col gap-1.5">
-      <p className="flex items-center justify-between text-caption">
-        <span>Holding {what}</span>
+    <div className={cn("gap-xs flex flex-col", className)}>
+      <p className="gap-m flex items-baseline justify-between text-body-m sm:text-body-s">
+        <span className="min-w-0 truncate text-muted-foreground">
+          Holding {what}
+        </span>
         <span
-          className="num font-semibold"
+          className="tabular shrink-0 font-heavy"
           role="timer"
           aria-label={`Hold time left ${fmtCountdown(left)}`}
         >
-          {fmtCountdown(left)}
+          {fmtCountdown(left)} left
         </span>
       </p>
       <div
-        className="h-1.5 overflow-hidden rounded-full bg-muted"
+        className="h-1 overflow-hidden corner-full bg-muted"
         aria-hidden="true"
       >
         <div
-          className="h-full rounded-full bg-night dark:bg-on-night"
+          className="h-full corner-full bg-night dark:bg-night-foreground"
           style={{ width: `${pct}%` }}
         />
       </div>
@@ -67,11 +72,16 @@ export function SlotHoldTimer({
         title="1 minute left"
         description={`We're holding ${what} for you.`}
       >
-        <div className="flex justify-end gap-2">
-          <Button variant="outline" onClick={() => setDismissed(holdUntil)}>
+        <div className="gap-s flex justify-end">
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => setDismissed(holdUntil)}
+          >
             Let it go
           </Button>
           <Button
+            size="sm"
             onClick={() => {
               onExtend()
             }}
@@ -91,6 +101,7 @@ export function Stepper({
   max,
   onChange,
   help,
+  className,
 }: {
   label: string
   value: number
@@ -98,11 +109,13 @@ export function Stepper({
   max: number
   onChange: (n: number) => void
   help?: string
+  className?: string
 }) {
   const id = useId()
   return (
     <NumberField.Root
       id={id}
+      className={className}
       value={value}
       min={min}
       max={max}
@@ -138,7 +151,10 @@ export function Stepper({
         {value}
       </span>
       {help ? (
-        <p id={`${id}-h`} className="text-caption text-muted-foreground">
+        <p
+          id={`${id}-h`}
+          className="text-body-m text-muted-foreground sm:text-body-s"
+        >
           {help}
         </p>
       ) : null}
@@ -146,42 +162,39 @@ export function Stepper({
   )
 }
 
+/** The card a member sees when the plan does not include what the tab books. */
 export function LockedCard({
   title,
   body,
   cta = "Compare plans",
   href = "/membership/change-plan",
+  className,
 }: {
   title: string
   body: string
   cta?: string
   href?: string
-}) {
-  return (
-    <div className="flex max-w-[560px] flex-col items-start gap-3 py-6">
-      <Lock className="size-7 text-muted-foreground" aria-hidden="true" />
-      <h2 className="font-heading text-h3 display-stretch">{title}</h2>
-      <p className="text-muted-foreground">{body}</p>
-      <Button render={<Link href={href} />}>{cta}</Button>
-    </div>
-  )
-}
-
-export function StickyBar({
-  children,
-  className,
-}: {
-  children: React.ReactNode
   className?: string
 }) {
   return (
-    <div
-      className={cn(
-        "fixed inset-x-0 bottom-0 z-30 border-t border-border bg-card px-4 py-3 pb-[max(12px,env(safe-area-inset-bottom))] lg:left-[var(--sb,264px)]",
-        className
-      )}
-    >
-      {children}
-    </div>
+    <Card className={cn("max-w-xl", className)}>
+      <div className="gap-m flex flex-col items-start">
+        <div className="gap-s flex items-start">
+          <Lock
+            className="mt-xxs size-4 shrink-0 text-muted-foreground sm:mt-xxs"
+            aria-hidden="true"
+          />
+          <div className="min-w-0">
+            <h2 className="text-body-m font-heavy text-balance sm:text-body-s">
+              {title}
+            </h2>
+            <p className="text-body-m text-pretty text-muted-foreground sm:text-body-s">
+              {body}
+            </p>
+          </div>
+        </div>
+        <Button render={<Link href={href} />}>{cta}</Button>
+      </div>
+    </Card>
   )
 }

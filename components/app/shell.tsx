@@ -4,29 +4,36 @@ import { usePathname, useRouter } from "next/navigation"
 import { useTheme } from "next-themes"
 import { type ReactNode, useEffect, useRef, useState } from "react"
 import { PaymentBanners } from "@/components/app/banners"
-import { ClubSwitcher } from "@/components/app/club-switcher"
 import { GlobalDialogs } from "@/components/app/global-dialogs"
 import { HouseholdGate, ShellSkeleton } from "@/components/app/household-gate"
-import { canOpen, canSee, NAV } from "@/components/app/nav"
-import { NotificationsPopover } from "@/components/app/notices"
+import {
+  ACCOUNT_NAV,
+  ACCOUNT_PATHS,
+  canOpen,
+  canSee,
+  HELP_NAV,
+  isCurrent,
+  PRIMARY_NAV,
+  type PrimaryNavItem,
+} from "@/components/app/nav"
+import { needsStepUp, StepUpGate } from "@/components/app/step-up"
 import { useApp } from "@/components/app/use-app"
 import { Menu } from "@/components/graphical"
 import {
+  Bell,
+  CalendarPlus,
   Check,
-  ChevronDown,
-  CircleHelp,
-  Menu as MenuIcon,
+  ChevronRight,
   MonitorSmartphone,
   Moon,
-  PanelLeft,
+  MoreHorizontal,
   QrCode,
   Search,
   Sun,
   X,
 } from "@/components/icons"
-import { Drawer } from "@/components/kit/overlays"
 import { Tip, TipProvider } from "@/components/kit/tip"
-import { EmptyState, Kbd, PersonAvatar } from "@/components/kit/ui"
+import { EmptyState, PersonAvatar } from "@/components/kit/ui"
 import { Button } from "@/components/ui/button"
 import {
   demoJumpClock,
@@ -38,11 +45,13 @@ import {
   switchMember,
 } from "@/lib/actions"
 import { announce } from "@/lib/announce"
-import { CLUB_BY_SLUG, PLANS } from "@/lib/data/catalog"
-import { guestPassesLeft, ptCreditsLeft } from "@/lib/engine"
+import { PLANS } from "@/lib/data/catalog"
 import { toast } from "@/lib/toast"
 import { openDialog, setOfflineDemo, useOffline } from "@/lib/ui-state"
 import { cn } from "@/lib/utils"
+
+/** The gutters of the content area. Each screen sets its own width with `AppPage`. */
+export const FRAME = "w-full px-m lg:px-l"
 
 function Logo({ className, symbol }: { className?: string; symbol?: boolean }) {
   return (
@@ -71,229 +80,282 @@ function Logo({ className, symbol }: { className?: string; symbol?: boolean }) {
   )
 }
 
-function badgeFor(href: string, app: ReturnType<typeof useApp>) {
-  const { s, me, hh, now } = app
-  if (href === "/bookings") {
-    const n = s.bookings.filter(
-      (b) =>
-        b.memberId === me.id &&
-        b.status === "held" &&
-        (b.holdExpiresAt ?? 0) > now
-    ).length
-    return n
-      ? { text: String(n), tone: "warning" as const, label: `${n} held` }
-      : null
-  }
-  if (href === "/training") {
-    const n = ptCreditsLeft(hh)
-    return n
-      ? {
-          text: String(n),
-          tone: "muted" as const,
-          label: `${n} training credits left`,
-        }
-      : null
-  }
-  if (href === "/guest-passes") {
-    const { left } = guestPassesLeft(s, hh.id, now)
-    return {
-      text: String(left),
-      tone: "muted" as const,
-      label: `${left} guest passes left`,
-    }
-  }
-  if (href === "/inbox") {
-    const n = s.notices.filter((x) => x.memberId === me.id && !x.readAt).length
-    return n
-      ? { text: String(n), tone: "danger" as const, label: `${n} unread` }
-      : null
-  }
-  if (href === "/membership") {
-    if (hh.status === "frozen")
-      return { text: "Frozen", tone: "muted" as const, label: "Frozen" }
-    if (hh.status === "payment_failed")
-      return { text: "!", tone: "danger" as const, label: "Payment failed" }
-  }
-  if (href === "/billing" && hh.status === "payment_failed")
-    return { text: "", tone: "dot" as const, label: "Payment failed" }
-  return null
+function SideLink({ item, count }: { item: PrimaryNavItem; count?: number }) {
+  const path = usePathname()
+  const active = isCurrent(path, item.match)
+  const Icon = item.icon
+  return (
+    <li>
+      <Link
+        href={item.href}
+        aria-current={active ? "page" : undefined}
+        className={cn(
+          "gap-s px-s flex h-9 items-center corner-s text-body-s font-medium",
+          active
+            ? "bg-card text-foreground hairline"
+            : "text-muted-foreground hover:bg-foreground/5 hover:text-foreground"
+        )}
+      >
+        <Icon
+          className={cn("size-4 shrink-0", active && "text-primary")}
+          aria-hidden="true"
+        />
+        <span className="flex-1 truncate">{item.label}</span>
+        {count ? (
+          <span className="tabular px-xs corner-full bg-badge-danger text-body-xs font-heavy text-badge-danger-fg">
+            <span className="sr-only">Unread: </span>
+            {count}
+          </span>
+        ) : null}
+      </Link>
+    </li>
+  )
 }
 
-function NavLinks({
-  collapsed,
-  onNavigate,
-}: {
-  collapsed?: boolean
-  onNavigate?: () => void
-}) {
-  const app = useApp()
-  const path = usePathname()
-  const items = NAV.filter((n) => canSee(app.me, n.href))
-  const groups: (string | undefined)[] = []
-  for (const n of items.filter((i) => !i.footer))
-    if (!groups.includes(n.group)) groups.push(n.group)
-  const link = (n: (typeof NAV)[number]) => {
-    const active =
-      path === n.href ||
-      path.startsWith(`${n.href}/`) ||
-      (n.href === "/schedule" && path.startsWith("/schedule"))
-    const b = badgeFor(n.href, app)
-    const Icon = n.icon
-    return (
-      <li key={n.href}>
-        {/* The collapsed rail shows icons only. The name stays in the sr-only label; the hint is for sighted users. */}
-        <Tip content={collapsed ? n.label : undefined} side="right">
-          <Link
-            href={n.href}
-            onClick={onNavigate}
-            aria-current={active ? "page" : undefined}
-            className={cn(
-              "relative flex min-h-11 items-center gap-3 rounded-md px-3 text-label transition-colors hover:bg-muted",
-              collapsed && "justify-center px-0",
-              active &&
-                "font-bold before:absolute before:inset-y-2 before:left-0 before:w-[3px] before:rounded-full before:bg-primary"
-            )}
+/** The sidebar, from 1024 px. What a member does is at the top. What a member manages is at the bottom. */
+function Sidebar() {
+  const { s, me } = useApp()
+  const unread = s.notices.filter(
+    (n) => n.memberId === me.id && !n.readAt
+  ).length
+  return (
+    <aside className="gap-m p-s sticky top-0 flex h-dvh w-60 shrink-0 flex-col overflow-y-auto max-lg:hidden">
+      <Link
+        href="/today"
+        aria-label="Cactus Peak Athletic, Home"
+        className="px-s flex h-10 items-center"
+      >
+        <Logo className="h-8 w-auto" />
+      </Link>
+      {/* The action members take most, with the pass beside it as an icon button: the pass is what they need at
+          the door. */}
+      <div className="gap-xs flex items-center">
+        <Button
+          className="flex-1 justify-start"
+          render={<Link href="/schedule" />}
+        >
+          <CalendarPlus aria-hidden="true" data-icon="inline-start" />
+          Book a class
+        </Button>
+        <Tip content="Show pass" side="bottom">
+          <Button
+            variant="outline"
+            size="icon"
+            aria-label="Show pass"
+            onClick={() => openDialog("pass")}
           >
-            <Icon className="size-5 shrink-0" aria-hidden="true" />
-            <span
-              className={cn(
-                "min-w-0 flex-1 break-words",
-                collapsed && "sr-only"
-              )}
+            <QrCode aria-hidden="true" />
+          </Button>
+        </Tip>
+      </div>
+      <nav aria-label="Main" className="flex flex-1 flex-col justify-between">
+        <ul className="gap-xxs flex flex-col">
+          {PRIMARY_NAV.map((n) => (
+            <SideLink
+              key={n.href}
+              item={n}
+              count={n.href === "/inbox" ? unread : undefined}
+            />
+          ))}
+        </ul>
+        <ul className="gap-xxs flex flex-col">
+          <li>
+            <button
+              type="button"
+              onClick={() => openDialog("command")}
+              className="gap-s px-s flex h-9 w-full items-center corner-s text-body-s font-medium text-muted-foreground hover:bg-foreground/5 hover:text-foreground"
             >
-              {n.label}
-            </span>
-            {b ? (
-              <span
+              <Search className="size-4 shrink-0" aria-hidden="true" />
+              <span className="flex-1 text-left">Search</span>
+            </button>
+          </li>
+          <SideLink item={HELP_NAV} />
+        </ul>
+      </nav>
+      <AccountMenu wide />
+    </aside>
+  )
+}
+
+/** The side menu of the Account area. Below 1024 px it is a row that scrolls sideways. */
+function AccountNav() {
+  const { me } = useApp()
+  const path = usePathname()
+  return (
+    <nav aria-label="Account" className="lg:w-52 lg:shrink-0">
+      <ul className="gap-xxs flex scrollbar-none max-lg:overflow-x-auto lg:sticky lg:top-[calc(var(--bar-h)+var(--space-m))] lg:flex-col">
+        {ACCOUNT_NAV.filter((n) => canSee(me, n.href)).map((n) => {
+          const active = path === n.href || path.startsWith(`${n.href}/`)
+          return (
+            <li key={n.href} className="shrink-0">
+              <Link
+                href={n.href}
+                aria-current={active ? "page" : undefined}
                 className={cn(
-                  "shrink-0 rounded-full px-2 num text-detail",
-                  b.tone === "warning" && "bg-warning-subtle text-warning",
-                  b.tone === "danger" &&
-                    "font-bold bg-badge-danger text-badge-danger-fg",
-                  b.tone === "muted" && "bg-muted text-muted-foreground",
-                  b.tone === "dot" && "size-2 bg-destructive p-0",
-                  collapsed && "absolute top-1 right-1 px-1"
+                  "px-s flex h-9 items-center corner-s text-body-m font-medium whitespace-nowrap sm:h-8 sm:text-body-s",
+                  active
+                    ? "bg-accent text-foreground"
+                    : "text-muted-foreground hover:bg-muted hover:text-foreground"
                 )}
               >
-                <span className="sr-only">{b.label}</span>
-                <span aria-hidden="true">{b.text}</span>
-              </span>
-            ) : null}
-          </Link>
-        </Tip>
-      </li>
-    )
-  }
-  return (
-    <nav
-      aria-label="Main"
-      className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-3 py-2"
-    >
-      <ul className="flex flex-col gap-0.5">
-        {items.filter((n) => !n.group && !n.footer).map(link)}
-      </ul>
-      {groups.filter(Boolean).map((g) => (
-        <div key={g}>
-          {collapsed ? (
-            <hr className="mb-2 border-border" />
-          ) : (
-            <p className="mb-1 px-3 eyebrow text-muted-foreground">{g}</p>
-          )}
-          <ul className="flex flex-col gap-0.5">
-            {items.filter((n) => n.group === g).map(link)}
-          </ul>
-        </div>
-      ))}
-      <ul className="mt-auto flex flex-col gap-0.5 border-t border-border pt-3">
-        {items.filter((n) => n.footer).map(link)}
+                {n.label}
+              </Link>
+            </li>
+          )
+        })}
       </ul>
     </nav>
   )
 }
 
-function AccountMenu() {
+/** The bell opens the Inbox page. The count is the member's unread notices. */
+function InboxLink() {
+  const { s, me } = useApp()
+  const path = usePathname()
+  const unread = s.notices.filter(
+    (n) => n.memberId === me.id && !n.readAt
+  ).length
+  return (
+    <Link
+      href="/inbox"
+      aria-label={unread ? `Inbox, ${unread} unread` : "Inbox"}
+      aria-current={path.startsWith("/inbox") ? "page" : undefined}
+      className="relative grid size-9 place-items-center corner-s hover:bg-muted"
+    >
+      <Bell className="size-4.5" aria-hidden="true" />
+      {unread ? (
+        <span
+          className="px-xxs tabular absolute top-0.5 right-0.5 grid min-w-4 place-items-center corner-full bg-badge-danger text-body-xs font-heavy text-badge-danger-fg"
+          aria-hidden="true"
+        >
+          {unread}
+        </span>
+      ) : null}
+    </Link>
+  )
+}
+
+const ROLE_LABEL = {
+  primary: "Primary member",
+  adult: "Family adult",
+  teen: "Teen",
+  child: "Child",
+} as const
+
+function AccountMenu({ wide }: { wide?: boolean }) {
   const { s, me, hh } = useApp()
   const offline = useOffline()
   const { theme, setTheme } = useTheme()
   const router = useRouter()
   // Row level security limits the app to the signed-in household, so only its members can be viewed here.
-  // Other demo people need their own sign-in.
-  const demoPeople = Object.values(s.members).filter(
+  const people = Object.values(s.members).filter(
     (m) => m.householdId === hh.id && m.role !== "child"
   )
   const [resetting, setResetting] = useState(false)
+  const sub = (label: string, children: ReactNode, wide?: boolean) => (
+    <Menu.SubmenuRoot>
+      <Menu.SubmenuTrigger>
+        {label}
+        <ChevronRight
+          className="ml-auto size-4 text-muted-foreground"
+          aria-hidden="true"
+        />
+      </Menu.SubmenuTrigger>
+      <Menu.Portal>
+        <Menu.Positioner sideOffset={4} alignOffset={-4}>
+          <Menu.Popup
+            className={cn(
+              "max-h-[80vh] overflow-y-auto",
+              wide ? "!min-w-64" : "!min-w-44"
+            )}
+          >
+            {children}
+          </Menu.Popup>
+        </Menu.Positioner>
+      </Menu.Portal>
+    </Menu.SubmenuRoot>
+  )
   return (
     <Menu.Root>
       <Menu.Trigger
         aria-label={`Account menu for ${me.firstName} ${me.lastName}`}
-        className="!flex !size-11 !items-center !justify-center !gap-1 !border-0 !bg-transparent !p-0 !shadow-none hover:!bg-muted"
+        className={cn(
+          "!border-0 !bg-transparent !shadow-none",
+          wide
+            ? "!gap-s !px-s !flex !h-12 !w-full !items-center !justify-start corner-s !text-left hover:!bg-foreground/5 data-[popup-open]:!bg-foreground/5"
+            : "!grid !size-9 !place-items-center !p-zero hover:!bg-muted"
+        )}
       >
         <PersonAvatar
           name={`${me.firstName} ${me.lastName}`}
           hue={me.hue}
-          size={32}
+          size={wide ? 32 : 28}
         />
-        <ChevronDown
-          className="size-4 text-muted-foreground max-sm:hidden"
-          aria-hidden="true"
-        />
+        {wide ? (
+          <>
+            <span className="min-w-0 flex-1">
+              <span className="block truncate text-body-s font-medium text-foreground">
+                {me.firstName} {me.lastName}
+              </span>
+              <span className="block truncate text-body-xs text-muted-foreground">
+                {PLANS[hh.plan].name}
+              </span>
+            </span>
+            <MoreHorizontal
+              className="size-4 shrink-0 rotate-90 text-muted-foreground"
+              aria-hidden="true"
+            />
+          </>
+        ) : null}
       </Menu.Trigger>
       <Menu.Portal>
-        <Menu.Positioner align="end" sideOffset={8}>
-          <Menu.Popup className="max-h-[80vh] !min-w-64 overflow-y-auto">
-            <div className="px-3 py-2">
-              <p className="text-label">
-                {me.firstName} {me.lastName}
-              </p>
-              <p className="text-caption text-muted-foreground">
-                {PLANS[hh.plan].name} ·{" "}
-                {me.role === "primary"
-                  ? "Primary member"
-                  : me.role === "adult"
-                    ? "Family adult"
-                    : me.role === "teen"
-                      ? "Teen"
-                      : "Child"}
-              </p>
+        <Menu.Positioner
+          side={wide ? "right" : "bottom"}
+          align="end"
+          sideOffset={wide ? 12 : 8}
+        >
+          <Menu.Popup className="!min-w-64">
+            <div className="gap-s px-s py-xs flex items-center">
+              <PersonAvatar
+                name={`${me.firstName} ${me.lastName}`}
+                hue={me.hue}
+                size={36}
+              />
+              <div className="min-w-0">
+                <p className="truncate text-body-s font-heavy">
+                  {me.firstName} {me.lastName}
+                </p>
+                <p className="truncate text-body-s text-muted-foreground">
+                  {PLANS[hh.plan].name} · {ROLE_LABEL[me.role]}
+                </p>
+              </div>
             </div>
             <Menu.Separator />
-            <Menu.Group>
-              <Menu.GroupLabel>View as (your household)</Menu.GroupLabel>
-              <Menu.RadioGroup
-                value={me.id}
-                onValueChange={(v) => {
-                  switchMember(v as string)
-                  router.push("/today")
-                  announce(
-                    `Now viewing as ${s.members[v as string].firstName}.`
-                  )
-                }}
-              >
-                {demoPeople.map((m) => (
-                  <Menu.RadioItem key={m.id} value={m.id} closeOnClick>
-                    <Menu.RadioItemIndicator>
-                      <Check aria-hidden="true" />
-                    </Menu.RadioItemIndicator>
-                    {m.firstName} {m.lastName}
-                    <span className="ml-2 text-detail text-muted-foreground">
-                      {m.role === "teen"
-                        ? "Teen"
-                        : m.role === "primary"
-                          ? "Primary"
-                          : "Adult"}
-                    </span>
-                  </Menu.RadioItem>
-                ))}
-              </Menu.RadioGroup>
-            </Menu.Group>
+            {/* What a member manages. On a phone the menu also carries the places the tab bar has no room for. On
+                the sidebar, Help and Search sit right above the menu, so it does not repeat them. */}
+            {(
+              [
+                ["/account", "Account", true],
+                ["/family", "Household", true],
+                ["/billing", "Billing", true],
+                ["/settings/notifications", "Notifications", true],
+                ["/clubs", "Clubs", false],
+                ["/progress", "Progress", false],
+                ["/help", "Help", false],
+              ] as const
+            )
+              .filter(
+                ([href, , everywhere]) =>
+                  canSee(me, href) && (everywhere || !wide)
+              )
+              .map(([href, label]) => (
+                <Menu.Item key={href} render={<Link href={href} />}>
+                  {label}
+                </Menu.Item>
+              ))}
             <Menu.Separator />
-            <Menu.Item render={<Link href="/settings" />}>Settings</Menu.Item>
-            {me.role === "primary" ? (
-              <Menu.Item render={<Link href="/billing" />}>Billing</Menu.Item>
-            ) : null}
-            <Menu.Separator />
-            <Menu.Group>
-              <Menu.GroupLabel>Appearance</Menu.GroupLabel>
+            {sub(
+              "Appearance",
               <Menu.RadioGroup
                 value={theme ?? "system"}
                 onValueChange={(v) => {
@@ -301,102 +363,119 @@ function AccountMenu() {
                   setPrefs(me.id, { theme: v as "system" })
                 }}
               >
-                <Menu.RadioItem value="system">
-                  <Menu.RadioItemIndicator>
-                    <Check aria-hidden="true" />
-                  </Menu.RadioItemIndicator>
-                  <MonitorSmartphone
-                    className="mr-2 size-4"
-                    aria-hidden="true"
-                  />
-                  System
-                </Menu.RadioItem>
-                <Menu.RadioItem value="light">
-                  <Menu.RadioItemIndicator>
-                    <Check aria-hidden="true" />
-                  </Menu.RadioItemIndicator>
-                  <Sun className="mr-2 size-4" aria-hidden="true" />
-                  Light
-                </Menu.RadioItem>
-                <Menu.RadioItem value="dark">
-                  <Menu.RadioItemIndicator>
-                    <Check aria-hidden="true" />
-                  </Menu.RadioItemIndicator>
-                  <Moon className="mr-2 size-4" aria-hidden="true" />
-                  Dark
-                </Menu.RadioItem>
+                {(
+                  [
+                    ["system", "System", MonitorSmartphone],
+                    ["light", "Light", Sun],
+                    ["dark", "Dark", Moon],
+                  ] as const
+                ).map(([value, label, Icon]) => (
+                  <Menu.RadioItem key={value} value={value}>
+                    <Menu.RadioItemIndicator>
+                      <Check aria-hidden="true" />
+                    </Menu.RadioItemIndicator>
+                    <Icon className="mr-xs size-4" aria-hidden="true" />
+                    {label}
+                  </Menu.RadioItem>
+                ))}
               </Menu.RadioGroup>
-            </Menu.Group>
-            <Menu.Separator />
-            <Menu.Group>
-              <Menu.GroupLabel>Demo tools</Menu.GroupLabel>
-              <Menu.Item
-                onClick={() => {
-                  const ok = demoOpenWaitlistSpot()
-                  announce(
-                    ok
-                      ? "A spot opened on your waitlist."
-                      : "You are not on a waitlist right now."
-                  )
-                }}
-              >
-                Open a spot on my waitlist
-              </Menu.Item>
-              <Menu.Item
-                onClick={() => {
-                  demoJumpClock(3600_000)
-                  announce("Clock moved forward 1 hour.")
-                }}
-              >
-                Move the clock forward 1 hour
-              </Menu.Item>
-              {me.role === "primary" ? (
-                <>
-                  <Menu.Item onClick={() => demoPaymentFailed(0)}>
-                    Fail my payment (day 0)
-                  </Menu.Item>
-                  <Menu.Item onClick={() => demoPaymentFailed(9)}>
-                    Fail my payment (day 9)
-                  </Menu.Item>
-                  <Menu.Item onClick={() => demoPaymentFailed(null)}>
-                    Clear payment failure
-                  </Menu.Item>
-                </>
-              ) : null}
-              <Menu.CheckboxItem
-                checked={offline}
-                onCheckedChange={(c) => setOfflineDemo(!!c)}
-              >
-                <Menu.CheckboxItemIndicator>
-                  <Check aria-hidden="true" />
-                </Menu.CheckboxItemIndicator>
-                Offline
-              </Menu.CheckboxItem>
-              <Menu.Item
-                disabled={resetting}
-                onClick={async () => {
-                  setResetting(true)
-                  try {
-                    await demoReset()
-                    setOfflineDemo(false)
-                    announce("Demo data reset.")
-                    toast({ title: "Demo data reset" })
-                    router.push("/today")
-                  } catch {
-                    toast({
-                      type: "error",
-                      title: "We couldn't reset the demo data",
-                      description:
-                        "Check your connection, then try Reset demo data again.",
-                    })
-                  } finally {
-                    setResetting(false)
-                  }
-                }}
-              >
-                {resetting ? "Resetting demo data…" : "Reset demo data"}
-              </Menu.Item>
-            </Menu.Group>
+            )}
+            {/* The demo tools are for the presentation, not for members. One submenu keeps them out of the way. */}
+            {sub(
+              "Demo",
+              <>
+                <Menu.Group>
+                  <Menu.GroupLabel>View as</Menu.GroupLabel>
+                  <Menu.RadioGroup
+                    value={me.id}
+                    onValueChange={(v) => {
+                      switchMember(v as string)
+                      router.push("/today")
+                      announce(
+                        `Now viewing as ${s.members[v as string].firstName}.`
+                      )
+                    }}
+                  >
+                    {people.map((m) => (
+                      <Menu.RadioItem key={m.id} value={m.id} closeOnClick>
+                        <Menu.RadioItemIndicator>
+                          <Check aria-hidden="true" />
+                        </Menu.RadioItemIndicator>
+                        {m.firstName} {m.lastName}
+                      </Menu.RadioItem>
+                    ))}
+                  </Menu.RadioGroup>
+                </Menu.Group>
+                <Menu.Separator />
+                <Menu.Item
+                  onClick={() => {
+                    const ok = demoOpenWaitlistSpot()
+                    announce(
+                      ok
+                        ? "A spot opened on your waitlist."
+                        : "You are not on a waitlist right now."
+                    )
+                  }}
+                >
+                  Open a spot on my waitlist
+                </Menu.Item>
+                <Menu.Item
+                  onClick={() => {
+                    demoJumpClock(3600_000)
+                    announce("Clock moved forward 1 hour.")
+                  }}
+                >
+                  Move the clock forward 1 hour
+                </Menu.Item>
+                {me.role === "primary" ? (
+                  <>
+                    <Menu.Item onClick={() => demoPaymentFailed(0)}>
+                      Fail my payment (day 0)
+                    </Menu.Item>
+                    <Menu.Item onClick={() => demoPaymentFailed(9)}>
+                      Fail my payment (day 9)
+                    </Menu.Item>
+                    <Menu.Item onClick={() => demoPaymentFailed(null)}>
+                      Clear payment failure
+                    </Menu.Item>
+                  </>
+                ) : null}
+                <Menu.CheckboxItem
+                  checked={offline}
+                  onCheckedChange={(c) => setOfflineDemo(!!c)}
+                >
+                  <Menu.CheckboxItemIndicator>
+                    <Check aria-hidden="true" />
+                  </Menu.CheckboxItemIndicator>
+                  Offline
+                </Menu.CheckboxItem>
+                <Menu.Item
+                  disabled={resetting}
+                  onClick={async () => {
+                    setResetting(true)
+                    try {
+                      await demoReset()
+                      setOfflineDemo(false)
+                      announce("Demo data reset.")
+                      toast({ title: "Demo data reset" })
+                      router.push("/today")
+                    } catch {
+                      toast({
+                        type: "error",
+                        title: "We couldn't reset the demo data",
+                        description:
+                          "Check your connection, then try Reset demo data again.",
+                      })
+                    } finally {
+                      setResetting(false)
+                    }
+                  }}
+                >
+                  {resetting ? "Resetting demo data…" : "Reset demo data"}
+                </Menu.Item>
+              </>,
+              true
+            )}
             <Menu.Separator />
             <Menu.Item
               onClick={async () => {
@@ -423,57 +502,21 @@ function AccountMenu() {
   )
 }
 
-function HelpMenu() {
-  const { club } = useApp()
-  const c = CLUB_BY_SLUG[club]
-  return (
-    <Menu.Root>
-      <Menu.Trigger
-        aria-label="Help"
-        className="!grid !size-11 !place-items-center !border-0 !bg-transparent !p-0 !shadow-none hover:!bg-muted"
-      >
-        <CircleHelp className="size-5" aria-hidden="true" />
-      </Menu.Trigger>
-      <Menu.Portal>
-        <Menu.Positioner align="end" sideOffset={8}>
-          <Menu.Popup className="!min-w-64">
-            <Menu.Item render={<Link href="/help" />}>Help centre</Menu.Item>
-            <Menu.Item render={<Link href="/help#contact" />}>
-              Message the front desk
-            </Menu.Item>
-            <Menu.Item
-              render={<a href={`tel:${c.phone.replace(/\D/g, "")}`} />}
-            >
-              Call {c.name}{" "}
-              <span className="ml-1 num text-muted-foreground">{c.phone}</span>
-            </Menu.Item>
-            <Menu.Item onClick={() => openDialog("shortcuts")}>
-              Keyboard shortcuts
-            </Menu.Item>
-          </Menu.Popup>
-        </Menu.Positioner>
-      </Menu.Portal>
-    </Menu.Root>
-  )
-}
-
-function TabBar({ onMore }: { onMore: () => void }) {
+/** Phone only. Three places and the pass: the pass is the one thing a member needs at the door. */
+function TabBar() {
   const path = usePathname()
-  if (path.startsWith("/reserve/")) return null
   const tabs = [
-    { href: "/today", label: "Today", icon: NAV[0].icon },
-    { href: "/schedule", label: "Schedule", icon: NAV[1].icon },
-    { href: "/bookings", label: "Bookings", icon: NAV[2].icon },
-    { href: "/pass", label: "Pass", icon: QrCode },
+    ...PRIMARY_NAV.slice(0, 3),
+    { href: "/pass", label: "Pass", icon: QrCode, match: ["/pass"] },
   ]
   return (
     <nav
       aria-label="Primary"
-      className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-card pb-[env(safe-area-inset-bottom)] md:hidden"
+      className="fixed inset-x-0 bottom-0 z-40 bg-sheet pb-[env(safe-area-inset-bottom)] rule-t lg:hidden"
     >
-      <ul className="grid grid-cols-5">
+      <ul className="grid grid-cols-4">
         {tabs.map((t) => {
-          const active = path === t.href || path.startsWith(`${t.href}/`)
+          const active = isCurrent(path, t.match)
           const Icon = t.icon
           return (
             <li key={t.href}>
@@ -481,35 +524,21 @@ function TabBar({ onMore }: { onMore: () => void }) {
                 href={t.href}
                 aria-current={active ? "page" : undefined}
                 className={cn(
-                  "flex min-h-16 min-w-0 flex-col items-center justify-center gap-0.5 truncate text-detail font-medium",
-                  active ? "text-link font-semibold" : "text-muted-foreground"
+                  "gap-xxs relative flex min-h-14 flex-col items-center justify-center text-body-xs font-medium",
+                  active
+                    ? "text-foreground before:absolute before:inset-x-6 before:top-0 before:h-0.5 before:bg-primary"
+                    : "text-muted-foreground"
                 )}
               >
-                <span
-                  className={cn(
-                    "grid h-7 w-12 place-items-center rounded-full",
-                    active && "bg-accent"
-                  )}
-                >
-                  <Icon className="size-5" aria-hidden="true" />
-                </span>
+                <Icon
+                  className={cn("size-5", active && "text-primary")}
+                  aria-hidden="true"
+                />
                 {t.label}
               </Link>
             </li>
           )
         })}
-        <li>
-          <button
-            type="button"
-            onClick={onMore}
-            className="flex min-h-16 w-full flex-col items-center justify-center gap-0.5 text-detail font-medium text-muted-foreground"
-          >
-            <span className="grid h-7 w-12 place-items-center">
-              <MenuIcon className="size-5" aria-hidden="true" />
-            </span>
-            More
-          </button>
-        </li>
       </ul>
     </nav>
   )
@@ -528,14 +557,6 @@ function Shell({ children }: { children: ReactNode }) {
   const { me } = app
   const path = usePathname()
   const offline = useOffline()
-  const [collapsed, setCollapsed] = useState(() => {
-    try {
-      return localStorage.getItem("cp-sidebar") === "1"
-    } catch {
-      return false
-    }
-  })
-  const [menuOpen, setMenuOpen] = useState(false)
   const main = useRef<HTMLElement>(null)
   useEffect(() => {
     document.documentElement.dataset.motion =
@@ -543,21 +564,6 @@ function Shell({ children }: { children: ReactNode }) {
     document.documentElement.dataset.text =
       app.prefs.textSize === "large" ? "large" : ""
   }, [app.prefs.motion, app.prefs.textSize])
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "b") {
-        e.preventDefault()
-        setCollapsed((c) => {
-          try {
-            localStorage.setItem("cp-sidebar", c ? "0" : "1")
-          } catch {}
-          return !c
-        })
-      }
-    }
-    window.addEventListener("keydown", onKey)
-    return () => window.removeEventListener("keydown", onKey)
-  }, [])
   // Route change: move focus to the page heading and announce the title.
   // biome-ignore lint/correctness/useExhaustiveDependencies: runs on route change only, the focus move must not repeat for other changes
   useEffect(() => {
@@ -569,118 +575,56 @@ function Shell({ children }: { children: ReactNode }) {
     return () => window.clearTimeout(t)
   }, [path])
   const access = canOpen(me, path)
-  const toggle = () =>
-    setCollapsed((c) => {
-      try {
-        localStorage.setItem("cp-sidebar", c ? "0" : "1")
-      } catch {}
-      return !c
-    })
+  const page =
+    ACCOUNT_PATHS.includes(path) || path.startsWith("/settings/") ? (
+      <div className="gap-l lg:gap-xl flex w-full flex-col lg:flex-row">
+        <AccountNav />
+        <div className="min-w-0 flex-1">{children}</div>
+      </div>
+    ) : (
+      children
+    )
   return (
     // One provider for the signed-in app, so moving between hints skips the open delay.
     <TipProvider>
-      <div
-        className={cn(
-          "grid min-h-dvh lg:grid-cols-[var(--sb)_minmax(0,1fr)]",
-          "[--sb:264px]",
-          collapsed && "lg:[--sb:72px]"
-        )}
-      >
+      <div className="isolate flex min-h-dvh [--bar-h:3.5rem] lg:[--bar-h:0rem]">
         <a
           href="#main"
-          className="fixed top-2 left-2 z-[70] -translate-y-20 rounded-md bg-night px-4 py-3 text-label text-on-night focus:translate-y-0"
+          className="px-m py-s fixed top-2 left-2 z-[70] -translate-y-20 corner-s bg-night text-body-s font-heavy text-night-foreground focus:translate-y-0"
         >
           Skip to main content
         </a>
-        <aside
-          className="sticky top-0 hidden h-dvh flex-col border-r border-border bg-card lg:flex"
-          aria-label="Sidebar"
+        <Sidebar />
+        {/* The content sheet beside the Sand sidebar (the template's inset sheet): its own surface, a step lighter than
+            the sidebar, with a soft ring. Screens sit on it; cards are raised from it. */}
+        <div
+          className={cn(
+            "flex min-w-0 flex-1 flex-col",
+            "bg-sheet",
+            "lg:my-xs lg:mr-xs lg:corner-l lg:hairline lg:ring-foreground/10 lg:shadow-s"
+          )}
         >
-          <div
-            className={cn(
-              "flex h-16 items-center px-4",
-              collapsed && "justify-center px-0"
-            )}
-          >
-            <Link href="/today" aria-label="Cactus Peak Athletic, Today">
-              {collapsed ? (
-                <Logo symbol className="size-8" />
-              ) : (
-                <Logo className="h-9 w-auto" />
-              )}
-            </Link>
-          </div>
-          <NavLinks collapsed={collapsed} />
-          <div className="border-t border-border p-3">
-            <Button
-              variant="ghost"
-              size="sm"
-              className={cn(
-                "w-full justify-start",
-                collapsed && "justify-center"
-              )}
-              onClick={toggle}
-              aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-            >
-              <PanelLeft aria-hidden="true" data-icon="inline-start" />
-              {collapsed ? null : "Collapse"}
-            </Button>
-          </div>
-        </aside>
-        <div className="flex min-w-0 flex-col">
-          <header className="sticky top-0 z-30 flex h-14 items-center gap-1 border-b border-border bg-card px-2 sm:gap-2 sm:px-4 md:h-16 lg:px-6">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="max-md:hidden lg:hidden"
-              onClick={() => setMenuOpen(true)}
-              aria-label="Menu"
-            >
-              <MenuIcon aria-hidden="true" />
-            </Button>
-            <Link
-              href="/today"
-              className="grid size-11 min-w-11 shrink-0 place-items-center md:hidden"
-              aria-label="Cactus Peak Athletic, Today"
-            >
-              <Logo symbol className="size-7" />
-            </Link>
-            <ClubSwitcher />
-            <button
-              type="button"
-              onClick={() => openDialog("command")}
-              className="ml-2 hidden h-11 max-w-sm min-w-0 flex-1 items-center gap-2 rounded-md bg-background px-3 text-left text-body text-muted-foreground edge ring-border hover:ring-input-hover lg:flex"
-            >
-              <Search className="size-4 shrink-0" aria-hidden="true" />
-              <span className="min-w-0 flex-1 truncate">
-                Search classes, clubs, coaches
-              </span>
-              <Kbd>Ctrl K</Kbd>
-            </button>
-            <div className="ml-auto flex items-center gap-0.5">
-              <Button
-                variant="ghost"
-                size="icon"
-                className="lg:hidden"
-                onClick={() => openDialog("command")}
-                aria-label="Search"
+          <header className="sticky top-0 z-30 bg-sheet rule-b lg:hidden">
+            <div className={cn(FRAME, "gap-s flex h-(--bar-h) items-center")}>
+              <Link
+                href="/today"
+                aria-label="Cactus Peak Athletic, Home"
+                className="shrink-0"
               >
-                <Search aria-hidden="true" />
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                className="mr-1 hidden min-h-10 md:inline-flex"
-                onClick={() => openDialog("pass")}
-              >
-                <QrCode aria-hidden="true" data-icon="inline-start" />
-                Pass
-              </Button>
-              <NotificationsPopover />
-              <div className="max-sm:hidden">
-                <HelpMenu />
+                <Logo symbol className="size-7" />
+              </Link>
+              <div className="gap-xs flex flex-1 items-center justify-end">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => openDialog("pass")}
+                >
+                  <QrCode aria-hidden="true" data-icon="inline-start" />
+                  Pass
+                </Button>
+                <InboxLink />
+                <AccountMenu />
               </div>
-              <AccountMenu />
             </div>
           </header>
           {path === "/pass" ? null : (
@@ -690,17 +634,24 @@ function Shell({ children }: { children: ReactNode }) {
             id="main"
             ref={main}
             tabIndex={-1}
-            className="mx-auto w-full max-w-[1200px] flex-1 px-4 pt-6 pb-28 outline-none md:px-6 md:pt-8 lg:px-8 lg:pb-16"
+            className={cn(
+              FRAME,
+              "py-m lg:py-l flex-1 outline-none max-lg:pb-[calc(var(--space-xxl)*2)]"
+            )}
           >
             {access.ok ? (
-              children
+              needsStepUp(path) ? (
+                <StepUpGate>{page}</StepUpGate>
+              ) : (
+                page
+              )
             ) : (
               <EmptyState
                 icon={X}
                 title="You don't have access to this page."
                 body={access.reason}
                 action={
-                  <Button render={<Link href="/today" />}>Back to Today</Button>
+                  <Button render={<Link href="/today" />}>Back to Home</Button>
                 }
                 secondary={
                   me.parentId ? (
@@ -719,36 +670,7 @@ function Shell({ children }: { children: ReactNode }) {
           aria-live="polite"
           className="sr-only"
         />
-        <TabBar onMore={() => setMenuOpen(true)} />
-        <Drawer.Root
-          open={menuOpen}
-          onOpenChange={setMenuOpen}
-          swipeDirection="left"
-        >
-          <Drawer.Portal>
-            <Drawer.Backdrop />
-            <Drawer.Viewport className="nav-drawer-viewport">
-              <Drawer.Popup className="nav-drawer">
-                <Drawer.Content className="h-full !gap-0">
-                  <div className="flex h-16 items-center justify-between px-4">
-                    <Drawer.Title className="sr-only">Menu</Drawer.Title>
-                    <Logo className="h-9 w-auto" />
-                    <Drawer.Close
-                      aria-label="Close menu"
-                      className="grid size-11 place-items-center rounded-md hover:bg-muted"
-                    >
-                      <X className="size-5" aria-hidden="true" />
-                    </Drawer.Close>
-                  </div>
-                  <Drawer.Description className="sr-only">
-                    All the pages in the member portal.
-                  </Drawer.Description>
-                  <NavLinks onNavigate={() => setMenuOpen(false)} />
-                </Drawer.Content>
-              </Drawer.Popup>
-            </Drawer.Viewport>
-          </Drawer.Portal>
-        </Drawer.Root>
+        <TabBar />
         <GlobalDialogs />
       </div>
     </TipProvider>

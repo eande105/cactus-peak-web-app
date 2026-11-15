@@ -18,7 +18,9 @@ const subscribe = () => () => {}
 // Ties the Graphical runtime to next-themes. The color mode follows the resolved theme, so it updates live when the
 // visitor switches mode or the system preference changes, and it reaches portals through the provider's context.
 // The server and the first client render use light. The real mode applies right after hydration, so hydration matches.
-// The CSS from ThemeVariables already paints the right colors before that.
+// graphical/generated/theme.css defines every theme variable at :root and .dark, so the first paint is right and the
+// provider writes none inline (inlineVariables={false}): the Graphical editor's live edits at :root then reach every
+// component, portals included.
 // The Graphical components keep their own icon code. This renderer swaps the artwork they draw for the Nucleo icon
 // of the same name (THEME_ICON_ART); a name with no Nucleo match returns undefined and keeps the bundled Lucide icon.
 function renderNucleo({
@@ -49,7 +51,11 @@ export function GraphicalThemeProvider({
   const colorMode = mounted && resolvedTheme === "dark" ? "dark" : "light"
 
   return (
-    <GraphicalProvider document={document} colorMode={colorMode}>
+    <GraphicalProvider
+      document={document}
+      colorMode={colorMode}
+      inlineVariables={false}
+    >
       <IconRendererProvider renderIcon={renderNucleo}>
         {children}
       </IconRendererProvider>

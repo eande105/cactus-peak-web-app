@@ -4,7 +4,6 @@ import {
   createContext,
   useContext,
   useEffect,
-  useRef,
   useState,
   type ComponentPropsWithRef,
   type CSSProperties,
@@ -19,8 +18,16 @@ import {
   useThemeMotion,
 } from "./component-theme";
 
-type Press = { pointerId: number; tab: HTMLElement; x: number; y: number };
-const TabPressContext = createContext<{ current: Press | null } | null>(null);
+type Press = {
+  pointerId: number;
+  tab: HTMLElement;
+  x: number;
+  y: number;
+  /** Lifted over the tab, so only its click is still to come. */
+  released?: boolean;
+};
+/** A held press defers selection on focus so its anticipation can play. */
+const TabPressContext = createContext(false);
 
 function useInteractionBorderStyle(variables: CSSProperties): CSSProperties {
   const values = variables as Record<string, string | number>;
@@ -105,16 +112,18 @@ export function SlidingTabsList({
   const underline =
     (variables as Record<string, unknown>)['--theme-name'] ===
     THEME_STYLE_NAMES.Grove;
-  const pressed = useRef<Press | null>(null);
   const [press, setPress] = useState<Press | null>(null);
   useEffect(() => {
     if (!press) return;
     const view = press.tab.ownerDocument.defaultView;
     if (!view) return;
-    const cancel = () => {
-      pressed.current = null;
-      setPress(null);
-    };
+    const cancel = () => setPress(null);
+    // The click normally follows at once and clears the press, a little later on
+    // touch. A release on a rounded corner or the seam between tabs may send none.
+    if (press.released) {
+      const timer = view.setTimeout(cancel, 100);
+      return () => view.clearTimeout(timer);
+    }
     const release = (event: PointerEvent) => {
       if (event.pointerId !== press.pointerId) return;
       const bounds = press.tab.getBoundingClientRect();
@@ -128,7 +137,7 @@ export function SlidingTabsList({
       if (!inside) cancel();
       // Keep the stretched surface until click and Base UI selection commit
       // together, avoiding a spring back to the previous tab on pointer-up.
-      else pressed.current = null;
+      else setPress({ ...press, released: true });
     };
     view.addEventListener('pointerup', release);
     view.addEventListener('pointercancel', cancel);
@@ -140,7 +149,7 @@ export function SlidingTabsList({
     };
   }, [press]);
   return (
-    <TabPressContext value={pressed}>
+    <TabPressContext value={!!press && !press.released}>
       <Tabs.List
         {...props}
         data-tab-style={underline ? 'underline' : 'surface'}
@@ -171,7 +180,7 @@ export function SlidingTabsList({
             return;
           const target = tab.getBoundingClientRect();
           const current = active.getBoundingClientRect();
-          const next = {
+          setPress({
             pointerId: event.pointerId,
             tab,
             x: Math.sign(
@@ -180,13 +189,10 @@ export function SlidingTabsList({
             y: Math.sign(
               target.top + target.height / 2 - current.top - current.height / 2,
             ),
-          };
-          pressed.current = next;
-          setPress(next);
+          });
         }}
         onClick={(event) => {
           onClick?.(event);
-          pressed.current = null;
           setPress(null);
         }}
       >
@@ -211,7 +217,7 @@ export function SlidingTab({
   style,
   ...props
 }: ComponentPropsWithRef<typeof Tabs.Tab>) {
-  const pressed = useContext(TabPressContext);
+  const holding = useContext(TabPressContext);
   const variables = usePartStyle('tabs', 'trigger');
   const borders = useInteractionBorderStyle(variables);
   return (
@@ -225,7 +231,7 @@ export function SlidingTab({
         onFocus?.(event);
         // Pointer focus is retained, but selection waits for release/click so the
         // anticipation can play. Arrow-key focus still activates normally.
-        if (pressed?.current) event.preventBaseUIHandler();
+        if (holding) event.preventBaseUIHandler();
       }}
     />
   );

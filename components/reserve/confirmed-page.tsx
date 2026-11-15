@@ -5,12 +5,15 @@ import { useEffect, useState } from "react"
 import { useApp } from "@/components/app/use-app"
 import { CancelDialog } from "@/components/booking/cancel-dialog"
 import { SuccessPanel } from "@/components/booking/success-panel"
-import { EmptyState, PageHeader } from "@/components/kit/ui"
+import { InfoLine } from "@/components/flows/parts"
+import { AppPage, Card, Row, Rows } from "@/components/kit/app"
+import { EmptyState, StatusPill } from "@/components/kit/ui"
 import { Button } from "@/components/ui/button"
 import { CLUB_BY_SLUG } from "@/lib/data/catalog"
 import { cancelNote } from "@/lib/engine"
 import { fmtDay, fmtRange } from "@/lib/time"
-import { cn } from "@/lib/utils"
+
+const BACK = { href: "/bookings", label: "Bookings" }
 
 export default function ConfirmedPage({ id }: { id: string }) {
   const { s, now } = useApp()
@@ -23,28 +26,32 @@ export default function ConfirmedPage({ id }: { id: string }) {
   }, [b])
   if (!b)
     return (
-      <EmptyState
-        title="We couldn't find that reservation."
-        action={
-          <Button render={<Link href="/reserve" />}>Back to Reserve</Button>
-        }
-      />
+      <AppPage title="Reservation" back={BACK} width="narrow">
+        <Card>
+          <EmptyState
+            className="py-zero"
+            title="We couldn't find that reservation."
+            action={
+              <Button size="sm" render={<Link href="/bookings" />}>
+                See bookings
+              </Button>
+            }
+          />
+        </Card>
+      </AppPage>
     )
   const club = CLUB_BY_SLUG[b.clubSlug]
   const cn0 = cancelNote(s, b.memberId, b.start, now, b.kind)
   return (
-    <div className="max-w-[560px]">
-      <PageHeader title="Reservation confirmed" className="sr-only" />
+    <AppPage title="Reservation confirmed" back={BACK} width="narrow">
       <SuccessPanel
-        pill="Reserved"
-        headline={`${b.resource ?? b.title}, ${fmtRange(b.start, b.end)}`}
+        headline={b.resource ?? b.title}
         summary={[
           {
             label: "Sport",
             value: (b.sport ?? "").replace(/^./, (c) => c.toUpperCase()),
           },
           { label: "Club", value: club.name },
-          { label: "Court", value: b.resource },
           {
             label: "When",
             value: `${fmtDay(b.start)} · ${fmtRange(b.start, b.end)}`,
@@ -59,27 +66,6 @@ export default function ConfirmedPage({ id }: { id: string }) {
           uid: b.id,
         }}
         shareText={`https://my.cactuspeakathletic.example/invite/${b.ref}`}
-        extra={
-          b.players?.length ? (
-            <ul className="flex w-full flex-col rule-rows" aria-label="Players">
-              {b.players.map((p) => (
-                <li
-                  key={p.name}
-                  className="flex items-center justify-between gap-3 py-2 text-caption"
-                >
-                  <span>{p.name}</span>
-                  <span className="rounded-full bg-muted px-2 py-0.5 text-detail">
-                    {p.status === "confirmed"
-                      ? "Confirmed"
-                      : p.status === "guest"
-                        ? "Guest pass sent"
-                        : "Invited"}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          ) : null
-        }
         rows={[
           {
             label: "Get directions",
@@ -91,27 +77,53 @@ export default function ConfirmedPage({ id }: { id: string }) {
           },
           { label: "Club details", href: `/clubs/${club.slug}` },
         ]}
-        onDone={() => router.push("/reserve")}
+        onDone={() => router.push("/bookings")}
+        doneLabel="See bookings"
       />
-      <p
-        className={cn(
-          "mt-4 text-caption",
-          cn0.late
-            ? "rounded-md bg-warning-subtle px-3 py-2"
-            : "text-muted-foreground"
-        )}
+      {b.players?.length ? (
+        <Card title="Players" tone="bare">
+          <Rows label="Players">
+            {b.players.map((p) => (
+              <Row
+                key={p.name}
+                title={p.name}
+                className="px-zero!"
+                end={
+                  // Only the states that differ from a confirmed player get a pill.
+                  p.status === "confirmed" ? undefined : (
+                    <StatusPill tone="info">
+                      {p.status === "guest" ? "Guest pass sent" : "Invited"}
+                    </StatusPill>
+                  )
+                }
+              />
+            ))}
+          </Rows>
+        </Card>
+      ) : null}
+      <Card
+        title="Cancellation"
+        tone="plain"
+        footer={
+          <Button
+            size="sm"
+            variant="outline"
+            className="text-destructive"
+            onClick={() => setCancel(true)}
+          >
+            Cancel reservation
+          </Button>
+        }
       >
-        {cn0.text}{" "}
-        <button
-          type="button"
-          className="text-link underline"
-          onClick={() => setCancel(true)}
+        <InfoLine
+          tone={cn0.late ? "warning" : "info"}
+          className="text-body-m sm:text-body-s"
         >
-          Cancel reservation
-        </button>
-      </p>
+          {cn0.text}
+        </InfoLine>
+      </Card>
       <CancelDialog booking={b} open={cancel} onOpenChange={setCancel} />
       <span className="sr-only">{now}</span>
-    </div>
+    </AppPage>
   )
 }

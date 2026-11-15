@@ -1,39 +1,72 @@
 "use client"
 import Link from "next/link"
 import { notFound, useRouter } from "next/navigation"
-import { useState } from "react"
+import { type ReactNode, useState } from "react"
 import { useApp } from "@/components/app/use-app"
-import { Collapsible } from "@/components/graphical"
-import { ChevronDown } from "@/components/icons"
+import { RemoveMemberConfirm, RolePill } from "@/components/family/parts"
+import { AppPage, Card, Facts, Row, Rows } from "@/components/kit/app"
 import {
   Banner,
   CheckRow,
   FormField,
-  PageHeader,
   PersonAvatar,
-  SectionTitle,
+  StatusPill,
   SwitchRow,
 } from "@/components/kit/ui"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
+import { useMedia } from "@/hooks/use-media"
 import {
-  removeFamilyMember,
   setTeenPermission,
+  undoRemoveMember,
   updateMember,
 } from "@/lib/actions"
 import { householdMembers, nextBillingDate } from "@/lib/engine"
 import { DAY, fmtDayShort, fmtDowTime } from "@/lib/time"
 import { toast } from "@/lib/toast"
+import { cn } from "@/lib/utils"
 
+type PermissionKey = Parameters<typeof setTeenPermission>[1]
+
+/** A list of switches or checkboxes inside a `flush` card: one control for each row, a rule between the rows. */
+function ControlRows({
+  label,
+  children,
+  className,
+}: {
+  label?: string
+  children: ReactNode
+  className?: string
+}) {
+  return (
+    <ul
+      aria-label={label}
+      className={cn(
+        "[&>li]:px-m [&>li]:py-s flex flex-col rule-t [&>li+li]:rule-t",
+        className
+      )}
+    >
+      {children}
+    </ul>
+  )
+}
+
+/**
+ * One member of the household, for the primary member. The sections are bordered blocks with a heading, in a
+ * column of 640 px at most; the activity is beside them from 1024 px. Each field saves when the member leaves it.
+ * Removal is the last, quiet row.
+ */
 export default function MemberProfile({ id }: { id: string }) {
   const { s, me, hh, now } = useApp()
   const router = useRouter()
+  const onTouch = useMedia("(pointer: coarse)")
   const m = s.members[id]
   const [saved, setSaved] = useState("")
   const [first, setFirst] = useState(m?.firstName ?? "")
   const [last, setLast] = useState(m?.lastName ?? "")
   const [notes, setNotes] = useState(m?.allergyNotes ?? "")
+  const [confirm, setConfirm] = useState(false)
   if (!m || m.householdId !== hh.id) notFound()
   const mark = (t: string) => {
     setSaved(t)
@@ -47,221 +80,283 @@ export default function MemberProfile({ id }: { id: string }) {
   const visits = s.visits.filter(
     (v) => v.memberId === m.id && now - v.at < 30 * DAY
   ).length
+  const save = (patch: Parameters<typeof updateMember>[1]) => {
+    updateMember(m.id, patch)
+    mark("Saved")
+  }
+  const allow = (key: PermissionKey, on: boolean) => {
+    setTeenPermission(m.id, key, on)
+    mark("Saved")
+  }
   const adults = householdMembers(s, hh.id).filter(
     (x) => x.role === "primary" || x.role === "adult"
   )
+  const back = { href: "/family", label: "Household" }
+  const name = `${m.firstName} ${m.lastName}`
+  const ends = nextBillingDate(hh, now)
   if (me.role !== "primary")
     return (
-      <Banner tone="neutral" title="Only the primary member edits profiles." />
+      <AppPage back={back} title={name} width="narrow">
+        <Banner tone="info" title="Only the primary member edits profiles." />
+      </AppPage>
     )
   return (
-    <div className="flex max-w-2xl flex-col gap-8">
-      <PageHeader
-        backHref="/family"
-        backLabel="Family"
-        eyebrow={
-          m.role === "primary"
-            ? "Primary member"
-            : m.role === "adult"
-              ? "Adult"
-              : m.role === "teen"
-                ? "Teen"
-                : "Child"
-        }
-        title={`${m.firstName} ${m.lastName}`}
-        description={`Age ${m.age} · member number ${m.memberNumber}`}
-      />
-      <p role="status" className="text-caption text-success">
-        {saved}
-      </p>
-      <section aria-labelledby="pr" className="flex flex-col gap-4">
-        <SectionTitle id="pr">Profile</SectionTitle>
-        <div className="flex items-center gap-4">
-          <PersonAvatar
-            name={`${m.firstName} ${m.lastName}`}
-            hue={m.hue}
-            size={72}
-          />
-          <Button variant="outline" size="sm" disabled>
-            Add a photo · Coming soon
-          </Button>
-        </div>
-        <div className="grid gap-4 sm:grid-cols-2">
-          <FormField label="First name">
-            {(p) => (
-              <Input
-                {...p}
-                value={first}
-                onChange={(e) => setFirst(e.target.value)}
-                onBlur={() => {
-                  updateMember(m.id, { firstName: first })
-                  mark("Saved")
-                }}
-              />
-            )}
-          </FormField>
-          <FormField label="Last name">
-            {(p) => (
-              <Input
-                {...p}
-                value={last}
-                onChange={(e) => setLast(e.target.value)}
-                onBlur={() => {
-                  updateMember(m.id, { lastName: last })
-                  mark("Saved")
-                }}
-              />
-            )}
-          </FormField>
-        </div>
-        <FormField label="Date of birth" help="Read-only after it is set.">
-          {(p) => <Input {...p} readOnly className="num" value={m.dob} />}
-        </FormField>
-      </section>
-      {m.role === "child" ? (
-        <section aria-labelledby="hn" className="flex flex-col gap-3">
-          <SectionTitle id="hn">Health notes</SectionTitle>
-          <FormField
-            label="Allergies and medical notes"
-            help="We share these with kids club staff."
-          >
-            {(p) => (
-              <Textarea
-                {...p}
-                rows={3}
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                onBlur={() => {
-                  updateMember(m.id, {
-                    allergyNotes: notes.trim() || undefined,
-                  })
-                  mark("Saved")
-                }}
-              />
-            )}
-          </FormField>
-        </section>
-      ) : null}
-      {m.role === "child" ? (
-        <section aria-labelledby="pu" className="flex flex-col gap-3">
-          <SectionTitle id="pu">Authorised pick-up adults</SectionTitle>
-          {adults.map((a) => (
-            <CheckRow
-              key={a.id}
-              checked={!!m.pickup?.includes(a.id)}
-              onChange={(on) => {
-                updateMember(m.id, {
-                  pickup: on
-                    ? [...(m.pickup ?? []), a.id]
-                    : (m.pickup ?? []).filter((x) => x !== a.id),
-                })
-                mark("Saved")
-              }}
-            >
-              {a.firstName} {a.lastName}
-            </CheckRow>
-          ))}
-        </section>
-      ) : null}
-      {m.role === "teen" ? (
-        <section
-          id="permissions"
-          aria-labelledby="pe"
-          className="flex flex-col gap-3"
+    <AppPage
+      back={back}
+      title={name}
+      meta={
+        <>
+          <RolePill role={m.role} />
+          {m.endsOn ? (
+            <StatusPill tone="warning">Ends {fmtDayShort(m.endsOn)}</StatusPill>
+          ) : null}
+        </>
+      }
+      actions={
+        <p
+          role="status"
+          className="text-body-m font-medium text-success sm:text-body-s"
         >
-          <SectionTitle id="pe">Permissions</SectionTitle>
-          <SwitchRow
-            checked={m.permissions?.classes ?? true}
-            onChange={(c) => {
-              setTeenPermission(m.id, "classes", c)
-              mark("Saved")
-            }}
-          >
-            Classes (Teen OK)
-          </SwitchRow>
-          <SwitchRow
-            checked={!!m.permissions?.courts}
-            onChange={(c) => {
-              setTeenPermission(m.id, "courts", c)
-              mark("Saved")
-            }}
-          >
-            Court reservations
-          </SwitchRow>
-          <SwitchRow
-            checked={!!m.permissions?.lanes}
-            disabled={m.age < 14}
-            onChange={(c) => {
-              setTeenPermission(m.id, "lanes", c)
-              mark("Saved")
-            }}
-          >
-            Lap lanes (14 and up)
-          </SwitchRow>
-          <SwitchRow
-            checked={m.permissions?.coachMessages ?? true}
-            onChange={(c) => {
-              setTeenPermission(m.id, "coachMessages", c)
-              mark("Saved")
-            }}
-          >
-            Teen can message coaches
-          </SwitchRow>
-          <p className="text-detail text-muted-foreground">
-            You can see their bookings and check-ins.
-          </p>
-        </section>
-      ) : null}
-      <section aria-labelledby="ac">
-        <SectionTitle id="ac">Activity</SectionTitle>
-        <p className="mt-2 text-body">
-          <span className="num">{visits}</span> visits this month ·{" "}
-          <span className="num">{next.length}</span> upcoming
+          {saved}
         </p>
-        {next.slice(0, 3).map((b) => (
-          <p key={b.id} className="num text-caption text-muted-foreground">
-            {fmtDowTime(b.start)} · {b.title}
-          </p>
-        ))}
-        <Button
-          variant="outline"
-          size="sm"
-          className="mt-3"
-          render={<Link href="/pass" />}
+      }
+    >
+      <div className="gap-m grid items-start lg:grid-cols-[minmax(0,640px)_minmax(0,1fr)]">
+        <div className="gap-m flex min-w-0 flex-col">
+          <Card
+            title="Profile"
+            description={`Member number ${m.memberNumber} · Age ${m.age}`}
+            id="pr"
+          >
+            <div className="gap-m flex flex-col">
+              <div className="gap-s flex flex-wrap items-center">
+                <PersonAvatar
+                  name={name}
+                  hue={m.hue}
+                  size={48}
+                  className="shrink-0"
+                />
+                <Button variant="outline" size="sm" disabled>
+                  Add a photo · Coming soon
+                </Button>
+              </div>
+              <div className="@container">
+                <div className="gap-m grid grid-cols-1 @md:grid-cols-2">
+                  <FormField label="First name">
+                    {(p) => (
+                      <Input
+                        {...p}
+                        value={first}
+                        onChange={(e) => setFirst(e.target.value)}
+                        onBlur={() => save({ firstName: first })}
+                      />
+                    )}
+                  </FormField>
+                  <FormField label="Last name">
+                    {(p) => (
+                      <Input
+                        {...p}
+                        value={last}
+                        onChange={(e) => setLast(e.target.value)}
+                        onBlur={() => save({ lastName: last })}
+                      />
+                    )}
+                  </FormField>
+                  <FormField
+                    label="Date of birth"
+                    help="Read-only after it is set."
+                  >
+                    {(p) => (
+                      <Input
+                        {...p}
+                        readOnly
+                        className="tabular"
+                        value={m.dob}
+                      />
+                    )}
+                  </FormField>
+                </div>
+              </div>
+            </div>
+          </Card>
+          {m.role === "child" ? (
+            <Card title="Health notes" id="hn">
+              <FormField
+                label="Allergies and medical notes"
+                help="Shared with kids club staff."
+              >
+                {(p) => (
+                  <Textarea
+                    {...p}
+                    rows={3}
+                    value={notes}
+                    onChange={(e) => setNotes(e.target.value)}
+                    onBlur={() =>
+                      save({ allergyNotes: notes.trim() || undefined })
+                    }
+                  />
+                )}
+              </FormField>
+            </Card>
+          ) : null}
+          {m.role === "child" ? (
+            <Card title="Pick-up adults" id="pu" flush>
+              <ControlRows label="Authorised pick-up adults">
+                {adults.map((a) => (
+                  <li key={a.id}>
+                    <CheckRow
+                      checked={!!m.pickup?.includes(a.id)}
+                      onChange={(on) =>
+                        save({
+                          pickup: on
+                            ? [...(m.pickup ?? []), a.id]
+                            : (m.pickup ?? []).filter((x) => x !== a.id),
+                        })
+                      }
+                    >
+                      {a.firstName} {a.lastName}
+                    </CheckRow>
+                  </li>
+                ))}
+              </ControlRows>
+            </Card>
+          ) : null}
+          {m.role === "teen" ? (
+            <Card title="Permissions" id="permissions" flush>
+              <ControlRows>
+                {(
+                  [
+                    {
+                      key: "classes",
+                      label: "Classes (Teen OK)",
+                      on: m.permissions?.classes ?? true,
+                    },
+                    {
+                      key: "courts",
+                      label: "Court reservations",
+                      on: !!m.permissions?.courts,
+                    },
+                    {
+                      key: "lanes",
+                      label: "Lap lanes (14 and up)",
+                      on: !!m.permissions?.lanes,
+                      disabled: m.age < 14,
+                    },
+                    {
+                      key: "coachMessages",
+                      label: "Teen can message coaches",
+                      on: m.permissions?.coachMessages ?? true,
+                    },
+                  ] satisfies {
+                    key: PermissionKey
+                    label: string
+                    on: boolean
+                    disabled?: boolean
+                  }[]
+                ).map((x) => (
+                  <li key={x.key}>
+                    <SwitchRow
+                      checked={x.on}
+                      disabled={x.disabled}
+                      onChange={(c) => allow(x.key, c)}
+                    >
+                      {x.label}
+                    </SwitchRow>
+                  </li>
+                ))}
+              </ControlRows>
+            </Card>
+          ) : null}
+          {m.role !== "primary" ? (
+            <Card flush as="div">
+              <Rows>
+                {m.endsOn ? (
+                  <Row
+                    title={`${m.firstName} leaves the plan`}
+                    line={
+                      <span className="tabular">
+                        Access ends {fmtDayShort(m.endsOn)}
+                      </span>
+                    }
+                    end={
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => {
+                          undoRemoveMember(m.id)
+                          toast({ title: `${m.firstName} stays on your plan` })
+                        }}
+                      >
+                        Keep on plan
+                      </Button>
+                    }
+                  />
+                ) : (
+                  <Row
+                    title={`Remove ${m.firstName}`}
+                    line={
+                      <span className="tabular">
+                        Access ends {fmtDayShort(ends)}
+                      </span>
+                    }
+                    end={
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="text-destructive"
+                        onClick={() => setConfirm(true)}
+                      >
+                        Remove
+                      </Button>
+                    }
+                  />
+                )}
+              </Rows>
+            </Card>
+          ) : null}
+        </div>
+
+        <Card
+          title="Activity"
+          description={`${visits} ${visits === 1 ? "visit" : "visits"} in the last 30 days`}
+          id="ac"
+          as="aside"
+          action={
+            onTouch ? (
+              <Button
+                variant="outline"
+                size="sm"
+                render={<Link href="/pass" />}
+              >
+                Show pass
+              </Button>
+            ) : undefined
+          }
         >
-          Show pass
-        </Button>
-      </section>
-      {m.role !== "primary" ? (
-        <Collapsible.Root className="pt-4 rule-t">
-          <Collapsible.Trigger className="group flex min-h-11 w-full items-center justify-between !bg-transparent !p-0 text-label text-destructive !shadow-none">
-            Remove {m.firstName}
-            <ChevronDown
-              className="size-4 transition-transform group-data-[panel-open]:rotate-180"
-              aria-hidden="true"
-            />
-          </Collapsible.Trigger>
-          <Collapsible.Content className="pt-2">
-            <p className="mb-3 text-caption text-muted-foreground">
-              {m.firstName}&apos;s access ends{" "}
-              {fmtDayShort(nextBillingDate(hh, now))}. Bookings after that are
-              cancelled with no strike. No refund this month.
-            </p>
-            <Button
-              variant="destructive"
-              onClick={() => {
-                removeFamilyMember(m.id)
-                toast({
-                  title: `${m.firstName} will be removed ${fmtDayShort(nextBillingDate(hh, now))}`,
-                })
-                router.push("/family")
-              }}
-            >
-              Remove {m.firstName}
-            </Button>
-          </Collapsible.Content>
-        </Collapsible.Root>
-      ) : null}
-    </div>
+          <Facts
+            items={[
+              {
+                label: "Upcoming bookings",
+                value: next.length,
+                hint: next.length
+                  ? next.slice(0, 3).map((b) => (
+                      <span key={b.id} className="block">
+                        {fmtDowTime(b.start)} · {b.title}
+                      </span>
+                    ))
+                  : undefined,
+              },
+            ]}
+          />
+        </Card>
+      </div>
+
+      <RemoveMemberConfirm
+        member={confirm ? m : null}
+        ends={ends}
+        onClose={() => setConfirm(false)}
+        onRemoved={() => router.push("/family")}
+      />
+    </AppPage>
   )
 }

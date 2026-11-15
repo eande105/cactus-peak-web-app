@@ -1,6 +1,6 @@
 # Interface judgment
 
-Bias toward minimalism and simplicity. Build the smallest complete interface that serves the requested task: useful product content, a clear title, and the actions people need. Each visible element should add information, enable an action, or provide necessary context. Empty space does not need filler copy or decoration. Correct tokens alone do not make a clear interface. Apply this guidance to custom markup, new routes, composed components, and revisions to existing screens.
+Build the smallest complete interface that serves the requested task. Before deciding how something should look or read, ask whether it should exist. Each visible element, whether a section, control, state, badge, or line of copy, should add information, enable an action, or provide context the user cannot act without. Build what was requested: do not add settings, filters, secondary actions, summary panels, or other features nobody asked for. Empty space does not need filler copy or decoration. Correct tokens alone do not make a clear interface. Apply this guidance to custom markup, new routes, composed components, and revisions to existing screens.
 
 ### Start with what the app already provides
 
@@ -8,13 +8,18 @@ Inspect the surrounding navigation, breadcrumbs, actions, and layout before addi
 
 A specific product title is a sufficient starting point. Add metadata only when it helps users understand or act on the content, using information the app actually knows. A title such as “Nephew’s bookshelf” can stand alone above its books, filters, and Add a book action. Do not automatically pair a title with a subtitle, category label, status badge, or introduction. Put the requested summary in the content, without another version under the title.
 
-### Keep copy useful
+### Keep copy that earns its place
 
-Omit invented eyebrows (small labels above headings), taglines, sentimental subtitles, motivational empty-state prose, header/footer slogans, and decorative icon-and-text badges. Add supporting copy only when it supplies necessary product context that the title, content, or controls do not already provide. Do not turn an ordinary app screen into a marketing hero unless that is the requested purpose. Express personality through the chosen theme and meaningful content instead of extra prose.
+Most unhelpful copy is not badly written; it should not be on the screen, and rewording it only makes the wrong thing read better. Read each string beside its label, value, and control, then stop at the first test it fails and remove it:
 
-Explain only what changes the user’s understanding, decision, or next action. Omit obvious workflow narration and implementation commentary such as “Saved on this browser · No account needed” from routine page chrome. Surface a storage limitation or other technical detail at the relevant decision only when it has a concrete consequence for the user. A friendly phrase does not need an icon, pill, or status dot; reserve those cues for meaningful categories, actions, or actual state.
+1. **Would the user have wondered about this?** Copy that answers a question nobody had plants one. “The preview is rendered at the exact size used on your profile” makes people doubt a preview they trusted.
+2. **Does something beside it already say it?** A field labelled “Retry limit” does not need “how many times we retry” beneath it. A bare “30” does need “seconds”.
+3. **Does it rule out a failure instead of describing behavior?** Reassurance about a fixed bug, a defense of a design decision, or hedging about something that works (“this may look slow but it is not”) hands the user a worry they arrived without. Implementation commentary such as “Saved on this browser · No account needed” is the same.
+4. **Remove the failing part. If nothing is left, remove the element**, not a shortened stub of it.
 
-Keep empty states brief and actionable: state what is missing when it is not already clear, and provide the next useful action. Avoid surrounding that action with a slogan, a paraphrase of the section title, and an explanation of what its label already says. Use one clear action at the point of need; repeat it only when placement or a different responsive context makes it useful. Preserve required labels, validation, accessibility, and instructions that prevent a real mistake.
+Copy stays when the user cannot act without it: a real consequence at the moment of choosing (“Anything not yet synced is lost”), a compatibility or scope fact they cannot see, what an empty state means and its next action, and units or format on a bare value. Keep the consequence and cut instructions about when to press a button they can already see. If a string matters only in a rare state, show it in that state. Preserve required labels, validation, accessibility, and instructions that prevent a real mistake.
+
+Omit invented eyebrows (small labels above headings), taglines, sentimental subtitles, motivational empty-state prose, header/footer slogans, and decorative icon-and-text badges. Do not turn an ordinary app screen into a marketing hero unless that is the requested purpose. Express personality through the chosen theme and meaningful content. A friendly phrase does not need an icon, pill, or status dot; reserve those cues for meaningful categories, actions, or actual state. Use one clear action at the point of need; repeat it only when placement or a different responsive context makes it useful.
 
 ### Give information a clear home
 
@@ -42,4 +47,4 @@ Render fixed dates and other read-only values as metadata. Use the existing cont
 
 ### Finish by removing what adds nothing
 
-Review the normal page, empty states, and expanded states within the project's review workflow. For each eyebrow, subtitle, badge, explanation, and footer line, identify the distinct information or action it contributes; remove it when there is none. Remove repeated navigation, labels, facts, captions, and style variations when doing so preserves meaning and usability. Keep the requested content, essential qualifications, accessible structure, useful metadata, and cues needed to act. A title without supporting copy is a complete design choice. Useful context earns its place; it is not a default slot to fill.
+Review the normal page, empty states, and expanded states within the project's review workflow. For each section, control, eyebrow, subtitle, badge, explanation, and footer line, identify the distinct information or action it contributes; remove it when there is none or when it was not requested. Remove repeated navigation, labels, facts, captions, and style variations when doing so preserves meaning and usability. Keep the requested content, essential qualifications, accessible structure, useful metadata, and cues needed to act. A title without supporting copy is a complete design choice. Useful context earns its place; it is not a default slot to fill.

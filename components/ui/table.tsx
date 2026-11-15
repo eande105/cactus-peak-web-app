@@ -11,7 +11,7 @@ function Table({
     return (
       <table
         data-slot="table"
-        className={cn("w-full caption-bottom text-body", className)}
+        className={cn("w-full caption-bottom text-body-m", className)}
         {...props}
       />
     )
@@ -22,7 +22,7 @@ function Table({
     >
       <table
         data-slot="table"
-        className={cn("w-full caption-bottom text-body", className)}
+        className={cn("w-full caption-bottom text-body-m", className)}
         {...props}
       />
     </div>
@@ -47,7 +47,7 @@ function TableFooter({ className, ...props }: React.ComponentProps<"tfoot">) {
   return (
     <tfoot
       data-slot="table-footer"
-      className={cn("bg-muted/50 font-semibold *:*:rule-t", className)}
+      className={cn("bg-muted/50 font-heavy *:*:rule-t", className)}
       {...props}
     />
   )
@@ -68,7 +68,11 @@ function TableHead({ className, ...props }: React.ComponentProps<"th">) {
     <th
       data-slot="table-head"
       className={cn(
-        "h-11 px-3 text-left align-middle text-label whitespace-nowrap text-foreground has-[[role=checkbox]]:pr-0",
+        "h-11",
+        "px-s",
+        "text-left align-middle text-body-s font-heavy whitespace-nowrap",
+        "text-foreground",
+        "has-[[role=checkbox]]:pr-zero",
         className
       )}
       {...props}
@@ -80,7 +84,10 @@ function TableCell({ className, ...props }: React.ComponentProps<"td">) {
   return (
     <td
       data-slot="table-cell"
-      className={cn("p-3 align-middle has-[[role=checkbox]]:pr-0", className)}
+      className={cn(
+        "p-s align-middle has-[[role=checkbox]]:pr-zero",
+        className
+      )}
       {...props}
     />
   )
@@ -94,7 +101,7 @@ function TableCaption({
     <caption
       data-slot="table-caption"
       className={cn(
-        "mt-4 text-left text-caption text-muted-foreground",
+        "mt-m text-left text-body-s text-muted-foreground",
         className
       )}
       {...props}

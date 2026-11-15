@@ -46,10 +46,10 @@ export function ClubMap({
           ? `Map of ${pins[0]?.name ?? "the club"} and the streets around it`
           : "Map of the clubs"
       }
-      className={cn("rounded-lg edge ring-border", className)}
+      className={cn("corner-m hairline ring-border", className)}
       style={{ aspectRatio: ratio }}
       fallback={
-        <p className="text-caption text-muted-foreground">
+        <p className="text-body-s text-muted-foreground">
           The map did not load. The address is listed with each club.
         </p>
       }
@@ -67,16 +67,16 @@ export function ClubMap({
             onBlur={() => onHover?.(null)}
             aria-label={`${c.name}, busyness ${b.label}`}
             aria-pressed={onSelect ? selected === c.slug : undefined}
-            className="rounded-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring disabled:cursor-default"
+            className="corner-s focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring disabled:cursor-default"
           >
             <BrandPin
               active={on}
               chipClassName={cn(
-                "flex flex-col items-center gap-0.5 rounded-md bg-card px-2 py-1 shadow-(--shadow-s) edge ring-border",
-                on && "!bg-night text-on-night"
+                "flex flex-col items-center gap-0.5 corner-s bg-card px-2 py-1 shadow-(--shadow-s) hairline ring-border",
+                on && "!bg-night text-night-foreground"
               )}
             >
-              <span className="text-detail font-semibold whitespace-nowrap">
+              <span className="text-body-xs font-heavy whitespace-nowrap">
                 {c.name}
               </span>
               <BusynessMeter level={b.level} variant="compact" />
@@ -85,7 +85,7 @@ export function ClubMap({
         )
       }}
       renderControls={({ zoomIn, zoomOut, reset }) => (
-        <div className="flex flex-col gap-1">
+        <div className="flex flex-col gap-xxs">
           <Button
             variant="outline"
             size="icon"

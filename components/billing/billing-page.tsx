@@ -1,26 +1,28 @@
 "use client"
 import Link from "next/link"
+import type { ReactNode } from "react"
 import { useEffect, useState } from "react"
-import { StepUp } from "@/components/app/step-up"
+import { capital, IconPill, Section } from "@/components/account/parts"
 import { useApp } from "@/components/app/use-app"
-import { Check, Download, Loader2, TriangleAlert } from "@/components/icons"
+import { Check, Download, TriangleAlert } from "@/components/icons"
 import {
+  AppPage,
+  Card,
+  Facts,
+  Row,
+  Rows,
+  Stat,
+  Stats,
+} from "@/components/kit/app"
+import {
+  Banner,
+  EmptyState,
   LoadingBlock,
-  PageHeader,
-  SectionTitle,
   SelectBox,
   StatusPill,
 } from "@/components/kit/ui"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table"
 import { makeDefaultCard, retryPayment, setBillingField } from "@/lib/actions"
 import { announce } from "@/lib/announce"
 import {
@@ -34,20 +36,30 @@ import { fmtDateFull, fmtDayShort, fmtMoney } from "@/lib/time"
 import { toast } from "@/lib/toast"
 import type { Invoice } from "@/lib/types"
 import { openDialog } from "@/lib/ui-state"
+import { cn } from "@/lib/utils"
 
-export const statusPill = (st: Invoice["status"]) =>
-  st === "paid" ? (
-    <StatusPill tone="success" icon={Check}>
+/**
+ * The status of an invoice. `inTable` is for the invoice list, where nearly every row is paid: a paid row shows quiet
+ * text with a green check, and only the states that differ (open, failed, refunded) are pills.
+ */
+export const statusPill = (st: Invoice["status"], inTable?: boolean) =>
+  st === "paid" && inTable ? (
+    <span className="gap-xxs inline-flex items-center">
+      <Check className="size-3.5 shrink-0 text-success" aria-hidden="true" />
       Paid
-    </StatusPill>
+    </span>
+  ) : st === "paid" ? (
+    <IconPill tone="success" icon={Check}>
+      Paid
+    </IconPill>
   ) : st === "failed" ? (
-    <StatusPill tone="danger" icon={TriangleAlert}>
+    <IconPill tone="danger" icon={TriangleAlert}>
       Failed
-    </StatusPill>
+    </IconPill>
   ) : st === "refunded" ? (
     <StatusPill tone="neutral">Refunded</StatusPill>
   ) : (
-    <StatusPill tone="neutral">Open</StatusPill>
+    <StatusPill tone="info">Open</StatusPill>
   )
 export const download = (i: Invoice) => {
   const blob = new Blob(
@@ -60,7 +72,11 @@ export const download = (i: Invoice) => {
   a.click()
 }
 
-function Editable({
+/**
+ * One billing detail as the value of a fact: the value with a small Edit action. Edit turns the value into a field.
+ * The field saves on blur.
+ */
+function EditableValue({
   label,
   value,
   field,
@@ -72,46 +88,80 @@ function Editable({
   const [edit, setEdit] = useState(false)
   const [v, setV] = useState(value)
   const [saved, setSaved] = useState(false)
+  if (edit)
+    return (
+      <Input
+        aria-label={label}
+        className="w-64 max-w-full"
+        value={v}
+        onChange={(e) => setV(e.target.value)}
+        onBlur={() => {
+          setBillingField(field, v)
+          setEdit(false)
+          setSaved(true)
+          setTimeout(() => setSaved(false), 3000)
+        }}
+        autoFocus
+      />
+    )
   return (
-    <div className="flex items-start justify-between gap-3 py-3">
-      <div className="min-w-0 flex-1">
-        <p className="text-detail text-muted-foreground">{label}</p>
-        {edit ? (
-          <Input
-            aria-label={label}
-            value={v}
-            onChange={(e) => setV(e.target.value)}
-            onBlur={() => {
-              setBillingField(field, v)
-              setEdit(false)
-              setSaved(true)
-              setTimeout(() => setSaved(false), 3000)
-            }}
-            autoFocus
-          />
-        ) : (
-          <p className="text-body">
-            {value}
-            {saved ? (
-              <span role="status" className="ml-2 text-detail text-success">
-                Saved
-              </span>
-            ) : null}
-          </p>
-        )}
-      </div>
+    <span className="gap-s flex items-center justify-end">
+      {saved ? (
+        <span role="status" className="shrink-0 text-success">
+          Saved
+        </span>
+      ) : null}
+      <span className="min-w-0 break-words">{value}</span>
       <Button
-        variant="ghost"
+        variant="outline"
         size="sm"
         onClick={() => setEdit(true)}
         aria-label={`Edit ${label}`}
       >
         Edit
       </Button>
-    </div>
+    </span>
   )
 }
 
+/** One card on file as a row of the payment method block: the card, one fact, and the status and action at the right. */
+function CardOnFile({
+  title,
+  line,
+  end,
+  className,
+}: {
+  title: string
+  line: ReactNode
+  end: ReactNode
+  className?: string
+}) {
+  return (
+    <li
+      className={cn(
+        "px-m py-s gap-x-m gap-y-xs flex flex-wrap items-center justify-between text-body-m sm:text-body-s",
+        className
+      )}
+    >
+      <div className="min-w-0 flex-1 basis-40">
+        <p className="truncate font-medium">{title}</p>
+        <p className="tabular text-muted-foreground">{line}</p>
+      </div>
+      <div className="gap-xs flex flex-wrap items-center">{end}</div>
+    </li>
+  )
+}
+
+const TH =
+  "h-9 px-s text-body-xs font-medium whitespace-nowrap text-muted-foreground first:pl-zero last:pr-zero"
+const TD = "px-s py-xs first:pl-zero last:pr-zero"
+const PER_PAGE = 10
+
+/**
+ * Billing: what the household pays next and what it has left as one block of numbers, the card that pays as one
+ * bordered row, the monthly charges and the receipt details as facts, and every invoice in a bare table.
+ * A declined card shows first, with the retry.
+ */
 export default function BillingPage() {
   const { s, me, hh, now } = useApp()
   const [loading, setLoading] = useState(false)
@@ -126,7 +176,6 @@ export default function BillingPage() {
   if (loading) return <LoadingBlock text="Loading your billing…" rows={4} />
   const money = householdMonthly(s, hh)
   const late = paymentDaysLate(s, me.id, now)
-  const exp = hh.card.expYear * 100 + hh.card.expMonth
   const cur =
     (new Date(now - 7 * 3600_000).getUTCFullYear() % 100) * 100 +
     new Date(now - 7 * 3600_000).getUTCMonth() +
@@ -135,7 +184,6 @@ export default function BillingPage() {
     (hh.card.expYear - (cur - (cur % 100)) / 100) * 12 +
     hh.card.expMonth -
     (cur % 100)
-  void exp
   const expiring = months <= 2 && months >= 0
   const inv = hh.invoices
     .filter(
@@ -150,317 +198,314 @@ export default function BillingPage() {
               : i.kind === "fee")
     )
     .sort((a, b) => b.date - a.date)
-  const pages = Math.max(1, Math.ceil(inv.length / 10))
-  const rows = inv.slice((page - 1) * 10, page * 10)
-  const brand = hh.card.brand[0].toUpperCase() + hh.card.brand.slice(1)
+  const pages = Math.max(1, Math.ceil(inv.length / PER_PAGE))
+  const rows = inv.slice((page - 1) * PER_PAGE, page * PER_PAGE)
+  const brand = capital(hh.card.brand)
   const { left } = guestPassesLeft(s, hh.id, now)
+  const dl = (i: Invoice) => (
+    <Button
+      variant="ghost"
+      size="icon"
+      aria-label={`Download invoice for ${fmtDayShort(i.date)} (PDF)`}
+      onClick={() => download(i)}
+    >
+      <Download aria-hidden="true" />
+    </Button>
+  )
   return (
-    <div className="flex flex-col gap-8">
-      <StepUp />
-      <PageHeader title="Billing" />
-      <div className="grid gap-x-12 gap-y-8 lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)]">
-        <section aria-labelledby="nc" className="flex flex-col gap-3">
-          <p id="nc" className="eyebrow text-muted-foreground">
-            Next charge
-          </p>
-          <div className="flex flex-wrap items-baseline gap-x-6 gap-y-1">
-            <p className="num-l text-display leading-none">
-              {fmtMoney(money.total)}
-            </p>
-            <p className="num text-body">
-              {fmtDateFull(nextBillingDate(hh, now))}
-            </p>
-          </div>
-          <ul className="max-w-md num text-body rule-rows">
-            <li className="flex justify-between py-2">
-              <span>{hh.plan[0].toUpperCase() + hh.plan.slice(1)}</span>
-              <span>{fmtMoney(money.base)}</span>
-            </li>
-            {money.adults ? (
-              <li className="flex justify-between py-2">
-                <span>Adult add-on</span>
-                <span>{fmtMoney(money.adultTotal)}</span>
-              </li>
-            ) : null}
-            {money.kids ? (
-              <li className="flex justify-between py-2">
-                <span>Child add-ons, {money.kids} × $19.00</span>
-                <span>{fmtMoney(money.kidTotal)}</span>
-              </li>
-            ) : null}
-          </ul>
-          <p className="text-caption text-muted-foreground">
-            Annual facility fee $49 is charged in March.
-          </p>
-        </section>
-        <section
-          aria-labelledby="pm"
-          className="flex flex-col gap-3 lg:border-l lg:border-border lg:pl-12"
-        >
-          <p id="pm" className="eyebrow text-muted-foreground">
-            Payment method
-          </p>
-          <p className="flex flex-wrap items-center gap-2 text-body-strong">
-            <span className="rounded-xs font-bold border border-input px-1.5 text-detail uppercase">
-              {hh.card.brand}
-            </span>
-            {brand} ending {hh.card.last4}
-            <StatusPill>Default</StatusPill>
-          </p>
-          {late >= 0 ? (
-            <p
-              role="status"
-              className={
-                late >= 6
-                  ? "text-caption font-semibold text-destructive"
-                  : "text-caption font-semibold text-warning"
-              }
-            >
-              Card declined {fmtDayShort(hh.paymentFailedAt ?? now)}.{" "}
-              {late >= 8
-                ? "New bookings are paused."
-                : `${Math.max(0, 7 - late)} days of full access left.`}{" "}
-              <button
-                type="button"
-                className="underline"
-                onClick={async () => {
-                  setRetrying(true)
-                  await new Promise((r) => setTimeout(r, 800))
-                  const r = retryPayment()
-                  setRetrying(false)
-                  if (r.ok) announce("Paid. Your membership is active.")
-                }}
-              >
-                {retrying ? "Trying…" : "Try again"}
-              </button>
-            </p>
-          ) : null}
-          <p className="num text-caption text-muted-foreground">
-            Expires {String(hh.card.expMonth).padStart(2, "0")}/
-            {hh.card.expYear}{" "}
-            {expiring ? (
-              <StatusPill tone="warning" icon={TriangleAlert} className="ml-2">
-                Expires next month
-              </StatusPill>
-            ) : null}
-          </p>
-          <div className="flex flex-wrap items-center gap-3">
+    <AppPage title="Billing">
+      {late >= 0 ? (
+        <Banner
+          role="status"
+          tone={late >= 6 ? "danger" : "warning"}
+          title={`Card declined ${fmtDayShort(hh.paymentFailedAt ?? now)}. ${
+            late >= 8
+              ? "New bookings are paused."
+              : `${Math.max(0, 7 - late)} days of full access left.`
+          }`}
+          actions={
             <Button
-              variant={late >= 0 ? "primary" : "outline"}
+              size="sm"
+              variant="outline"
+              loading={retrying}
+              onClick={async () => {
+                setRetrying(true)
+                await new Promise((r) => setTimeout(r, 800))
+                const r = retryPayment()
+                setRetrying(false)
+                if (r.ok) announce("Paid. Your membership is active.")
+              }}
+            >
+              {retrying ? "Trying…" : "Try again"}
+            </Button>
+          }
+        />
+      ) : null}
+
+      <Stats>
+        <Stat
+          label="Next charge"
+          value={fmtMoney(money.total)}
+          hint={fmtDateFull(nextBillingDate(hh, now))}
+        />
+        <Stat label="Training sessions left" value={ptCreditsLeft(hh)} />
+        <Stat
+          label="Guest passes left this cycle"
+          value={left}
+          hint={`${hh.guestPassesBought} bought`}
+        />
+      </Stats>
+
+      <Section
+        id="pm"
+        title="Payment method"
+        action={
+          hh.backupCard ? undefined : (
+            <Button
+              size="sm"
+              variant="ghost"
               onClick={() => openDialog("card")}
             >
-              Update payment method
+              Add a backup card
             </Button>
-            {hh.backupCard ? (
-              <Button
-                variant="ghost"
-                onClick={() => {
-                  makeDefaultCard()
-                  toast({
-                    title: `${hh.backupCard!.brand} ending ${hh.backupCard!.last4} is now the default`,
-                  })
-                }}
-              >
-                Make {hh.backupCard.brand} ending {hh.backupCard.last4} default
-                again
-              </Button>
-            ) : (
-              <Button variant="ghost" onClick={() => openDialog("card")}>
-                Add a backup card
-              </Button>
-            )}
-          </div>
+          )
+        }
+      >
+        <ul className="flex flex-col corner-m raised [&>li+li]:rule-t">
+          <CardOnFile
+            title={`${brand} ending ${hh.card.last4}`}
+            line={`Expires ${String(hh.card.expMonth).padStart(2, "0")}/${hh.card.expYear}`}
+            end={
+              <>
+                {expiring ? (
+                  <IconPill tone="warning" icon={TriangleAlert}>
+                    Expires soon
+                  </IconPill>
+                ) : null}
+                <StatusPill>Default</StatusPill>
+                <Button
+                  size="sm"
+                  variant={late >= 0 ? "primary" : "outline"}
+                  onClick={() => openDialog("card")}
+                >
+                  Update card
+                </Button>
+              </>
+            }
+          />
           {hh.backupCard ? (
-            <p className="text-caption text-muted-foreground">
-              Backup: {hh.backupCard.brand} ending {hh.backupCard.last4}. Kept
-              for 30 days.
-            </p>
+            <CardOnFile
+              title={`${capital(hh.backupCard.brand)} ending ${hh.backupCard.last4}`}
+              line="Backup. Kept for 30 days."
+              end={
+                <Button
+                  variant="outline"
+                  size="sm"
+                  aria-label={`Make ${hh.backupCard.brand} ending ${hh.backupCard.last4} default again`}
+                  onClick={() => {
+                    makeDefaultCard()
+                    toast({
+                      title: `${hh.backupCard!.brand} ending ${hh.backupCard!.last4} is now the default`,
+                    })
+                  }}
+                >
+                  Make default
+                </Button>
+              }
+            />
           ) : null}
-        </section>
-      </div>
-      <div className="grid gap-x-12 gap-y-6 lg:grid-cols-2">
-        <section aria-labelledby="bd">
-          <SectionTitle id="bd">Billing details</SectionTitle>
-          <div className="mt-1 rule-rows">
-            <Editable label="Name" value={hh.billingName} field="billingName" />
-            <Editable
-              label="Billing address"
-              value={hh.billingAddress}
-              field="billingAddress"
-            />
-            <Editable
-              label="Receipt email"
-              value={hh.receiptEmail}
-              field="receiptEmail"
-            />
-          </div>
-        </section>
-        <section aria-labelledby="cr">
-          <SectionTitle id="cr">Credits and packs</SectionTitle>
-          <ul className="mt-1 text-body rule-rows">
-            <li className="flex justify-between py-3">
-              <span>Training sessions left</span>
-              <span className="num">{ptCreditsLeft(hh)}</span>
-            </li>
-            <li className="flex justify-between py-3">
-              <span>Guest passes left this cycle</span>
-              <span className="num">{left}</span>
-            </li>
-            <li className="flex justify-between py-3">
-              <span>Guest passes bought</span>
-              <span className="num">{hh.guestPassesBought}</span>
-            </li>
-          </ul>
-        </section>
-      </div>
-      <section aria-labelledby="iv">
-        <SectionTitle
-          id="iv"
-          action={
-            <SelectBox
-              label="Show"
-              hideLabel
-              value={filter}
-              onChange={(v) => {
-                setFilter(v)
-                setPage(1)
-              }}
-              options={[
-                { value: "all", label: "All" },
-                { value: "membership", label: "Membership" },
-                { value: "training", label: "Training" },
-                { value: "guest", label: "Guest passes" },
-                { value: "fee", label: "Fees" },
-              ]}
-            />
-          }
-        >
-          Invoices
-        </SectionTitle>
+        </ul>
+      </Section>
+
+      <Section id="nc" title="Monthly charges">
+        <Facts
+          className="rule-t"
+          items={[
+            { label: capital(hh.plan), value: fmtMoney(money.base) },
+            ...(money.adults
+              ? [{ label: "Adult add-on", value: fmtMoney(money.adultTotal) }]
+              : []),
+            ...(money.kids
+              ? [
+                  {
+                    label: `Child add-ons, ${money.kids} × $19.00`,
+                    value: fmtMoney(money.kidTotal),
+                  },
+                ]
+              : []),
+            { label: "Annual facility fee", value: "$49, charged in March" },
+          ]}
+        />
+      </Section>
+
+      <Section id="bd" title="Billing details">
+        <Facts
+          className="rule-t"
+          items={(
+            [
+              ["Name", hh.billingName, "billingName"],
+              ["Billing address", hh.billingAddress, "billingAddress"],
+              ["Receipt email", hh.receiptEmail, "receiptEmail"],
+            ] as const
+          ).map(([label, value, field]) => ({
+            label,
+            value: <EditableValue label={label} value={value} field={field} />,
+          }))}
+        />
+      </Section>
+
+      <Card
+        id="invoices"
+        tone="bare"
+        title="Invoices"
+        action={
+          <SelectBox
+            label="Show"
+            hideLabel
+            className="w-40"
+            value={filter}
+            onChange={(v) => {
+              setFilter(v)
+              setPage(1)
+            }}
+            options={[
+              { value: "all", label: "All" },
+              { value: "membership", label: "Membership" },
+              { value: "training", label: "Training" },
+              { value: "guest", label: "Guest passes" },
+              { value: "fee", label: "Fees" },
+            ]}
+          />
+        }
+        footer={
+          rows.length ? (
+            <>
+              <p className="tabular mr-auto text-body-m text-muted-foreground sm:text-body-s">
+                Showing {(page - 1) * PER_PAGE + 1}–
+                {(page - 1) * PER_PAGE + rows.length} of {inv.length}
+              </p>
+              {pages > 1 ? (
+                <nav
+                  aria-label="Invoice pages"
+                  className="gap-xs flex items-center"
+                >
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={page === 1}
+                    onClick={() => setPage(page - 1)}
+                  >
+                    Previous
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={page === pages}
+                    onClick={() => setPage(page + 1)}
+                  >
+                    Next
+                  </Button>
+                </nav>
+              ) : null}
+            </>
+          ) : undefined
+        }
+      >
         {rows.length ? (
           <>
-            <div className="mt-2 hidden md:block">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead scope="col" className="text-left">
+            {/* A table from 640 px. */}
+            <div className="overflow-x-auto max-sm:hidden">
+              <table className="w-full text-left text-body-s">
+                <caption className="sr-only">Invoices</caption>
+                <thead>
+                  <tr className="rule-b">
+                    <th scope="col" className={TH}>
                       Date
-                    </TableHead>
-                    <TableHead scope="col" className="text-left">
+                    </th>
+                    <th scope="col" className={TH}>
                       Description
-                    </TableHead>
-                    <TableHead scope="col" className="text-right">
-                      Amount
-                    </TableHead>
-                    <TableHead scope="col" className="text-left">
+                    </th>
+                    <th scope="col" className={TH}>
                       Status
-                    </TableHead>
-                    <TableHead scope="col">
-                      <span className="sr-only">Download</span>
-                    </TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
+                    </th>
+                    <th scope="col" className={`${TH} text-right`}>
+                      Amount
+                    </th>
+                    <th scope="col" className={`${TH} w-px`}>
+                      <span className="sr-only">Actions</span>
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="[&>tr+tr]:rule-t">
                   {rows.map((i) => (
-                    <TableRow key={i.id}>
-                      <TableCell className="py-3 num">
-                        <Link
-                          href={`/billing/invoices/${i.id}`}
-                          className="hover:underline"
-                        >
-                          {fmtDayShort(i.date)}
-                        </Link>
-                      </TableCell>
-                      <TableCell>{i.desc}</TableCell>
-                      <TableCell className="text-right num">
-                        {fmtMoney(i.amount)}
-                      </TableCell>
-                      <TableCell>{statusPill(i.status)}</TableCell>
-                      <TableCell className="text-right">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          aria-label={`Download invoice for ${fmtDayShort(i.date)} (PDF)`}
-                          onClick={() => download(i)}
-                        >
-                          <Download aria-hidden="true" />
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-            <ul className="mt-2 rule-rows md:hidden">
-              {rows.map((i) => (
-                <li
-                  key={i.id}
-                  className="flex items-start justify-between gap-3 py-3"
-                >
-                  <Link href={`/billing/invoices/${i.id}`} className="min-w-0">
-                    <span className="flex justify-between gap-4">
-                      <span className="num text-label">
+                    <tr key={i.id}>
+                      <th
+                        scope="row"
+                        className={`${TD} tabular font-medium whitespace-nowrap`}
+                      >
                         {fmtDayShort(i.date)}
-                      </span>
-                      <span className="num text-label">
+                      </th>
+                      <td className={`${TD} text-muted-foreground`}>
+                        {i.desc}
+                      </td>
+                      <td className={TD}>{statusPill(i.status, true)}</td>
+                      <td className={`${TD} tabular text-right`}>
                         {fmtMoney(i.amount)}
-                      </span>
+                      </td>
+                      <td className="pl-s py-xxs whitespace-nowrap">
+                        <span className="gap-xs flex items-center justify-end">
+                          <Link
+                            href={`/billing/invoices/${i.id}`}
+                            aria-label={`View invoice for ${fmtDayShort(i.date)}`}
+                            className="font-medium text-link hover:underline"
+                          >
+                            View
+                          </Link>
+                          {dl(i)}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            {/* Rows below 640 px. */}
+            <Rows label="Invoices" className="sm:hidden">
+              {rows.map((i) => (
+                <Row
+                  key={i.id}
+                  href={`/billing/invoices/${i.id}`}
+                  title={i.desc}
+                  line={
+                    <span className="tabular">
+                      {fmtDayShort(i.date)} · {fmtMoney(i.amount)}
                     </span>
-                    <span className="mt-0.5 block text-caption text-muted-foreground">
-                      {i.desc}
-                    </span>
-                    <span className="mt-1 block">{statusPill(i.status)}</span>
-                  </Link>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    aria-label={`Download invoice for ${fmtDayShort(i.date)} (PDF)`}
-                    onClick={() => download(i)}
-                  >
-                    <Download aria-hidden="true" />
-                  </Button>
-                </li>
+                  }
+                  end={
+                    <>
+                      {statusPill(i.status, true)}
+                      {dl(i)}
+                    </>
+                  }
+                />
               ))}
-            </ul>
-            {pages > 1 ? (
-              <nav
-                aria-label="Invoice pages"
-                className="mt-3 flex items-center gap-2"
-              >
-                <Button
-                  variant="outline"
-                  size="sm"
-                  disabled={page === 1}
-                  onClick={() => setPage(page - 1)}
-                >
-                  Previous
-                </Button>
-                <span className="num text-caption">
-                  Page {page} of {pages}
-                </span>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  disabled={page === pages}
-                  onClick={() => setPage(page + 1)}
-                >
-                  Next
-                </Button>
-              </nav>
-            ) : null}
+            </Rows>
           </>
         ) : (
-          <p className="mt-3 text-muted-foreground">
-            Your invoices will show here after your first charge.
-          </p>
+          <EmptyState
+            title={
+              hh.invoices.length
+                ? "No invoices of this type."
+                : "No invoices yet."
+            }
+            body={
+              hh.invoices.length
+                ? undefined
+                : "Your first invoice shows here after your first charge."
+            }
+          />
         )}
-        <p className="mt-3 text-detail text-muted-foreground">
-          Need a receipt for your employer? Download the PDF on any row.
-        </p>
-      </section>
-      <span className="sr-only">
-        <Loader2 />
-      </span>
-    </div>
+      </Card>
+    </AppPage>
   )
 }

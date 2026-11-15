@@ -38,11 +38,11 @@ function LoadError({ message }: { message: string }) {
   return (
     <main
       id="main"
-      className="mx-auto flex min-h-dvh max-w-[560px] flex-col items-start justify-center gap-3 px-4"
+      className="mx-auto flex min-h-dvh max-w-[560px] flex-col items-start justify-center gap-s px-m"
     >
-      <div role="alert" className="flex flex-col items-start gap-3">
+      <div role="alert" className="flex flex-col items-start gap-s">
         <TriangleAlert className="size-6 text-warning" aria-hidden="true" />
-        <h1 className="font-heading text-h2">
+        <h1 className="font-display-wide font-display-wide text-body-xxl font-heavy">
           We couldn&apos;t load your account.
         </h1>
         <p className="text-muted-foreground">
@@ -51,52 +51,39 @@ function LoadError({ message }: { message: string }) {
             : "Your bookings are safe. Try again in a moment."}
         </p>
         <Button onClick={() => void retryLoad()}>Try again</Button>
-        <p className="text-detail text-muted-foreground">Error: {message}</p>
+        <p className="text-body-xs text-muted-foreground">Error: {message}</p>
       </div>
     </main>
   )
 }
 
-// Same grid as the signed-in shell: sidebar, top bar, then the page column.
+// Same frame as the signed-in shell: the sidebar, the top bar, then cards.
 export function ShellSkeleton() {
   return (
-    <div
-      className="grid min-h-dvh lg:grid-cols-[264px_minmax(0,1fr)]"
-      aria-busy="true"
-    >
-      <aside className="hidden h-dvh flex-col gap-2 border-r border-border bg-card p-4 lg:flex">
-        <Skeleton className="mb-6 h-9 w-40" />
-        {Array.from({ length: 9 }, (_, i) => (
+    <div className="flex min-h-dvh" aria-busy="true">
+      <div className="gap-s p-s hidden w-60 shrink-0 flex-col rule-r lg:flex">
+        <Skeleton className="h-8 w-36" />
+        {Array.from({ length: 6 }, (_, i) => (
           // biome-ignore lint/suspicious/noArrayIndexKey: static placeholder rows
-          <Skeleton key={i} className="h-9 w-full" />
+          <Skeleton key={i} className="h-8 w-full" />
         ))}
-      </aside>
-      <div className="flex min-w-0 flex-col">
-        <div className="flex h-14 items-center gap-3 border-b border-border bg-card px-4 md:h-16 lg:px-6">
-          <Skeleton className="h-9 w-44" />
-          <Skeleton className="ml-auto size-9 rounded-full" />
+      </div>
+      <div className="flex min-w-0 flex-1 flex-col">
+        <div className="gap-s px-m lg:px-l flex h-14 items-center rule-b">
+          <Skeleton className="h-9 w-64 max-sm:hidden" />
+          <Skeleton className="ml-auto h-9 w-20" />
+          <Skeleton className="size-8 corner-full" />
         </div>
-        <main
-          id="main"
-          className="mx-auto flex w-full max-w-[1200px] flex-1 flex-col gap-6 px-4 pt-6 md:px-6 md:pt-8 lg:px-8"
-        >
+        <main id="main" className="gap-m p-m lg:p-l flex flex-1 flex-col">
           <p role="status" className="sr-only">
             Loading your day…
           </p>
-          <Skeleton className="h-10 w-64" />
-          <Skeleton className="h-4 w-80 max-w-full" />
-          <div className="grid gap-6 md:grid-cols-[5fr_7fr]">
-            <Skeleton className="h-48" />
-            <div className="flex flex-col divide-y divide-border">
-              {Array.from({ length: 5 }, (_, i) => (
-                // biome-ignore lint/suspicious/noArrayIndexKey: static placeholder rows
-                <div key={i} className="flex items-center gap-4 py-3">
-                  <Skeleton className="h-5 w-16" />
-                  <Skeleton className="h-5 flex-1" />
-                  <Skeleton className="h-9 w-24" />
-                </div>
-              ))}
-            </div>
+          <Skeleton className="h-8 w-40" />
+          <div className="gap-m grid lg:grid-cols-[3fr_2fr]">
+            <Skeleton className="h-40 w-full" />
+            <Skeleton className="h-40 w-full" />
+            <Skeleton className="h-56 w-full" />
+            <Skeleton className="h-56 w-full" />
           </div>
         </main>
       </div>
@@ -110,7 +97,7 @@ export function FlowSkeleton() {
     <main
       id="main"
       aria-busy="true"
-      className="mx-auto flex min-h-dvh w-full max-w-[640px] flex-col gap-4 px-4 pt-8"
+      className="mx-auto flex min-h-dvh w-full max-w-[640px] flex-col gap-m px-m pt-xl"
     >
       <p role="status" className="sr-only">
         Loading…

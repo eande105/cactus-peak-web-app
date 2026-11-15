@@ -210,6 +210,7 @@ function numberStepper(Base: typeof NumberField.Increment) {
           // A physical mouse click follows the pointer-down activation above.
           // Base UI also skips it; do not call the consumer twice for one press.
           if (event.detail > 0 && mousePress.current) {
+            mousePress.current = false;
             event.preventDefault();
             return;
           }

@@ -1,4 +1,7 @@
+import type { Metadata } from "next"
 import MemberProfile from "@/components/family/member-profile"
+
+export const metadata: Metadata = { title: "Household member" }
 
 export default async function Page({
   params,

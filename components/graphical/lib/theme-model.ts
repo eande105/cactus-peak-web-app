@@ -60,6 +60,21 @@ export type ComponentState =
 // Theme Maker's shared vocabulary, with concrete theme values instead of axes.
 export const SIZE_KEYS = ['xxs', 'xs', 's', 'm', 'l', 'xl', 'xxl'] as const;
 export type SizeKey = (typeof SIZE_KEYS)[number];
+/**
+ * Neighboring text sizes stay at least this far apart (14%), so no two read
+ * as the same size: 14px and 16px are distinct, 16px and 18px are not.
+ */
+export const MIN_TEXT_STEP = 1.14;
+/** Both type scales, body and display, have the same seven steps. */
+export const TEXT_KEYS = SIZE_KEYS;
+export type TextKey = SizeKey;
+/**
+ * Body sets interface and reading text; display sets headings. The font role
+ * picks the scale: display text uses the display scale, body and data text
+ * the body scale.
+ */
+export const TYPE_SCALES = ['body', 'display'] as const;
+export type TypeScale = (typeof TYPE_SCALES)[number];
 export const LETTER_SPACING_KEYS = ['xs', 's', 'm', 'l', 'xl'] as const;
 export type LetterSpacingKey = (typeof LETTER_SPACING_KEYS)[number];
 /** Tracking in em; the editor presents these relative values as percentages. */
@@ -71,7 +86,7 @@ export const DEFAULT_LETTER_SPACING: Record<LetterSpacingKey, number> = {
   xl: 0.02,
 };
 /** Larger text tightens; small labels open up slightly. */
-export const TEXT_LETTER_SPACING: Record<SizeKey, LetterSpacingKey> = {
+export const TEXT_LETTER_SPACING: Record<TextKey, LetterSpacingKey> = {
   xxs: 'xl',
   xs: 'l',
   s: 'l',
@@ -87,10 +102,31 @@ export function letterSpacingScale(theme: ThemeDefinition) {
 
 export function resolveLetterSpacing(
   theme: ThemeDefinition,
-  textSize: SizeKey,
+  textSize: TextKey,
   token: LetterSpacingKey = TEXT_LETTER_SPACING[textSize],
 ): number {
   return letterSpacingScale(theme)[token];
+}
+
+/**
+ * The tracking a text style carries. Body steps pair by name. Display steps
+ * run larger than their names, so each pairs as the body step nearest its
+ * size would, and steps past Body XXL tighten like XXL: a 25px heading
+ * tightens whatever its step is called.
+ */
+export function textLetterSpacingKey(
+  theme: ThemeDefinition,
+  scale: TypeScale,
+  key: TextKey,
+): LetterSpacingKey {
+  if (scale === 'body') return TEXT_LETTER_SPACING[key];
+  const body = themeText(theme);
+  const size = themeDisplay(theme)[key].size;
+  const away = (step: TextKey) =>
+    Math.abs(Math.log(Math.max(body[step].size, 0.01) / Math.max(size, 0.01)));
+  return TEXT_LETTER_SPACING[
+    TEXT_KEYS.reduce((best, step) => (away(step) < away(best) ? step : best))
+  ];
 }
 
 export const SPACE_KEYS = ['zero', ...SIZE_KEYS] as const;
@@ -128,12 +164,148 @@ export function presetText(): Record<SizeKey, TextStep> {
     SIZE_KEYS.map((key) => [key, { ...PRESET_SCALE.text[key] }]),
   ) as Record<SizeKey, TextStep>;
 }
+
+/**
+ * Keep neighboring text sizes at least `MIN_TEXT_STEP` apart, working out
+ * from M, the base: a size too close to the one nearer M moves away from it,
+ * keeping its own leading. Proportion applies this to every theme.
+ */
+export function distinctTextSteps(
+  text: Record<SizeKey, TextStep>,
+): Record<SizeKey, TextStep> {
+  const keys = SIZE_KEYS.filter((key) => text[key]);
+  const anchor = keys.indexOf('m');
+  const next = { ...text };
+  const move = (key: SizeKey, size: number) => {
+    const step = next[key];
+    next[key] = {
+      ...step,
+      size,
+      lineHeight: (step.lineHeight * size) / Math.max(step.size, 0.01),
+    };
+  };
+  // Sizes render in whole pixels, so the gap holds between rendered sizes.
+  for (let index = anchor + 1; index < keys.length; index++) {
+    const floor = Math.ceil(
+      themePx(next[keys[index - 1]].size) * MIN_TEXT_STEP,
+    );
+    if (themePx(next[keys[index]].size) < floor) move(keys[index], floor);
+  }
+  for (let index = anchor - 1; index >= 0; index--) {
+    const ceiling = Math.floor(
+      themePx(next[keys[index + 1]].size) / MIN_TEXT_STEP,
+    );
+    if (themePx(next[keys[index]].size) > ceiling) move(keys[index], ceiling);
+  }
+  return next;
+}
+
+/** The body scale: interface, reading and data text. */
+export function themeText(theme: ThemeDefinition): Record<SizeKey, TextStep> {
+  return theme.text;
+}
+
+/**
+ * The display scale, for headings. A theme without its own uses the body
+ * scale's values, so its headings look as they did before display existed.
+ */
+export function themeDisplay(
+  theme: ThemeDefinition,
+): Record<SizeKey, TextStep> {
+  return theme.display ?? theme.text;
+}
+
+/** The scale a font role sets its text on. */
+export function fontScale(font: FontKey): TypeScale {
+  return font === 'display' ? 'display' : 'body';
+}
+
+export function themeScale(
+  theme: ThemeDefinition,
+  scale: TypeScale,
+): Record<SizeKey, TextStep> {
+  return scale === 'display' ? themeDisplay(theme) : themeText(theme);
+}
+
+/** One text style: a font role's step on the scale that role uses. */
+export function textStep(
+  theme: ThemeDefinition,
+  font: FontKey,
+  size: SizeKey,
+): TextStep {
+  return themeScale(theme, fontScale(font))[size];
+}
 export const RADIUS_KEYS = ['zero', 'xs', 's', 'm', 'l', 'xl', 'full'] as const;
 export type RadiusKey = (typeof RADIUS_KEYS)[number];
 export const WEIGHT_KEYS = ['regular', 'medium', 'heavy'] as const;
 export type WeightKey = (typeof WEIGHT_KEYS)[number];
-export const FONT_KEYS = ['ui', 'brand', 'editorial', 'data'] as const;
+/** Body sets interface text, display sets headings, data sets numbers and code. */
+export const FONT_KEYS = ['body', 'display', 'data'] as const;
 export type FontKey = (typeof FONT_KEYS)[number];
+/** Roles before Display absorbed Brand and Editorial, and Body was UI. */
+const LEGACY_FONT_KEYS: Readonly<Record<string, FontKey>> = {
+  ui: 'body',
+  brand: 'display',
+  editorial: 'display',
+};
+/** A font role by its current or legacy name. */
+export function fontKey(value: string): FontKey | undefined {
+  return (FONT_KEYS as readonly string[]).includes(value)
+    ? (value as FontKey)
+    : LEGACY_FONT_KEYS[value];
+}
+
+const plain = (value: unknown): value is Record<string, unknown> =>
+  !!value && typeof value === 'object' && !Array.isArray(value);
+
+/**
+ * Read an older document in today's shape: four font roles (UI, Brand,
+ * Editorial, Data) become three, with Body taking UI's face and Display
+ * Brand's (every preset set Editorial to the same face). Component tokens
+ * that named a legacy role follow it, and text steps beyond XXL from the
+ * retired ten-step scale are dropped. Current documents pass through.
+ */
+export function upgradeThemeDocument<T>(value: T): T {
+  if (!plain(value)) return value;
+  const theme = plain(value.theme) ? { ...value.theme } : undefined;
+  if (theme && plain(theme.fonts)) {
+    const fonts = theme.fonts;
+    if (!('body' in fonts) || !('display' in fonts) || 'ui' in fonts)
+      theme.fonts = {
+        body: fonts.body ?? fonts.ui,
+        display: fonts.display ?? fonts.brand ?? fonts.editorial ?? fonts.ui,
+        data: fonts.data ?? fonts.ui,
+      };
+  }
+  if (theme && plain(theme.text))
+    theme.text = Object.fromEntries(
+      Object.entries(theme.text).filter(([key]) =>
+        (SIZE_KEYS as readonly string[]).includes(key),
+      ),
+    );
+  const fontsIn = (tokens: unknown): unknown => {
+    if (Array.isArray(tokens)) return tokens.map(fontsIn);
+    if (!plain(tokens)) return tokens;
+    return Object.fromEntries(
+      Object.entries(tokens).map(([key, entry]) => [
+        key,
+        key === 'font' && typeof entry === 'string'
+          ? (fontKey(entry) ?? entry)
+          : fontsIn(entry),
+      ]),
+    );
+  };
+  return {
+    ...value,
+    ...(theme ? { theme } : {}),
+    ...('componentTokens' in value
+      ? { componentTokens: fontsIn(value.componentTokens) }
+      : {}),
+    ...('componentVariants' in value
+      ? { componentVariants: fontsIn(value.componentVariants) }
+      : {}),
+  } as T;
+}
 export const BORDER_KEYS = ['none', 's', 'm', 'l'] as const;
 export type BorderKey = (typeof BORDER_KEYS)[number];
 export const SHADOW_KEYS = ['none', 's', 'm', 'l'] as const;
@@ -169,7 +341,15 @@ export type BaseColorKey =
   | PaletteKey
   | (typeof NEUTRAL_KEYS)[number]
   | SemanticKey;
-export type ColorKey = BaseColorKey | 'none' | `${BaseColorKey}-transparent`;
+/**
+ * Every color has three levels: solid, translucent (stronger) and transparent
+ * (lighter). Each style sets both opacities per color and mode.
+ */
+export type ColorKey =
+  | BaseColorKey
+  | 'none'
+  | `${BaseColorKey}-translucent`
+  | `${BaseColorKey}-transparent`;
 
 export type TextStep = {
   size: number;
@@ -311,7 +491,39 @@ export function isAtlasTheme(theme: { name: string }): boolean {
   return theme.name === 'Atlas' || theme.name === 'Lustre';
 }
 
+export type ThemeCharacterProfile =
+  | 'imported'
+  | 'generic'
+  | 'grove'
+  | 'atlas'
+  | 'lustre'
+  | 'charter'
+  | 'forma'
+  | 'base';
+
+/** Stable authored reference for relative Scale and Character controls. */
+export type ThemeAdjustmentBaseline = {
+  version: 1;
+  textM: number;
+  text: Record<SizeKey, TextStep>;
+  display?: Record<SizeKey, TextStep>;
+  spacing: Record<SpaceKey, number>;
+  character: {
+    /** Preserve the authored Character mapping across host wrappers and renames. */
+    profile?: ThemeCharacterProfile;
+    radius: Record<RadiusKey, number>;
+    border: Record<BorderKey, number>;
+    weights: Record<FontKey, Record<WeightKey, number>>;
+    colorEmphasis?: number;
+    buttonRadius?: 's' | 'full';
+  };
+};
+
 export type ThemeDefinition = {
+  /** Metadata only: concrete tokens remain the rendering source of truth. */
+  adjustmentBaseline?: ThemeAdjustmentBaseline;
+  /** Character thumb position when an authored emphasis endpoint clamps one side. */
+  characterX?: number;
   /** Curated default key-color stops; custom colors remain unrestricted. */
   keyColorPalette?: readonly string[];
   /** Authored companions and text choices applied when a palette is selected. */
@@ -328,13 +540,15 @@ export type ThemeDefinition = {
   neutralTone?: NeutralTone;
   /** Quiet–Bold's color distribution, from small accents to larger surfaces. */
   colorEmphasis?: number;
+  /** Imported styles keep authored corners and strokes when Character changes. */
+  characterProfile?: 'imported';
   /** The theme's default button shape, before individual component edits. */
   buttonRadius?: 's' | 'full';
   iconFamily?: 'Lucide' | 'Phosphor' | 'Central' | 'Hugeicons';
+  /** Independent icon weight; absent themes retain typography-driven defaults. */
+  iconWeight?: number;
   iconStyle?: 'filled' | 'outlined';
   hugeiconsVariant?: HugeiconsVariant;
-  /** Independent icon weight; omission preserves typography-driven defaults. */
-  iconWeight?: number;
   /** Optional material detailing, independent of the elevation shadow scale. */
   surfaceDetails?: SurfaceDetails;
   /** Shared keyboard-focus outline, separate from component edges and elevation. */
@@ -350,8 +564,18 @@ export type ThemeDefinition = {
   colorTranslucency?: Partial<
     Record<ColorMode, Partial<Record<BaseColorKey, number>>>
   >;
+  /** Per-color opacity percentages for translucent tokens; omitted values use 40%. */
+  colorTranslucent?: Partial<
+    Record<ColorMode, Partial<Record<BaseColorKey, number>>>
+  >;
   spacing: Record<SpaceKey, number>;
+  /** The body scale: interface, reading and data text. */
   text: Record<SizeKey, TextStep>;
+  /**
+   * The display scale, for headings. Omitted, it uses the body scale's values;
+   * read it through `themeDisplay`.
+   */
+  display?: Record<SizeKey, TextStep>;
   /** Omitted by older documents; resolves to the shared five-step defaults. */
   letterSpacing?: Record<LetterSpacingKey, number>;
   fonts: Record<FontKey, FontDefinition>;
@@ -388,7 +612,7 @@ export type ComponentTokens = {
   paddingLeft?: SpaceKey;
   paddingRight?: SpaceKey;
   gap: SpaceKey;
-  textSize: SizeKey;
+  textSize: TextKey;
   /** Omission follows the text size; a named choice stays linked to the theme. */
   lineHeight?: SizeKey;
   /** Omission follows the text size; a named choice stays linked to the theme. */
@@ -566,9 +790,8 @@ export const DEFAULT_DOCUMENT: ThemeDocument = {
       xxl: { size: 54, lineHeight: 59.4 },
     },
     fonts: {
-      ui: font(SYSTEM_UI_FONT),
-      brand: font(SYSTEM_UI_FONT),
-      editorial: font('Georgia, serif'),
+      body: font(SYSTEM_UI_FONT),
+      display: font(SYSTEM_UI_FONT),
       data: font('ui-monospace, SFMono-Regular, Menlo, monospace'),
     },
     radius: { zero: 0, xs: 4, s: 8, m: 12, l: 24, xl: 36, full: 9999 },
@@ -605,16 +828,24 @@ export const DEFAULT_DOCUMENT: ThemeDocument = {
 export function tokenLabel(key: string): string {
   if (key === 'zero') return '0';
   if (SIZE_KEYS.includes(key as SizeKey)) return key.toUpperCase();
-  if (key === 'ui') return 'UI';
   return key
     .split('-')
     .map((part) => part[0].toUpperCase() + part.slice(1))
     .join(' ');
 }
+/** The solid color behind any level: `color-1` for `color-1-translucent`. */
+export function baseColorKey(key: Exclude<ColorKey, 'none'>): BaseColorKey {
+  return key.replace(/-(?:translucent|transparent)$/, '') as BaseColorKey;
+}
+/** Whether a key is one of a color's translucent levels. */
+export function isTranslucentColorKey(key: ColorKey) {
+  return /-(?:translucent|transparent)$/.test(key);
+}
 export function transparentColorKey(key: ColorKey): ColorKey {
-  return key === 'none' || key.endsWith('-transparent')
-    ? key
-    : `${key as BaseColorKey}-transparent`;
+  return key === 'none' ? key : `${baseColorKey(key)}-transparent`;
+}
+export function translucentColorKey(key: ColorKey): ColorKey {
+  return key === 'none' ? key : `${baseColorKey(key)}-translucent`;
 }
 
 export function paletteKeys(theme: ThemeDefinition, mode: ColorMode) {
@@ -632,18 +863,38 @@ export function themeColorTranslucency(
   );
 }
 
+/** The translucent level's opacity percentage. */
+export function themeColorTranslucent(
+  theme: ThemeDefinition,
+  mode: ColorMode,
+  key: BaseColorKey,
+) {
+  return Math.max(
+    0,
+    Math.min(100, theme.colorTranslucent?.[mode]?.[key] ?? 40),
+  );
+}
+
 export function resolveColor(
   theme: ThemeDefinition,
   mode: ColorMode,
   key: ColorKey,
 ): string {
   if (key === 'none') return 'transparent';
-  const base = key.replace(/-transparent$/, '') as BaseColorKey;
+  const base = baseColorKey(key);
   const color = theme.colors[mode][base];
   if (!color) return 'transparent';
-  return key.endsWith('-transparent')
-    ? colorWithOpacity(color, themeColorTranslucency(theme, mode, base) / 100)
-    : color;
+  if (key.endsWith('-transparent'))
+    return colorWithOpacity(
+      color,
+      themeColorTranslucency(theme, mode, base) / 100,
+    );
+  if (key.endsWith('-translucent'))
+    return colorWithOpacity(
+      color,
+      themeColorTranslucent(theme, mode, base) / 100,
+    );
+  return color;
 }
 export function resolveShadow(
   theme: ThemeDefinition,
@@ -675,7 +926,7 @@ export function resolveShadowDefinition(
     layer(1, 1 - (1 - opacity) ** 0.6),
   ].join(', ');
 }
-export function colorOptions(theme: ThemeDefinition, mode: ColorMode) {
+function resolveColorOptions(theme: ThemeDefinition, mode: ColorMode) {
   const baseGroups = [
     { label: 'Palette', keys: paletteKeys(theme, mode) },
     { label: 'Neutrals', keys: NEUTRAL_KEYS },
@@ -691,14 +942,61 @@ export function colorOptions(theme: ThemeDefinition, mode: ColorMode) {
     ...baseGroups.map((group) => ({
       label: group.label,
       options: group.keys.flatMap((base) =>
-        [base, transparentColorKey(base)].map((value) => ({
-          value,
-          label: tokenLabel(value),
-          color: resolveColor(theme, mode, value),
-        })),
+        [base, translucentColorKey(base), transparentColorKey(base)].map(
+          (value) => ({
+            value,
+            label: tokenLabel(value),
+            color: resolveColor(theme, mode, value),
+            // Embedded inspectors serialize values as CSS references; retain
+            // the family and authored opacity independently of that spelling.
+            colorToken: {
+              base,
+              level: value.endsWith('-translucent')
+                ? ('translucent' as const)
+                : value.endsWith('-transparent')
+                  ? ('transparent' as const)
+                  : ('full' as const),
+              opacity: value.endsWith('-translucent')
+                ? themeColorTranslucent(theme, mode, base)
+                : value.endsWith('-transparent')
+                  ? themeColorTranslucency(theme, mode, base)
+                  : 100,
+            },
+          }),
+        ),
       ),
     })),
   ];
+}
+type ColorOptionGroups = ReturnType<typeof resolveColorOptions>;
+// Options depend only on one mode's colors and translucency. Theme edits copy
+// those records rather than mutating them, so their identity keys the cache.
+const colorOptionCache = new WeakMap<
+  object,
+  {
+    translucency: object | undefined;
+    translucent: object | undefined;
+    groups: ColorOptionGroups;
+  }
+>();
+/** Shared, read-only option groups; editors request these on every render. */
+export function colorOptions(
+  theme: ThemeDefinition,
+  mode: ColorMode,
+): ColorOptionGroups {
+  const colors = theme.colors[mode];
+  const translucency = theme.colorTranslucency?.[mode];
+  const translucent = theme.colorTranslucent?.[mode];
+  const cached = colorOptionCache.get(colors);
+  if (
+    cached &&
+    cached.translucency === translucency &&
+    cached.translucent === translucent
+  )
+    return cached.groups;
+  const groups = resolveColorOptions(theme, mode);
+  colorOptionCache.set(colors, { translucency, translucent, groups });
+  return groups;
 }
 export function componentKey(
   componentId: ComponentId,
@@ -811,7 +1109,7 @@ export function resolveComponentTokens(
     paddingX: componentId === 'button' ? 'm' : 's',
     gap: 'xs',
     textSize: document.theme.name === 'Grove' ? 'm' : 's',
-    font: 'ui',
+    font: 'body',
     weight: componentId === 'button' ? 'medium' : 'regular',
     controlSize: componentId === 'checkbox' ? 'm' : 'l',
     shadow: 'none',
@@ -948,10 +1246,7 @@ export function resolveComponentStyle(
   const tokens = resolveComponentTokens(document, componentId, state, variant);
   const style = resolveTokenStyle(document.theme, mode, tokens, state, {
     surface: componentSurfaceRelief(componentId),
-    borderInset:
-      (componentId === 'button' &&
-        !(document.theme.name === 'Grove' && variant === 'secondary')) ||
-      (document.theme.name === 'Grove' && componentId === 'checkbox'),
+    borderInset: componentBorderInset(document.theme, componentId, variant),
     borderColorAuthored:
       (componentId === 'button' && variant === 'outline') ||
       hasComponentBorderColorOverride(document, componentId, variant, state),
@@ -1016,6 +1311,22 @@ export function resolveAutomaticForeground(
     : resolveColor(theme, mode, tokens.foreground);
 }
 
+/**
+ * Controls whose strokes sit inside: buttons, except Grove's secondary
+ * button, and Grove's checkbox. Grove and Lustre apply it (see below).
+ */
+export function componentBorderInset(
+  theme: Pick<ThemeDefinition, 'name'>,
+  componentId: ComponentId,
+  variant: ButtonVariant | 'default' = 'default',
+): boolean {
+  return (
+    (componentId === 'button' &&
+      !(theme.name === 'Grove' && variant === 'secondary')) ||
+    (theme.name === 'Grove' && componentId === 'checkbox')
+  );
+}
+
 /** Filled surfaces contain their edges in Charter and Forma; light surfaces keep outer edges. */
 export function themeBorderInset(
   theme: ThemeDefinition,
@@ -1026,7 +1337,7 @@ export function themeBorderInset(
   if (theme.name !== 'Charter' && theme.name !== 'Forma')
     return (theme.name === 'Grove' || theme.name === 'Lustre') && controlInset;
   if (background === 'none') return false;
-  const base = background.replace(/-transparent$/, '');
+  const base = baseColorKey(background);
   return (
     [...PALETTE_KEYS, ...SEMANTIC_KEYS].some((key) => key === base) ||
     contrastingTextColor(
@@ -1054,18 +1365,18 @@ export function resolveTokenStyle(
   } = {},
 ): ComponentStyle {
   const face = theme.fonts[tokens.font];
-  const text = theme.text[tokens.textSize];
+  const text = themeText(theme)[tokens.textSize];
   const borderWidth = resolveBorderWidth(theme, tokens.borderWidth);
   const backgroundOpacity = Math.max(
     0,
     Math.min(100, tokens.backgroundOpacity ?? 100),
   );
   const background = resolveColor(theme, mode, tokens.background);
-  // Flat fills, text-only parts, transparent tokens, and disabled controls stay flat.
+  // Flat fills, text-only parts, translucent levels, and disabled controls stay flat.
   const details =
     surface &&
     tokens.background !== 'none' &&
-    !tokens.background.endsWith('-transparent') &&
+    !isTranslucentColorKey(tokens.background) &&
     state !== 'disabled' &&
     backgroundOpacity === 100 &&
     (borderWidth > 0 || tokens.shadow !== 'none')
@@ -1148,7 +1459,7 @@ export function resolveTokenStyle(
     fontFamily: face.family,
     fontSize: themePx(text.size),
     lineHeight: themePx(
-      theme.text[tokens.lineHeight ?? tokens.textSize].lineHeight,
+      themeText(theme)[tokens.lineHeight ?? tokens.textSize].lineHeight,
     ),
     letterSpacing: resolveLetterSpacing(
       theme,
@@ -1290,7 +1601,7 @@ export function previewCssVariables(
     '--focus-ring-outline': focusRing
       ? `${theme.border[focusRing.width]}px solid color-mix(in srgb, ${resolveColor(theme, mode, focusRing.color)} ${focusRing.opacity}%, transparent)`
       : 'initial',
-    ...iconWeightVariables(theme.fonts.ui.weights.regular),
+    ...iconWeightVariables(theme.fonts.body.weights.regular),
     '--motion-duration': `${smallMotion.duration}ms`,
     '--motion-easing': smallMotion.easing,
     '--motion-type': theme.animation.type ?? 'easing',
@@ -1410,10 +1721,18 @@ export function previewCssVariables(
     vars[`--space-${key}`] = `${themePx(theme.spacing[key])}px`;
   for (const key of LETTER_SPACING_KEYS)
     vars[`--tracking-${key}`] = `${letterSpacingScale(theme)[key]}em`;
+  const textScale = themeText(theme);
+  const displayScale = themeDisplay(theme);
   for (const key of SIZE_KEYS) {
-    vars[`--size-${key}`] = `${themePx(theme.text[key].size)}px`;
-    vars[`--line-${key}`] = `${themePx(theme.text[key].lineHeight)}px`;
-    vars[`--letter-spacing-${key}`] = `${resolveLetterSpacing(theme, key)}em`;
+    const tracking = (scale: TypeScale) =>
+      `${resolveLetterSpacing(theme, key, textLetterSpacingKey(theme, scale, key))}em`;
+    vars[`--size-${key}`] = `${themePx(textScale[key].size)}px`;
+    vars[`--line-${key}`] = `${themePx(textScale[key].lineHeight)}px`;
+    vars[`--letter-spacing-${key}`] = tracking('body');
+    vars[`--display-size-${key}`] = `${themePx(displayScale[key].size)}px`;
+    vars[`--display-line-${key}`] =
+      `${themePx(displayScale[key].lineHeight)}px`;
+    vars[`--display-letter-spacing-${key}`] = tracking('display');
   }
   for (const key of RADIUS_KEYS)
     vars[`--radius-${key}`] = `${themePx(theme.radius[key])}px`;
@@ -1441,6 +1760,23 @@ export function previewCssVariables(
       vars[`--${option.value === 'none' ? 'color-none' : option.value}`] =
         option.color;
   }
+  // Readable text on each color, which `on:<color>` app tokens alias.
+  const inks = (['neutral-1', 'neutral-10'] as const).map((key) =>
+    resolveColor(theme, mode, key),
+  );
+  const [darkInk, lightInk] =
+    contrastingTextColor(inks[0]) === '#000000' ? [inks[1], inks[0]] : inks;
+  for (const key of [...PALETTE_KEYS, ...SEMANTIC_KEYS, ...NEUTRAL_KEYS]) {
+    if (!theme.colors[mode][key]) continue;
+    vars[`--on-${key}`] = (NEUTRAL_KEYS as readonly string[]).includes(key)
+      ? contrastingTextColor(resolveColor(theme, mode, key)) === '#000000'
+        ? darkInk
+        : lightInk
+      : resolveAutomaticForeground(theme, mode, {
+          background: key,
+          foreground: 'neutral-10',
+        });
+  }
   for (const key of SHADOW_KEYS)
     vars[`--shadow-${key}`] = resolveShadow(theme, mode, key);
   return {
@@ -1455,9 +1791,9 @@ export function previewCssVariables(
     '--cte-accent-text': colors.accentText,
     '--cte-danger': colors.danger,
     '--cte-focus': colors.focus,
-    '--cte-font': theme.fonts.ui.family,
+    '--cte-font': theme.fonts.body.family,
     '--cte-font-size': `${themePx(text.size)}px`,
-    '--cte-font-weight': theme.fonts.ui.weights.regular,
+    '--cte-font-weight': theme.fonts.body.weights.regular,
     '--cte-line-height': `${themePx(text.lineHeight)}px`,
     '--cte-letter-spacing': `${resolveLetterSpacing(theme, textSize)}em`,
     '--cte-detail-font-size': `${themePx(detailText.size)}px`,

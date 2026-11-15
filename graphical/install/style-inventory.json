@@ -1,0 +1,5484 @@
+{
+  "format": "graphical-app-styles-v1",
+  "appName": "Cactus Peak Athletic",
+  "roots": ["app", "components", "lib", "hooks"],
+  "coverage": [
+    {
+      "path": "lib/fonts.ts",
+      "line": 13,
+      "kind": "unresolved-class-source",
+      "detail": "Cannot resolve class helper Inter. Include its source or convert and review this class expression manually.",
+      "reviewed": "next/font loader calls, not class lists. (line 13)"
+    },
+    {
+      "path": "lib/fonts.ts",
+      "line": 7,
+      "kind": "unresolved-class-source",
+      "detail": "Cannot resolve class helper Archivo. Include its source or convert and review this class expression manually.",
+      "reviewed": "next/font loader calls, not class lists. (line 7)"
+    },
+    {
+      "path": "lib/utils.ts",
+      "line": 27,
+      "kind": "unresolved-class-source",
+      "detail": "Cannot resolve class helper merge. Include its source or convert and review this class expression manually.",
+      "reviewed": "The merge call inside cn(); cn's own arguments are traced. (line 27)"
+    },
+    {
+      "path": "components/kit/ui.tsx",
+      "line": 389,
+      "kind": "unresolved-class-source",
+      "detail": "Cannot resolve class helper CATEGORIES.map. Include its source or convert and review this class expression manually.",
+      "reviewed": "CATEGORIES.map() lists the category ids for a hue lookup, not a class list. (line 389)"
+    }
+  ],
+  "files": [
+    {
+      "path": "app/(app)/@panel/(.)schedule/[sessionId]/page.tsx",
+      "hash": "589e1ea656509f43a68365abffeb555d1cac30fe49c4bfaa611713c42d7a638b"
+    },
+    {
+      "path": "app/(app)/@panel/default.tsx",
+      "hash": "b36538ed7a0b167d655064a683484cee8d52e0f2fe025ece6ca5729c7b13aef2"
+    },
+    {
+      "path": "app/(app)/403/page.tsx",
+      "hash": "cc0c61e29701db239ba2b254be39fabc0bbd07ca1698d0aebcff3f7e578b2d0c"
+    },
+    {
+      "path": "app/(app)/account/page.tsx",
+      "hash": "77e7ac11f42f071d4db375bfaed51fc3a6e97adc3fb76d6520998788ae613cb3"
+    },
+    {
+      "path": "app/(app)/billing/invoices/[invoiceId]/page.tsx",
+      "hash": "8b5e883142658eef0f8e921704b146a0c398d59f6d2c52991d7f4fc71e7f73d9"
+    },
+    {
+      "path": "app/(app)/billing/page.tsx",
+      "hash": "b56888ecb300d320ab61220ada55e02ab436907ad940ca99a31cdd9783d9b9d9"
+    },
+    {
+      "path": "app/(app)/billing/payment-method/page.tsx",
+      "hash": "1a0de9f7426dcaca5cb00501b4ca454eadb8fabe853bd6908d865036b41006b1"
+    },
+    {
+      "path": "app/(app)/bookings/page.tsx",
+      "hash": "df5e30bc16fa036df61d27183468601f9e4e588350b80f0879146d29753e274b"
+    },
+    {
+      "path": "app/(app)/clubs/[slug]/page.tsx",
+      "hash": "28cc6aebf567213997117dd54f74292d912f8afc182aedf175f3a990aa6f6a15"
+    },
+    {
+      "path": "app/(app)/clubs/page.tsx",
+      "hash": "b4697862e2a88af8b23eb418cb1dcdd2b10b5db03720bd0635db31d82226257b"
+    },
+    {
+      "path": "app/(app)/family/[memberId]/page.tsx",
+      "hash": "fb90b7c2c490532a7fed6a30038a54d4e81cb9b562be3d68cd7de1659e60f475"
+    },
+    {
+      "path": "app/(app)/family/add/page.tsx",
+      "hash": "51373caf3ef03d7db323672bd605f6ed3a552bce2fcd54c0b2fcfd9b1585a236"
+    },
+    {
+      "path": "app/(app)/family/page.tsx",
+      "hash": "48f9b7f4bdfb8aa0b9782fb862b1fd0922eac16d47b4b7fc0692d57009022377"
+    },
+    {
+      "path": "app/(app)/guest-passes/page.tsx",
+      "hash": "5f0ca012f864048978dc22a90e4cadb129e356ce5ee10a269fcfe78b8eb22cab"
+    },
+    {
+      "path": "app/(app)/guest-passes/send/page.tsx",
+      "hash": "940610b6b2f46d401b4aa8f73d7b1972c70242486d7a6ed2a7e4b0a3a6694461"
+    },
+    {
+      "path": "app/(app)/help/page.tsx",
+      "hash": "5c6ee4fc3a574b21bfec6c554ce41e2b2288bbedd1aad6fc65e72b92787ea1f0"
+    },
+    {
+      "path": "app/(app)/inbox/[threadId]/page.tsx",
+      "hash": "d0ff648a573dd1b05f97a13cb2b704824c7c128d327b73147299157b4afd0272"
+    },
+    {
+      "path": "app/(app)/inbox/page.tsx",
+      "hash": "0d762523b8ab067014a96d914f2d1e6f9665f128cdac2936ac483ea56f9c88f0"
+    },
+    {
+      "path": "app/(app)/layout.tsx",
+      "hash": "6a0c4291e1a24af5ba7a5aeaac1733bae792cb292f382eca807585b023e9a79f"
+    },
+    {
+      "path": "app/(app)/maintenance/page.tsx",
+      "hash": "823ce9b415d2e71939fedbcfaa29e29ad486915442c163841368f63d5203e397"
+    },
+    {
+      "path": "app/(app)/membership/cancel/page.tsx",
+      "hash": "3089aa0d72cb066fa4031841f36310d6d9dd7a64b051a2024c725522c66f8be3"
+    },
+    {
+      "path": "app/(app)/membership/change-plan/page.tsx",
+      "hash": "ee3decfdafdec506f60a96f214c53cee74e0cdce76e84313cdcec047ba9b3502"
+    },
+    {
+      "path": "app/(app)/membership/freeze/page.tsx",
+      "hash": "3f2cb001edb679f929ba4bc6fab2c76babd627dad61d4bbb3e47634a4805fa95"
+    },
+    {
+      "path": "app/(app)/membership/page.tsx",
+      "hash": "6328b71a58554cba213cea497dae3b9d6627c5655f53d37a0be82ec8555cf4fe"
+    },
+    {
+      "path": "app/(app)/pass/page.tsx",
+      "hash": "94e16e56d3e59dacb39ddb171d0a939be2e76d30d00a62dec20add12c80f6cc3"
+    },
+    {
+      "path": "app/(app)/progress/page.tsx",
+      "hash": "a8a4a8faebf04dd09e5227b7790fcaf88fc5a56c218c8cb1a71ed263e43c3b56"
+    },
+    {
+      "path": "app/(app)/reserve/confirmed/[reservationId]/page.tsx",
+      "hash": "945225dcc061fb94741199e5ed9e540907a16f967df90194a0aee39d5a9d46ed"
+    },
+    {
+      "path": "app/(app)/reserve/courts/page.tsx",
+      "hash": "8e749064b4466d68974e5307b75f5aac57af50966726b9b97559ebb0434372ae"
+    },
+    {
+      "path": "app/(app)/reserve/kids-club/page.tsx",
+      "hash": "77c2a717966a74d7a7a4e8d2fc49ee832c2ef3ffb09d1e33a17a2462e8ec4db1"
+    },
+    {
+      "path": "app/(app)/reserve/lanes/page.tsx",
+      "hash": "2ed7f1d7d861ba20afe8641d74322046b0beff2b7027a7fcc1236bbdf5f5de9c"
+    },
+    {
+      "path": "app/(app)/reserve/page.tsx",
+      "hash": "4d6ac50f8c31ddc14e0a9b3ea3deaecea914c815f01bf1785a9afa1e41367f78"
+    },
+    {
+      "path": "app/(app)/schedule/[sessionId]/page.tsx",
+      "hash": "7bcfaf3f639b5fe24ad19f8e5d2946e9eadb8765b06aa4bc21f2ba1c601667e3"
+    },
+    {
+      "path": "app/(app)/schedule/page.tsx",
+      "hash": "52147e3c38de22d8f6b649b90f03ab116b6c12098474aaabeee95bc87c62b27f"
+    },
+    {
+      "path": "app/(app)/settings/calendar/page.tsx",
+      "hash": "5395d839b05a5dc8d248c6b1fa5b2f026939c391e08f510e522568e1a57cdff3"
+    },
+    {
+      "path": "app/(app)/settings/display/page.tsx",
+      "hash": "7be8996dc910ee9f3b23c041e5d11602c109e6c3f43a219cc152c70c645a3847"
+    },
+    {
+      "path": "app/(app)/settings/layout.tsx",
+      "hash": "dacd85c33bd03e287334095270f7806772b3952a23211db29d94a07c14907b21"
+    },
+    {
+      "path": "app/(app)/settings/notifications/page.tsx",
+      "hash": "674ad34997841adb73f903064d612e528d9056c9fe4ad88704f02b54660d384e"
+    },
+    {
+      "path": "app/(app)/settings/page.tsx",
+      "hash": "fc54cfe5b467565a928a03d4975cdc7e4824571429bbfd3cf04ae3a3530c8af5"
+    },
+    {
+      "path": "app/(app)/settings/preferences/page.tsx",
+      "hash": "4814d4acf4e9996f5b64a8d02199b5e8c5e4f8563d5b7c5989a622d554cad0c2"
+    },
+    {
+      "path": "app/(app)/settings/privacy/page.tsx",
+      "hash": "efdc931e27e63605a87d773355b9f9363e87ed374023759e123f3173f52f77a0"
+    },
+    {
+      "path": "app/(app)/settings/profile/page.tsx",
+      "hash": "bdc5370ad3e1aa4910f15c7cb887754cf33a3f0d5cb2701dd7a0d83374c4115f"
+    },
+    {
+      "path": "app/(app)/settings/security/page.tsx",
+      "hash": "d315c6a0540f5851e37c9d9a89fcc386b9f47d43db5786dc9526cdb22249e387"
+    },
+    {
+      "path": "app/(app)/today/page.tsx",
+      "hash": "5830164870c8b0141bcd5c4e028b354c90199337af33d31f5aabff7abed95237"
+    },
+    {
+      "path": "app/(app)/training/coaches/[coachSlug]/book/page.tsx",
+      "hash": "00353a87103fa27b220cc1c049d4c26f29d9c8ef5f7a47b852f0ab63fdcd60d1"
+    },
+    {
+      "path": "app/(app)/training/coaches/[coachSlug]/page.tsx",
+      "hash": "80090a0db4ccbb758aa964a38a498f98e9b89f9a98002c826ab258fd0cd18ec4"
+    },
+    {
+      "path": "app/(app)/training/page.tsx",
+      "hash": "39cb6b1199956fda075e9e839c8c5dabef33e8fd184a9101775a006c11446e83"
+    },
+    {
+      "path": "app/(auth)/layout.tsx",
+      "hash": "13d112e5d8e2abdc3899bf4e6e4c4ae8f3347fb4b867eb436c6e95d8e4d26f74"
+    },
+    {
+      "path": "app/(auth)/sign-in/page.tsx",
+      "hash": "12adc71d5326c2bee52b34be0ef9ae0a733183265d5089e03b023c8338067192"
+    },
+    {
+      "path": "app/(flow)/layout.tsx",
+      "hash": "e407b92af485783f5878dfa00d3ef868fa5790f965d6bfc0929cef992d74ff90"
+    },
+    {
+      "path": "app/(flow)/welcome/page.tsx",
+      "hash": "9e2f05fc7929c254980d5f2b7ef7977c008a0103f36c770bf12802696fc52e8e"
+    },
+    {
+      "path": "app/error.tsx",
+      "hash": "49a8e128357749f693ec769a68e8cb0b3cfd2aec5e9b4f02cd0501784081230e"
+    },
+    {
+      "path": "app/global-error.tsx",
+      "hash": "a7fb454355f18a35fd321563e0552e4682f29ff0f1075709e03103c78ba3f94a"
+    },
+    {
+      "path": "app/globals.css",
+      "hash": "9d932a1c5afc84de081b0ef264e653b78e3ff60837050d1a76d4c4779acb34b2"
+    },
+    {
+      "path": "app/layout.tsx",
+      "hash": "e1e6cb50d2fce39aa9faf84ae1e50444dff9fb7a3b53d9d94026f48c710ad8ea"
+    },
+    {
+      "path": "app/not-found.tsx",
+      "hash": "1133d63168cb7a9a18387c481b9c48c8c932d79d3009858be7458304845ec5d2"
+    },
+    {
+      "path": "app/offline/page.tsx",
+      "hash": "65becf69ac08b6efe74b4daf1aa75e01a48ffecc132711558e9d4149f579dd4d"
+    },
+    {
+      "path": "app/page.tsx",
+      "hash": "c962695fe4613e94d5a8c5c6869ec9e9a549d81cf2f29a39198859e1020fefb7"
+    },
+    {
+      "path": "app/tailwind-reset.css",
+      "hash": "eba140c2ff18aa1927f302eba7035df4a0e4668aa670d192e9c75e350bd3473d"
+    },
+    {
+      "path": "components/account/account-page.tsx",
+      "hash": "5b4dd48645f2b669051248fa790b2cde1c170b77c8888112c223290cea8b492c"
+    },
+    {
+      "path": "components/account/parts.tsx",
+      "hash": "ae033093a2ef9ac1940b898229bf96dbb3b5175d1feac3aa72a79cff96668466"
+    },
+    {
+      "path": "components/app/auth-shell.tsx",
+      "hash": "8baddb64c103bfcbaa01cb90512974dabf269a41bd383eb79978cb6bec7a666a"
+    },
+    {
+      "path": "components/app/banners.tsx",
+      "hash": "0138d2b34662069c7756658b80c81a0c31dfa44eb561f3bcf541abca620388ba"
+    },
+    {
+      "path": "components/app/catalog-boundary.tsx",
+      "hash": "2ef67867f2b1712c1bed1df26310e4bd16cb3cb5b1656f9c434665487cf60974"
+    },
+    {
+      "path": "components/app/check-in-pass.tsx",
+      "hash": "fe9e09fee24fd6b2fbb481e246bb7a83455108a5c2bb146450592e57a9d1e239"
+    },
+    {
+      "path": "components/app/flow-shell.tsx",
+      "hash": "4207351558499c0e8e97e11b7b9d0cc58b4e11b05e3934f9bd5f59d7b48300c2"
+    },
+    {
+      "path": "components/app/global-dialogs.tsx",
+      "hash": "b7c475326d4bc65d9973c9ba5d9ecfa67257bbd38bfd292793b828bd5a2ebf6a"
+    },
+    {
+      "path": "components/app/help.tsx",
+      "hash": "dc5a6fab92338bfb1af9967e92a670cafebd3bb6bc9fc68ea0c3a8f14a142961"
+    },
+    {
+      "path": "components/app/household-gate.tsx",
+      "hash": "60b205ee3a3178e756ecff645536fd56d92fd328ca935d6bd6ef9721974d681c"
+    },
+    {
+      "path": "components/app/nav.ts",
+      "hash": "12704ddbda060c3b57d303302060f5cc795d7a99bfb255c449981b3d2fa00dac"
+    },
+    {
+      "path": "components/app/notices.tsx",
+      "hash": "b87e97a0a0451d8068fcf801e039a5cbcbd93a1ddee3717e09079d968f6e9cdf"
+    },
+    {
+      "path": "components/app/pass-page.tsx",
+      "hash": "059c75a6e7ee9f3631eb6d16d847f31310d74d6ddd1118f77b1c4c5098724257"
+    },
+    {
+      "path": "components/app/screen-parts.tsx",
+      "hash": "bc087f182aa846ff1c1fc7937197a356511ac63285e423f6f133cc1707507f90"
+    },
+    {
+      "path": "components/app/shell.tsx",
+      "hash": "b497102b0189a9f3998c6b18852f195dd09ffb829569d19931596d10db133f03"
+    },
+    {
+      "path": "components/app/step-up.tsx",
+      "hash": "0bb7ba0982455b03028fcb9a6b5a5c358b89254fac3f1f71eeb24d532227a283"
+    },
+    {
+      "path": "components/app/use-app.ts",
+      "hash": "ab2edfbb5d019139beae4e335655ac7a9250628f05f7e957f5d5dc1f4abcf03a"
+    },
+    {
+      "path": "components/app/welcome.tsx",
+      "hash": "c217201cc65f79d9a024799ec0bfc15438dd527034fea196a5bbde182a3828d2"
+    },
+    {
+      "path": "components/billing/billing-page.tsx",
+      "hash": "07ea6a995cdf590062353efacb7f78817a570db6c224e06586e0c8ffe167dcc5"
+    },
+    {
+      "path": "components/billing/card-route.tsx",
+      "hash": "54456976da13739e5c16522aa4127bf27e910cc43f1cea0e1d37c5fc9e9d9a2c"
+    },
+    {
+      "path": "components/billing/invoice-page.tsx",
+      "hash": "42958c38c422effd1964f9d38f6c716f2442ce2d8f8f6feb073bda5cea3123dc"
+    },
+    {
+      "path": "components/book/book-tabs.tsx",
+      "hash": "3e1047d4af1029d3b392a708a343a1dd0a79b664c9bc5e3581467ff5932b2e22"
+    },
+    {
+      "path": "components/booking/calendar-menu.tsx",
+      "hash": "898d023c1b7dde89d0b37c7724adee2a375ed4b2af6b3b625b5aa2c0cf8d8d22"
+    },
+    {
+      "path": "components/booking/cancel-dialog.tsx",
+      "hash": "50db12e006e17982e0fda1718e02c636d2ff19b81e563496bc7026ccc60768ef"
+    },
+    {
+      "path": "components/booking/class-row.tsx",
+      "hash": "770b5b220eb7daca5019efa0851e3c2950dd3e29d35ff00c5ee911a7bfcaad2c"
+    },
+    {
+      "path": "components/booking/parts.tsx",
+      "hash": "1dc6fa4f9046e35f7f59783472ba81c2b7f8b90c235417c1e6d42e52aef86d9f"
+    },
+    {
+      "path": "components/booking/session-action.tsx",
+      "hash": "fd27e92515cdffa647443b07a0bd3e1efb89f0927c9378947ffd71e269a48aa7"
+    },
+    {
+      "path": "components/booking/session-detail.tsx",
+      "hash": "d7a29756d25705bacb07d35600662357fdd5bc896a8be2ca9f833efe85f3fc37"
+    },
+    {
+      "path": "components/booking/session-page.tsx",
+      "hash": "b771ac83929e92741f5c0c0019ed6fe89e35be5b2a93697afe96a4dcde7e9c2f"
+    },
+    {
+      "path": "components/booking/session-sheet.tsx",
+      "hash": "34de57a728b7e4be65072ecd779559582eb67487be9e4dde7826343d2b0c0b46"
+    },
+    {
+      "path": "components/booking/success-panel.tsx",
+      "hash": "46f45996f364abef8675b0a81a69e72b87b4ff04777d583fe771b371cbbabd75"
+    },
+    {
+      "path": "components/bookings/bookings-page.tsx",
+      "hash": "895666f7449be0fe7e962eff613be782d35a7eaecefc8242ad1269bab03c3d67"
+    },
+    {
+      "path": "components/clubs/club-detail.tsx",
+      "hash": "3ffe16f9c9149d81df4a96b7ee0c3894a9f5045b5aa9ddfdc0b4a944623c662b"
+    },
+    {
+      "path": "components/clubs/club-map.tsx",
+      "hash": "0847f4f188b1c2347bb6202bca22f7f5e6143d2eed14e11dd05ce569de07188a"
+    },
+    {
+      "path": "components/clubs/clubs-page.tsx",
+      "hash": "828119859a9ebcc1cbc6c54df5349ac102f56206e7aa24a7c572549ebad673e0"
+    },
+    {
+      "path": "components/clubs/parts.tsx",
+      "hash": "051786452a469f7c68c295c2f0235607969f32fe56ce0a93e4d9f52b41eebb19"
+    },
+    {
+      "path": "components/clubs/popular-times.tsx",
+      "hash": "3b935f03a030bc9ca017542ca894c517842f8be95ee4e25d982ff773bf7bae1d"
+    },
+    {
+      "path": "components/family/add-member.tsx",
+      "hash": "8743170c9937bf611118cf50edffc90e27c34690831833744ddf0cfcccd34577"
+    },
+    {
+      "path": "components/family/family-page.tsx",
+      "hash": "0bbe5e998a57f19abfebfaeb657ffd98b2e7011103f4e01edd9f20aa4e653eda"
+    },
+    {
+      "path": "components/family/member-profile.tsx",
+      "hash": "443b382a31f332b2ea6d226b456a3612d8bd118fd5cd3639adebaf98c928da5e"
+    },
+    {
+      "path": "components/family/parts.tsx",
+      "hash": "dc7e6abd57285b0f8f1b8508e82bb2e1d8f9effb7a683ece7d916027f6ba25e1"
+    },
+    {
+      "path": "components/flows/parts.tsx",
+      "hash": "e16ef3c1a094746f9cb49bcdd344f4e8a808aa763f2afc4a9f49136bbd7a8ae8"
+    },
+    {
+      "path": "components/graphical-theme-provider.tsx",
+      "hash": "4c9142e444b7f9a276d9211163874ad0044a0ad008e33a41f0ce08bdf5ab49bc"
+    },
+    {
+      "path": "components/guest/guest-passes.tsx",
+      "hash": "f8b9b8ec909ee8fa77e063b8d155ead72e541c7143b5f5a9ed137f2ca61f43a6"
+    },
+    {
+      "path": "components/icons/index.ts",
+      "hash": "15425197c9beaebbdb81e941799778f0809826348a5e71fab61ca27b46c6d894"
+    },
+    {
+      "path": "components/icons/nucleo.tsx",
+      "hash": "cbbb0f95fe5c83d67f94cf15f17f2bade04f050b159208732fdd6d218f3cc95b"
+    },
+    {
+      "path": "components/inbox/inbox.tsx",
+      "hash": "e7c43e7f40ed0e28a1b326a174230807cd3fd69d2b5881bef0917593ef328453"
+    },
+    {
+      "path": "components/inbox/thread-page.tsx",
+      "hash": "bf4b167d21272c18f9fc274cf2e454d8d91cd35f0285d541cf500d42087af05c"
+    },
+    {
+      "path": "components/kit/app.tsx",
+      "hash": "d5356fd3829e5f708963d8e7017cef175f8485f53ffaebb85a19214a6bdc6110"
+    },
+    {
+      "path": "components/kit/brand-art.tsx",
+      "hash": "1aae20598dba3db22270cdc62bba2def66f4e19e7e4b0cdf36b5258e9113b064"
+    },
+    {
+      "path": "components/kit/calendar.tsx",
+      "hash": "929973e27f8af0261966d05cd4300471ec3f2b03f519b29556e515e3b697168e"
+    },
+    {
+      "path": "components/kit/category.tsx",
+      "hash": "16ca0cb170d97e47b11245da43c03feda05e65e3b9f1e5f39b2342b96ab104f3"
+    },
+    {
+      "path": "components/kit/collapse.tsx",
+      "hash": "0d857a006ee51f9dcca64c9d04441c4049ac9ed51af6f246617a46322ddaf932"
+    },
+    {
+      "path": "components/kit/icons.tsx",
+      "hash": "f1e7ab15eec15f6c22c3a20cf10b6d45a2023ed5939f20fa6f61899737fba462"
+    },
+    {
+      "path": "components/kit/overlays.tsx",
+      "hash": "3e83ec859ef7b21316fe8f740ab91d49e537dea09eb9397d2ac2db8ea820b47f"
+    },
+    {
+      "path": "components/kit/progress.tsx",
+      "hash": "d22a80262e860042fa986c57ecfafb339e211ab2a49d0c4ca36cd3b9c609ac3e"
+    },
+    {
+      "path": "components/kit/ribs.tsx",
+      "hash": "9cdda7feb3a950625121e7a052812f0d862d2216e00b42e55358196808f618e7"
+    },
+    {
+      "path": "components/kit/tip.tsx",
+      "hash": "3392a06f0b7e86e79282caa53444f0900a82048bae5edb3707782a17f694a600"
+    },
+    {
+      "path": "components/kit/ui.tsx",
+      "hash": "ab6ad67937eb97fb412f93e1bc0a379d158eee9e137a83d1d84ad31bd51ae30b"
+    },
+    {
+      "path": "components/map/brand-map-style.ts",
+      "hash": "5a5c84c8c1a7a32ac1bd020b078f2c93d131a1c0118eed8b12200fb91994549a"
+    },
+    {
+      "path": "components/map/brand-map.tsx",
+      "hash": "d3b2b69a04cb8b48b69795df5be3f97e20aad286de397222ae585443a007bc8f"
+    },
+    {
+      "path": "components/membership/cancel.tsx",
+      "hash": "667977bc686e6296e44be506f45b270fcf40ce03c2b979a359bbf6474377d8c6"
+    },
+    {
+      "path": "components/membership/change-plan.tsx",
+      "hash": "8fcb632f6217340b07b8d377c4984dd6b3ac6ba33ea7142ba73309fc2120a655"
+    },
+    {
+      "path": "components/membership/freeze.tsx",
+      "hash": "e35ed01c3e43802b702ce61d6eb63fb8a9872b4eb3e196c790a2df18e793eeaf"
+    },
+    {
+      "path": "components/membership/membership-page.tsx",
+      "hash": "2041ac2bdf78c63b77bacb709ad55e705bce6b4518840b0686b83ea7a730706e"
+    },
+    {
+      "path": "components/progress/progress-page.tsx",
+      "hash": "fa6e8c7d55e8d9d35497c75495d757299792dcf4ad0ac3001f6791965912f6c7"
+    },
+    {
+      "path": "components/reserve/booking-list.tsx",
+      "hash": "3442bb55bde7cef4f86eea239385194590f210f0e0a414a8be06f3f24ae04892"
+    },
+    {
+      "path": "components/reserve/common.tsx",
+      "hash": "3dbbd630e4c87519180485005d00846354fbcf9e993cfa54672ec1bf2343b606"
+    },
+    {
+      "path": "components/reserve/confirmed-page.tsx",
+      "hash": "35729d1e17e6586f0a3a574f36dd8ff74aa34e4db06bc963e86efc18527fb60a"
+    },
+    {
+      "path": "components/reserve/courts-page.tsx",
+      "hash": "e41868f4c3a46e7bb696849c04e38a705b68e47e6290b55edcc9b86cd1dd99b2"
+    },
+    {
+      "path": "components/reserve/kids-page.tsx",
+      "hash": "b69d7d963aa515deaee53f7d1dfb05be770a5f44f2ef9583ecfeb76c317c4df4"
+    },
+    {
+      "path": "components/reserve/lanes-page.tsx",
+      "hash": "ab6724ad3bd69661d28245787a1136e3006776170d39d64a70379ed6aef2623a"
+    },
+    {
+      "path": "components/reserve/parts.tsx",
+      "hash": "fff6c801d31a8cac552c8abf83b743affdb101ff26970825bc072fef97baff6a"
+    },
+    {
+      "path": "components/reserve/slot-grid.tsx",
+      "hash": "291aaeed124888e98e9e1c1b6fbad3ce63eda890ad37690f52606cf9db1eb035"
+    },
+    {
+      "path": "components/schedule/day-strip.tsx",
+      "hash": "cc707aa9151da0aed8450d87d0ff1498efc3908ddad976f73386792d62e8d9c9"
+    },
+    {
+      "path": "components/schedule/filters.tsx",
+      "hash": "aabdba22764fa53e07a2258724e97969109f97fdb6eb4e4e7f4fe18313efad73"
+    },
+    {
+      "path": "components/schedule/schedule-page.tsx",
+      "hash": "a7a40784eabe74e54d7ff347465c81ab0e4214d5450246179fdd4ceaac9ba5d1"
+    },
+    {
+      "path": "components/settings/pages.tsx",
+      "hash": "d108625d1f7629d0dbfb9ddabf76c4374cd56a64776b594b277db9bf17a9aa07"
+    },
+    {
+      "path": "components/settings/parts.tsx",
+      "hash": "dc9b7fc7ed36823c93ef80589acfd668af2302fc540a39275233f3e9db1ab757"
+    },
+    {
+      "path": "components/settings/settings-shell.tsx",
+      "hash": "96aa5c4327cf83465e4696a5de40c869141ead82659f9dd60a82bbff20b50643"
+    },
+    {
+      "path": "components/theme-provider.tsx",
+      "hash": "f57536461b6062da2ce3b5998ce5291e5eeeaa02d3ced8e9fdc14be3bab75b34"
+    },
+    {
+      "path": "components/today/today-page.tsx",
+      "hash": "03fa150a8f69dc1f61d2e1e7378e5b369cc03088cf1f95c0388a93191f55e20e"
+    },
+    {
+      "path": "components/training/book-page.tsx",
+      "hash": "53075bdf180f09f4c80cd6e998b9085d5d0299c7a8fcae0b96e87f9531c9e2a8"
+    },
+    {
+      "path": "components/training/coach-profile.tsx",
+      "hash": "9f245eec296640e11157d91f37cb72a1a251044b589060381d51c3ffe9661493"
+    },
+    {
+      "path": "components/training/training-page.tsx",
+      "hash": "59c95a1e446c560726958401abe46329d579f54a41f1974b1b20956a85ded11a"
+    },
+    {
+      "path": "components/ui/accordion.tsx",
+      "hash": "f77ed41eb6d3058962dde931ae73e9291fd7cd9d7da7412c3a62dec7eb67c250"
+    },
+    {
+      "path": "components/ui/badge.tsx",
+      "hash": "bd0283276d8c395155fb9ab4ad9a319e348e694fdd4982f77a9475bef5ff4fa6"
+    },
+    {
+      "path": "components/ui/button.tsx",
+      "hash": "5657b18eff647e737107bcb22a0fb16a72f07f3d8dfc5c5693569af141f954e7"
+    },
+    {
+      "path": "components/ui/input.tsx",
+      "hash": "8a3796c70adae5c4d17d9cfc26e9ba3725234aa9977e507e84d511f8b7152beb"
+    },
+    {
+      "path": "components/ui/separator.tsx",
+      "hash": "37bed47e1610a367a583115f57d5af9461be73ed112fb0f170b3bf32c735cfc6"
+    },
+    {
+      "path": "components/ui/skeleton.tsx",
+      "hash": "f7112b8ba70966439855d533bda223b760275ac44d7a5ac16446674d0ce257ce"
+    },
+    {
+      "path": "components/ui/table.tsx",
+      "hash": "106edd7ae6fde7e9c743dd86d95a749f2c00c2ab38068191cdf8147d033cc457"
+    },
+    {
+      "path": "components/ui/textarea.tsx",
+      "hash": "d001a044dd576cde2db18e25efc97c9bce4111c312418ac4ebce9a4408c300d2"
+    },
+    {
+      "path": "hooks/use-media.ts",
+      "hash": "7a571538b9878fdb4ff11621c71fa81ba2b9035ff89a98254e6da8f3775cb687"
+    },
+    {
+      "path": "lib/actions.ts",
+      "hash": "11e75855f3f5e1d03537a6d51ab334b4836c58f76211cac23f5b872150a1af45"
+    },
+    {
+      "path": "lib/advance.ts",
+      "hash": "2fe549216fa1c72e97db6a8d2d24c0d7cc6ed522a51001f5098ab549bbde93ae"
+    },
+    {
+      "path": "lib/announce.ts",
+      "hash": "f8f5cc1364603337fc06c5c899a09f9e8629ab8ded4e8909220e895f7ff85b8a"
+    },
+    {
+      "path": "lib/data/catalog-server.ts",
+      "hash": "0531752c6a5f3ae8aac00b1ebd82a52e96704f048a8ec4ca7d94fc7ba73ae095"
+    },
+    {
+      "path": "lib/data/catalog.ts",
+      "hash": "eee1af4545d013690c580fd7ec2a5edbddeadfd66bb5152a52acd89d04107a4b"
+    },
+    {
+      "path": "lib/data/club-spaces.ts",
+      "hash": "d4667cc5cb3dec6882c6a651da2dfc86b7c920a243cfee9889f1ce94d8b1ca1b"
+    },
+    {
+      "path": "lib/data/rows.ts",
+      "hash": "a21b7fbbde4a421416995d82b3a6827fd1bf62d51a8aeef51f63ecb8d608cde3"
+    },
+    {
+      "path": "lib/data/sessions.ts",
+      "hash": "167ed054993494c8e4f8309217c4cc6c277eb85e8e3af226e247e396cfe61a4e"
+    },
+    {
+      "path": "lib/data/state.ts",
+      "hash": "0405437333589748bdb472b060dc99a9e9e87367ad31ae4057faa2b9dade1fec"
+    },
+    {
+      "path": "lib/engine.ts",
+      "hash": "1cbbe3dcfd63abe5c462c98ba67f2327dfe294e52f6fed23b52af3eabfcf6b22"
+    },
+    {
+      "path": "lib/fonts.ts",
+      "hash": "532eb92135ed1d789981d724b132e239ed60a41ee04cabb5b69162059f634c07"
+    },
+    {
+      "path": "lib/history.ts",
+      "hash": "f29c10e637a20bd0855ce859634880ce4f913466809e455aeced086ddddad1a5"
+    },
+    {
+      "path": "lib/ics.ts",
+      "hash": "8dc719297bbbcfe3543525c3a464f77ca09c6c394a3d6ba584f695771bf15946"
+    },
+    {
+      "path": "lib/purchases.ts",
+      "hash": "613b465bb48da8a5d887be942b5bca22646fccf79e0f9b5a8055e50b26a8c88e"
+    },
+    {
+      "path": "lib/safe-next.ts",
+      "hash": "499eef0f483aadfbb283ee90743810018a47d87c38fd2d1e688913a534b76a1e"
+    },
+    {
+      "path": "lib/schedule-filters.ts",
+      "hash": "58cd57b37f48fcccef28846ae61f94f16fd45038e9d95a8d3369aa834cea5681"
+    },
+    {
+      "path": "lib/store.ts",
+      "hash": "ef57c5ecbaefc30f184c754efcf2b3d5e70431109152885f2269a8eb1e23bb4a"
+    },
+    {
+      "path": "lib/supabase/client.ts",
+      "hash": "079e36f045335c809769117151bbaed81875d5e46c269435af724d9dbc16daa0"
+    },
+    {
+      "path": "lib/supabase/database.types.ts",
+      "hash": "de3d16e650a6d7c7692bcbe9e94886a5f52755d960b1d674f9eec549baebae44"
+    },
+    {
+      "path": "lib/supabase/env.ts",
+      "hash": "fa35251e8a7fc9842a3c80fc71f2f64b397c58f326f5ceea1fc3b348d07b7aff"
+    },
+    {
+      "path": "lib/supabase/proxy.ts",
+      "hash": "5b0b61cd2f1156913751830ab20cd2460db4b401bbc7b3b5e40109432ed23575"
+    },
+    {
+      "path": "lib/supabase/public.ts",
+      "hash": "028333d6018d25c8c0771fd24fffdc4cc11d457982069ffa33e8fe01cac759f7"
+    },
+    {
+      "path": "lib/supabase/server.ts",
+      "hash": "cde4a3f8a7734d91d26952d6339dbe875af2c33081ed60595faabc3abe443299"
+    },
+    {
+      "path": "lib/supabase/user.ts",
+      "hash": "61119371546217276e06da1837d90120a4974d677cd66474dbcb471749e20c8b"
+    },
+    {
+      "path": "lib/time.ts",
+      "hash": "4e3ee5ee9329f865b1e53b1656521ca5ddffab6455ce0c89fa9a42d1496c3886"
+    },
+    {
+      "path": "lib/toast.tsx",
+      "hash": "3912acc58e1e266aac0d1d376b64a69e532b096fea9f0793c06bb607640a7168"
+    },
+    {
+      "path": "lib/types.ts",
+      "hash": "c2e08b231a89daa0a72d1a6b514ced92e8eb4cb0f6dc467cdb23ca57d1257649"
+    },
+    {
+      "path": "lib/ui-state.ts",
+      "hash": "1c07286dce7296889cc458188836cca3af1eebcc07494c776d68392cb785bc8f"
+    },
+    {
+      "path": "lib/utils.ts",
+      "hash": "bc0051614fa81e1e247a963ce9ced81b00d62b6d64b2409d71a333f6610f19c7"
+    }
+  ],
+  "values": [
+    {
+      "family": "border-width",
+      "value": "0px",
+      "number": 0,
+      "preserve": true,
+      "uses": [
+        {
+          "path": "components/app/shell.tsx",
+          "line": 271,
+          "text": "!border-0",
+          "property": "border-color"
+        }
+      ]
+    },
+    {
+      "family": "border-width",
+      "value": "2px",
+      "number": 2,
+      "preserve": true,
+      "uses": [
+        {
+          "path": "components/clubs/club-map.tsx",
+          "line": 70,
+          "text": "focus-visible:outline-2",
+          "property": "outline-color"
+        },
+        {
+          "path": "components/clubs/popular-times.tsx",
+          "line": 117,
+          "text": "outline-2",
+          "property": "outline-color"
+        },
+        {
+          "path": "components/kit/progress.tsx",
+          "line": 97,
+          "text": "outline-2",
+          "property": "outline-color"
+        }
+      ]
+    },
+    {
+      "family": "border-width",
+      "value": "3px",
+      "number": 3,
+      "preserve": true,
+      "uses": [
+        {
+          "path": "components/app/notices.tsx",
+          "line": 91,
+          "text": "border-l-[3px]",
+          "property": "border-color"
+        }
+      ]
+    },
+    {
+      "family": "border-width",
+      "value": "sw",
+      "preserve": true,
+      "uses": [
+        {
+          "path": "components/icons/nucleo.tsx",
+          "line": 351,
+          "text": "\"--nucleo-stroke-width\": sw",
+          "property": "--nucleo-stroke-width"
+        }
+      ]
+    },
+    {
+      "family": "color",
+      "value": "#1c3328",
+      "preserve": true,
+      "role": ":background",
+      "uses": [
+        {
+          "path": "components/app/check-in-pass.tsx",
+          "line": 99,
+          "text": "bg-night",
+          "property": "background-color"
+        },
+        {
+          "path": "components/app/check-in-pass.tsx",
+          "line": 118,
+          "text": "bg-night",
+          "property": "background-color"
+        },
+        {
+          "path": "components/app/screen-parts.tsx",
+          "line": 168,
+          "text": "bg-night",
+          "property": "background-color"
+        },
+        {
+          "path": "components/app/shell.tsx",
+          "line": 560,
+          "text": "bg-night",
+          "property": "background-color"
+        },
+        {
+          "path": "components/clubs/popular-times.tsx",
+          "line": 116,
+          "text": "bg-night/80",
+          "property": "background-color"
+        },
+        {
+          "path": "components/inbox/inbox.tsx",
+          "line": 80,
+          "text": "bg-night",
+          "property": "background-color"
+        },
+        {
+          "path": "components/kit/app.tsx",
+          "line": 242,
+          "text": "bg-night",
+          "property": "background-color"
+        },
+        {
+          "path": "components/kit/brand-art.tsx",
+          "line": 112,
+          "text": "bg-night",
+          "property": "background-color"
+        },
+        {
+          "path": "components/kit/calendar.tsx",
+          "line": 178,
+          "text": "bg-night",
+          "property": "background-color"
+        },
+        {
+          "path": "components/progress/progress-page.tsx",
+          "line": 104,
+          "text": "bg-night",
+          "property": "background-color"
+        },
+        {
+          "path": "components/reserve/common.tsx",
+          "line": 65,
+          "text": "bg-night",
+          "property": "background-color"
+        },
+        {
+          "path": "components/reserve/parts.tsx",
+          "line": 18,
+          "text": "bg-night",
+          "property": "background-color"
+        },
+        {
+          "path": "components/training/book-page.tsx",
+          "line": 599,
+          "text": "bg-night",
+          "property": "background-color"
+        }
+      ]
+    },
+    {
+      "family": "color",
+      "value": "#1c3328",
+      "preserve": true,
+      "role": ":foreground",
+      "uses": [
+        {
+          "path": "components/kit/ribs.tsx",
+          "line": 11,
+          "text": "text-night",
+          "property": "color"
+        }
+      ]
+    },
+    {
+      "family": "color",
+      "value": "#1c3328",
+      "preserve": true,
+      "role": ":unknown",
+      "uses": [
+        {
+          "path": "components/map/brand-map.tsx",
+          "line": 311,
+          "text": "fill-night",
+          "property": "fill"
+        }
+      ]
+    },
+    {
+      "family": "color",
+      "value": "#1d1b17",
+      "preserve": true,
+      "role": ":background",
+      "uses": [
+        {
+          "path": "app/globals.css",
+          "line": 689,
+          "text": ".ui-part[data-ui-component=\"toggle\"][data-pressed]:not([data-disabled]) {background-color:var(--foreground)}",
+          "property": "background-color"
+        },
+        {
+          "path": "components/app/shell.tsx",
+          "line": 94,
+          "text": "hover:bg-foreground/5",
+          "property": "background-color"
+        },
+        {
+          "path": "components/app/shell.tsx",
+          "line": 273,
+          "text": "hover:!bg-foreground/5",
+          "property": "background-color"
+        },
+        {
+          "path": "components/clubs/popular-times.tsx",
+          "line": 105,
+          "text": "bg-foreground",
+          "property": "background-color"
+        },
+        {
+          "path": "components/reserve/parts.tsx",
+          "line": 80,
+          "text": "bg-foreground",
+          "property": "background-color"
+        }
+      ]
+    },
+    {
+      "family": "color",
+      "value": "#1d1b17",
+      "preserve": true,
+      "role": ":foreground",
+      "uses": [
+        {
+          "path": "components/app/check-in-pass.tsx",
+          "line": 190,
+          "text": "text-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/app/help.tsx",
+          "line": 199,
+          "text": "text-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/app/shell.tsx",
+          "line": 93,
+          "text": "text-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/app/shell.tsx",
+          "line": 94,
+          "text": "hover:text-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/app/shell.tsx",
+          "line": 132,
+          "text": "hover:text-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/app/shell.tsx",
+          "line": 185,
+          "text": "text-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/app/shell.tsx",
+          "line": 186,
+          "text": "hover:text-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/app/shell.tsx",
+          "line": 284,
+          "text": "text-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/app/shell.tsx",
+          "line": 496,
+          "text": "text-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/billing/invoice-page.tsx",
+          "line": 44,
+          "text": "text-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/booking/class-row.tsx",
+          "line": 165,
+          "text": "text-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/booking/class-row.tsx",
+          "line": 173,
+          "text": "text-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/clubs/clubs-page.tsx",
+          "line": 136,
+          "text": "text-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/clubs/popular-times.tsx",
+          "line": 142,
+          "text": "text-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/clubs/popular-times.tsx",
+          "line": 146,
+          "text": "text-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/kit/app.tsx",
+          "line": 58,
+          "text": "hover:text-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/kit/app.tsx",
+          "line": 109,
+          "text": "hover:text-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/kit/app.tsx",
+          "line": 111,
+          "text": "text-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/kit/app.tsx",
+          "line": 160,
+          "text": "hover:text-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/kit/app.tsx",
+          "line": 162,
+          "text": "text-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/kit/app.tsx",
+          "line": 306,
+          "text": "hover:text-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/kit/ribs.tsx",
+          "line": 7,
+          "text": "text-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/kit/ribs.tsx",
+          "line": 127,
+          "text": "text-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/kit/ribs.tsx",
+          "line": 215,
+          "text": "text-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/kit/ui.tsx",
+          "line": 363,
+          "text": "text-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/membership/change-plan.tsx",
+          "line": 335,
+          "text": "text-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/membership/membership-page.tsx",
+          "line": 268,
+          "text": "hover:text-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/reserve/parts.tsx",
+          "line": 19,
+          "text": "text-accent-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/reserve/parts.tsx",
+          "line": 202,
+          "text": "text-accent-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/reserve/slot-grid.tsx",
+          "line": 146,
+          "text": "hover:text-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/ui/badge.tsx",
+          "line": 19,
+          "text": "text-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/ui/badge.tsx",
+          "line": 20,
+          "text": "text-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/ui/button.tsx",
+          "line": 31,
+          "text": "text-secondary-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/ui/button.tsx",
+          "line": 33,
+          "text": "text-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/ui/button.tsx",
+          "line": 35,
+          "text": "text-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/ui/input.tsx",
+          "line": 14,
+          "text": "text-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/ui/table.tsx",
+          "line": 74,
+          "text": "text-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/ui/textarea.tsx",
+          "line": 12,
+          "text": "text-foreground",
+          "property": "color"
+        }
+      ]
+    },
+    {
+      "family": "color",
+      "value": "#1d1b17",
+      "preserve": true,
+      "role": ":stroke",
+      "uses": [
+        {
+          "path": "components/clubs/popular-times.tsx",
+          "line": 117,
+          "text": "outline-foreground",
+          "property": "outline-color"
+        },
+        {
+          "path": "components/kit/progress.tsx",
+          "line": 97,
+          "text": "outline-foreground",
+          "property": "outline-color"
+        }
+      ]
+    },
+    {
+      "family": "color",
+      "value": "#2a704733",
+      "preserve": true,
+      "role": "success:background",
+      "uses": [
+        {
+          "path": "components/kit/ui.tsx",
+          "line": 172,
+          "text": "bg-success-subtle",
+          "property": "background-color"
+        },
+        {
+          "path": "components/reserve/parts.tsx",
+          "line": 17,
+          "text": "bg-success-subtle",
+          "property": "background-color"
+        },
+        {
+          "path": "components/reserve/parts.tsx",
+          "line": 21,
+          "text": "bg-success-subtle",
+          "property": "background-color"
+        }
+      ]
+    },
+    {
+      "family": "color",
+      "value": "#2e6db4",
+      "preserve": true,
+      "role": ":stroke",
+      "uses": [
+        {
+          "path": "components/clubs/club-map.tsx",
+          "line": 70,
+          "text": "focus-visible:outline-ring",
+          "property": "outline-color"
+        }
+      ]
+    },
+    {
+      "family": "color",
+      "value": "#4a443a",
+      "preserve": true,
+      "role": ":foreground",
+      "uses": [
+        {
+          "path": "app/(auth)/sign-in/page.tsx",
+          "line": 97,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "app/(auth)/sign-in/page.tsx",
+          "line": 140,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "app/(auth)/sign-in/page.tsx",
+          "line": 144,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "app/error.tsx",
+          "line": 19,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "app/error.tsx",
+          "line": 26,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "app/global-error.tsx",
+          "line": 28,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "app/global-error.tsx",
+          "line": 37,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "app/not-found.tsx",
+          "line": 10,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "app/not-found.tsx",
+          "line": 14,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "app/offline/page.tsx",
+          "line": 13,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/account/account-page.tsx",
+          "line": 71,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/account/account-page.tsx",
+          "line": 79,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/account/account-page.tsx",
+          "line": 104,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/account/parts.tsx",
+          "line": 32,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/account/parts.tsx",
+          "line": 62,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/app/auth-shell.tsx",
+          "line": 28,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/app/global-dialogs.tsx",
+          "line": 600,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/app/global-dialogs.tsx",
+          "line": 611,
+          "text": "placeholder:text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/app/global-dialogs.tsx",
+          "line": 647,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/app/global-dialogs.tsx",
+          "line": 669,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/app/global-dialogs.tsx",
+          "line": 677,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/app/global-dialogs.tsx",
+          "line": 682,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/app/global-dialogs.tsx",
+          "line": 692,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/app/help.tsx",
+          "line": 71,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/app/help.tsx",
+          "line": 91,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/app/help.tsx",
+          "line": 191,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/app/help.tsx",
+          "line": 197,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/app/household-gate.tsx",
+          "line": 48,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/app/household-gate.tsx",
+          "line": 54,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/app/notices.tsx",
+          "line": 97,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/app/notices.tsx",
+          "line": 126,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/app/notices.tsx",
+          "line": 130,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/app/pass-page.tsx",
+          "line": 71,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/app/screen-parts.tsx",
+          "line": 26,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/app/screen-parts.tsx",
+          "line": 111,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/app/shell.tsx",
+          "line": 94,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/app/shell.tsx",
+          "line": 132,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/app/shell.tsx",
+          "line": 186,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/app/shell.tsx",
+          "line": 248,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/app/shell.tsx",
+          "line": 287,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/app/shell.tsx",
+          "line": 300,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/app/shell.tsx",
+          "line": 497,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/app/step-up.tsx",
+          "line": 97,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/app/welcome.tsx",
+          "line": 280,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/app/welcome.tsx",
+          "line": 290,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/app/welcome.tsx",
+          "line": 337,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/app/welcome.tsx",
+          "line": 367,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/billing/billing-page.tsx",
+          "line": 148,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/billing/billing-page.tsx",
+          "line": 156,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/billing/billing-page.tsx",
+          "line": 382,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/billing/billing-page.tsx",
+          "line": 447,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/billing/card-route.tsx",
+          "line": 14,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/booking/class-row.tsx",
+          "line": 29,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/booking/class-row.tsx",
+          "line": 159,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/booking/class-row.tsx",
+          "line": 163,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/booking/class-row.tsx",
+          "line": 245,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/booking/class-row.tsx",
+          "line": 255,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/booking/parts.tsx",
+          "line": 45,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/booking/parts.tsx",
+          "line": 86,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/booking/parts.tsx",
+          "line": 121,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/booking/parts.tsx",
+          "line": 218,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/booking/parts.tsx",
+          "line": 238,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/booking/parts.tsx",
+          "line": 260,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/booking/session-action.tsx",
+          "line": 82,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/booking/session-action.tsx",
+          "line": 142,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/booking/session-action.tsx",
+          "line": 284,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/booking/session-action.tsx",
+          "line": 488,
+          "text": "!text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/booking/session-detail.tsx",
+          "line": 93,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/booking/session-detail.tsx",
+          "line": 150,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/booking/session-detail.tsx",
+          "line": 373,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/booking/session-detail.tsx",
+          "line": 389,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/booking/session-detail.tsx",
+          "line": 412,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/booking/session-detail.tsx",
+          "line": 427,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/booking/session-detail.tsx",
+          "line": 446,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/booking/session-detail.tsx",
+          "line": 446,
+          "text": "marker:text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/booking/session-detail.tsx",
+          "line": 478,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/booking/session-detail.tsx",
+          "line": 518,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/bookings/bookings-page.tsx",
+          "line": 370,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/bookings/bookings-page.tsx",
+          "line": 494,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/clubs/club-detail.tsx",
+          "line": 71,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/clubs/club-detail.tsx",
+          "line": 87,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/clubs/club-detail.tsx",
+          "line": 120,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/clubs/club-detail.tsx",
+          "line": 285,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/clubs/club-detail.tsx",
+          "line": 301,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/clubs/club-detail.tsx",
+          "line": 307,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/clubs/club-detail.tsx",
+          "line": 380,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/clubs/club-detail.tsx",
+          "line": 627,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/clubs/club-map.tsx",
+          "line": 52,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/clubs/clubs-page.tsx",
+          "line": 70,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/clubs/clubs-page.tsx",
+          "line": 84,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/clubs/clubs-page.tsx",
+          "line": 124,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/clubs/clubs-page.tsx",
+          "line": 135,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/clubs/clubs-page.tsx",
+          "line": 177,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/clubs/popular-times.tsx",
+          "line": 128,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/clubs/popular-times.tsx",
+          "line": 139,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/family/add-member.tsx",
+          "line": 158,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/family/family-page.tsx",
+          "line": 134,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/family/family-page.tsx",
+          "line": 147,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/family/family-page.tsx",
+          "line": 250,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/family/family-page.tsx",
+          "line": 373,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/family/family-page.tsx",
+          "line": 439,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/family/member-profile.tsx",
+          "line": 135,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/flows/parts.tsx",
+          "line": 74,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/flows/parts.tsx",
+          "line": 85,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/flows/parts.tsx",
+          "line": 112,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/flows/parts.tsx",
+          "line": 161,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/flows/parts.tsx",
+          "line": 167,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/flows/parts.tsx",
+          "line": 208,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/flows/parts.tsx",
+          "line": 235,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/guest/guest-passes.tsx",
+          "line": 146,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/guest/guest-passes.tsx",
+          "line": 238,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/guest/guest-passes.tsx",
+          "line": 428,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/inbox/inbox.tsx",
+          "line": 56,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/inbox/inbox.tsx",
+          "line": 89,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/inbox/inbox.tsx",
+          "line": 125,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/inbox/inbox.tsx",
+          "line": 142,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/inbox/inbox.tsx",
+          "line": 146,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/inbox/inbox.tsx",
+          "line": 203,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/inbox/thread-page.tsx",
+          "line": 39,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/kit/app.tsx",
+          "line": 58,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/kit/app.tsx",
+          "line": 112,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/kit/app.tsx",
+          "line": 117,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/kit/app.tsx",
+          "line": 163,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/kit/app.tsx",
+          "line": 168,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/kit/app.tsx",
+          "line": 306,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/kit/app.tsx",
+          "line": 359,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/kit/app.tsx",
+          "line": 366,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/kit/app.tsx",
+          "line": 428,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/kit/app.tsx",
+          "line": 494,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/kit/app.tsx",
+          "line": 575,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/kit/app.tsx",
+          "line": 616,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/kit/app.tsx",
+          "line": 671,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/kit/app.tsx",
+          "line": 726,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/kit/calendar.tsx",
+          "line": 116,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/kit/calendar.tsx",
+          "line": 180,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/kit/overlays.tsx",
+          "line": 58,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/kit/overlays.tsx",
+          "line": 105,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/kit/overlays.tsx",
+          "line": 128,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/kit/progress.tsx",
+          "line": 100,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/kit/ribs.tsx",
+          "line": 112,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/kit/ribs.tsx",
+          "line": 165,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/kit/ribs.tsx",
+          "line": 173,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/kit/ribs.tsx",
+          "line": 235,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/kit/ribs.tsx",
+          "line": 241,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/kit/ribs.tsx",
+          "line": 262,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/kit/ribs.tsx",
+          "line": 268,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/kit/ribs.tsx",
+          "line": 342,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/kit/ui.tsx",
+          "line": 62,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/kit/ui.tsx",
+          "line": 69,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/kit/ui.tsx",
+          "line": 99,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/kit/ui.tsx",
+          "line": 108,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/kit/ui.tsx",
+          "line": 185,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/kit/ui.tsx",
+          "line": 372,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/kit/ui.tsx",
+          "line": 501,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/kit/ui.tsx",
+          "line": 518,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/kit/ui.tsx",
+          "line": 559,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/membership/cancel.tsx",
+          "line": 313,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/membership/change-plan.tsx",
+          "line": 357,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/membership/change-plan.tsx",
+          "line": 540,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/membership/freeze.tsx",
+          "line": 377,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/membership/membership-page.tsx",
+          "line": 79,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/membership/membership-page.tsx",
+          "line": 268,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/progress/progress-page.tsx",
+          "line": 54,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/progress/progress-page.tsx",
+          "line": 114,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/progress/progress-page.tsx",
+          "line": 171,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/progress/progress-page.tsx",
+          "line": 348,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/progress/progress-page.tsx",
+          "line": 399,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/progress/progress-page.tsx",
+          "line": 415,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/reserve/booking-list.tsx",
+          "line": 83,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/reserve/common.tsx",
+          "line": 49,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/reserve/common.tsx",
+          "line": 156,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/reserve/common.tsx",
+          "line": 184,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/reserve/common.tsx",
+          "line": 191,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/reserve/courts-page.tsx",
+          "line": 139,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/reserve/courts-page.tsx",
+          "line": 583,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/reserve/kids-page.tsx",
+          "line": 102,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/reserve/kids-page.tsx",
+          "line": 463,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/reserve/lanes-page.tsx",
+          "line": 392,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/reserve/parts.tsx",
+          "line": 204,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/reserve/parts.tsx",
+          "line": 254,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/reserve/parts.tsx",
+          "line": 288,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/reserve/parts.tsx",
+          "line": 329,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/reserve/slot-grid.tsx",
+          "line": 103,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/reserve/slot-grid.tsx",
+          "line": 119,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/reserve/slot-grid.tsx",
+          "line": 128,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/reserve/slot-grid.tsx",
+          "line": 160,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/reserve/slot-grid.tsx",
+          "line": 233,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/schedule/day-strip.tsx",
+          "line": 112,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/schedule/day-strip.tsx",
+          "line": 118,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/schedule/day-strip.tsx",
+          "line": 172,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/schedule/filters.tsx",
+          "line": 92,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/schedule/filters.tsx",
+          "line": 123,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/schedule/filters.tsx",
+          "line": 151,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/schedule/schedule-page.tsx",
+          "line": 153,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/settings/pages.tsx",
+          "line": 349,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/settings/pages.tsx",
+          "line": 419,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/settings/pages.tsx",
+          "line": 636,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/settings/pages.tsx",
+          "line": 802,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/settings/pages.tsx",
+          "line": 805,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/settings/parts.tsx",
+          "line": 94,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/today/today-page.tsx",
+          "line": 100,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/today/today-page.tsx",
+          "line": 107,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/today/today-page.tsx",
+          "line": 108,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/today/today-page.tsx",
+          "line": 149,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/today/today-page.tsx",
+          "line": 362,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/today/today-page.tsx",
+          "line": 516,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/today/today-page.tsx",
+          "line": 633,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/today/today-page.tsx",
+          "line": 643,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/training/book-page.tsx",
+          "line": 275,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/training/book-page.tsx",
+          "line": 586,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/training/coach-profile.tsx",
+          "line": 75,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/training/coach-profile.tsx",
+          "line": 83,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/training/coach-profile.tsx",
+          "line": 124,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/training/coach-profile.tsx",
+          "line": 157,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/training/coach-profile.tsx",
+          "line": 288,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/training/coach-profile.tsx",
+          "line": 312,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/training/coach-profile.tsx",
+          "line": 317,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/training/training-page.tsx",
+          "line": 69,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/training/training-page.tsx",
+          "line": 74,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/training/training-page.tsx",
+          "line": 79,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/training/training-page.tsx",
+          "line": 118,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/training/training-page.tsx",
+          "line": 125,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/ui/input.tsx",
+          "line": 15,
+          "text": "placeholder:text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/ui/table.tsx",
+          "line": 104,
+          "text": "text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/ui/textarea.tsx",
+          "line": 13,
+          "text": "placeholder:text-muted-foreground",
+          "property": "color"
+        },
+        {
+          "path": "lib/toast.tsx",
+          "line": 42,
+          "text": "text-muted-foreground",
+          "property": "color"
+        }
+      ]
+    },
+    {
+      "family": "color",
+      "value": "#8a530017",
+      "preserve": true,
+      "role": "warning:background",
+      "uses": [
+        {
+          "path": "components/app/check-in-pass.tsx",
+          "line": 190,
+          "text": "bg-warning-subtle",
+          "property": "background-color"
+        },
+        {
+          "path": "components/kit/ui.tsx",
+          "line": 170,
+          "text": "bg-warning-subtle",
+          "property": "background-color"
+        },
+        {
+          "path": "components/ui/badge.tsx",
+          "line": 24,
+          "text": "bg-warning-subtle",
+          "property": "background-color"
+        }
+      ]
+    },
+    {
+      "family": "color",
+      "value": "#8c7f6b",
+      "preserve": true,
+      "role": ":background",
+      "uses": [
+        {
+          "path": "components/kit/overlays.tsx",
+          "line": 99,
+          "text": "bg-input",
+          "property": "background-color"
+        }
+      ]
+    },
+    {
+      "family": "color",
+      "value": "#8c7f6b",
+      "preserve": true,
+      "role": ":foreground",
+      "uses": [
+        {
+          "path": "components/ui/button.tsx",
+          "line": 24,
+          "text": "disabled:text-disabled-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/ui/input.tsx",
+          "line": 18,
+          "text": "disabled:text-disabled-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/ui/textarea.tsx",
+          "line": 13,
+          "text": "disabled:text-disabled-foreground",
+          "property": "color"
+        }
+      ]
+    },
+    {
+      "family": "color",
+      "value": "#8f1c13",
+      "preserve": true,
+      "role": ":background",
+      "uses": [
+        {
+          "path": "components/ui/button.tsx",
+          "line": 37,
+          "text": "hover:bg-destructive-hover",
+          "property": "background-color"
+        }
+      ]
+    },
+    {
+      "family": "color",
+      "value": "#9e4522",
+      "preserve": true,
+      "role": ":foreground",
+      "uses": [
+        {
+          "path": "app/error.tsx",
+          "line": 21,
+          "text": "text-link",
+          "property": "color"
+        },
+        {
+          "path": "app/global-error.tsx",
+          "line": 31,
+          "text": "text-link",
+          "property": "color"
+        },
+        {
+          "path": "components/app/auth-shell.tsx",
+          "line": 32,
+          "text": "text-link",
+          "property": "color"
+        },
+        {
+          "path": "components/app/auth-shell.tsx",
+          "line": 39,
+          "text": "text-link",
+          "property": "color"
+        },
+        {
+          "path": "components/app/help.tsx",
+          "line": 27,
+          "text": "text-link",
+          "property": "color"
+        },
+        {
+          "path": "components/billing/billing-page.tsx",
+          "line": 459,
+          "text": "text-link",
+          "property": "color"
+        },
+        {
+          "path": "components/booking/session-action.tsx",
+          "line": 84,
+          "text": "text-link",
+          "property": "color"
+        },
+        {
+          "path": "components/booking/session-action.tsx",
+          "line": 91,
+          "text": "text-link",
+          "property": "color"
+        },
+        {
+          "path": "components/booking/session-action.tsx",
+          "line": 251,
+          "text": "text-link",
+          "property": "color"
+        },
+        {
+          "path": "components/booking/session-action.tsx",
+          "line": 257,
+          "text": "text-link",
+          "property": "color"
+        },
+        {
+          "path": "components/booking/session-action.tsx",
+          "line": 323,
+          "text": "text-link",
+          "property": "color"
+        },
+        {
+          "path": "components/booking/session-detail.tsx",
+          "line": 97,
+          "text": "text-link",
+          "property": "color"
+        },
+        {
+          "path": "components/booking/session-detail.tsx",
+          "line": 494,
+          "text": "text-link",
+          "property": "color"
+        },
+        {
+          "path": "components/booking/session-detail.tsx",
+          "line": 502,
+          "text": "text-link",
+          "property": "color"
+        },
+        {
+          "path": "components/bookings/bookings-page.tsx",
+          "line": 497,
+          "text": "text-link",
+          "property": "color"
+        },
+        {
+          "path": "components/clubs/club-detail.tsx",
+          "line": 354,
+          "text": "text-link",
+          "property": "color"
+        },
+        {
+          "path": "components/family/family-page.tsx",
+          "line": 292,
+          "text": "text-link",
+          "property": "color"
+        },
+        {
+          "path": "components/guest/guest-passes.tsx",
+          "line": 154,
+          "text": "text-link",
+          "property": "color"
+        },
+        {
+          "path": "components/inbox/inbox.tsx",
+          "line": 306,
+          "text": "text-link",
+          "property": "color"
+        },
+        {
+          "path": "components/inbox/inbox.tsx",
+          "line": 309,
+          "text": "text-link",
+          "property": "color"
+        },
+        {
+          "path": "components/membership/change-plan.tsx",
+          "line": 485,
+          "text": "text-link",
+          "property": "color"
+        },
+        {
+          "path": "components/membership/freeze.tsx",
+          "line": 337,
+          "text": "text-link",
+          "property": "color"
+        },
+        {
+          "path": "components/today/today-page.tsx",
+          "line": 645,
+          "text": "text-link",
+          "property": "color"
+        },
+        {
+          "path": "components/training/book-page.tsx",
+          "line": 545,
+          "text": "text-link",
+          "property": "color"
+        },
+        {
+          "path": "components/training/coach-profile.tsx",
+          "line": 306,
+          "text": "text-link",
+          "property": "color"
+        },
+        {
+          "path": "components/ui/badge.tsx",
+          "line": 26,
+          "text": "text-link",
+          "property": "color"
+        }
+      ]
+    },
+    {
+      "family": "color",
+      "value": "#9e4522",
+      "preserve": true,
+      "role": ":background",
+      "uses": [
+        {
+          "path": "components/ui/button.tsx",
+          "line": 29,
+          "text": "hover:bg-primary-hover",
+          "property": "background-color"
+        }
+      ]
+    },
+    {
+      "family": "color",
+      "value": "#b5532c",
+      "preserve": true,
+      "role": ":foreground",
+      "uses": [
+        {
+          "path": "components/app/shell.tsx",
+          "line": 98,
+          "text": "text-primary",
+          "property": "color"
+        },
+        {
+          "path": "components/app/shell.tsx",
+          "line": 501,
+          "text": "text-primary",
+          "property": "color"
+        },
+        {
+          "path": "components/ui/button.tsx",
+          "line": 38,
+          "text": "text-primary",
+          "property": "color"
+        }
+      ]
+    },
+    {
+      "family": "color",
+      "value": "#b5532c",
+      "preserve": true,
+      "role": ":background",
+      "uses": [
+        {
+          "path": "components/app/shell.tsx",
+          "line": 496,
+          "text": "before:bg-primary",
+          "property": "background-color"
+        },
+        {
+          "path": "components/app/welcome.tsx",
+          "line": 374,
+          "text": "bg-primary",
+          "property": "background-color"
+        },
+        {
+          "path": "components/kit/app.tsx",
+          "line": 111,
+          "text": "after:bg-primary",
+          "property": "background-color"
+        },
+        {
+          "path": "components/kit/app.tsx",
+          "line": 162,
+          "text": "after:bg-primary",
+          "property": "background-color"
+        },
+        {
+          "path": "components/kit/app.tsx",
+          "line": 688,
+          "text": "bg-primary",
+          "property": "background-color"
+        },
+        {
+          "path": "components/kit/calendar.tsx",
+          "line": 194,
+          "text": "bg-primary",
+          "property": "background-color"
+        },
+        {
+          "path": "components/progress/progress-page.tsx",
+          "line": 91,
+          "text": "bg-primary",
+          "property": "background-color"
+        },
+        {
+          "path": "components/schedule/day-strip.tsx",
+          "line": 133,
+          "text": "bg-primary",
+          "property": "background-color"
+        },
+        {
+          "path": "components/ui/button.tsx",
+          "line": 29,
+          "text": "bg-primary",
+          "property": "background-color"
+        }
+      ]
+    },
+    {
+      "family": "color",
+      "value": "#b5532c",
+      "preserve": true,
+      "role": ":unknown",
+      "uses": [
+        {
+          "path": "components/map/brand-map.tsx",
+          "line": 311,
+          "text": "fill-primary",
+          "property": "fill"
+        }
+      ]
+    },
+    {
+      "family": "color",
+      "value": "#b5532c1a",
+      "preserve": false,
+      "role": ":background",
+      "uses": [
+        {
+          "path": "app/globals.css",
+          "line": 624,
+          "text": "from {background-color:var(--accent)}",
+          "property": "background-color"
+        }
+      ]
+    },
+    {
+      "family": "color",
+      "value": "#b5532c1a",
+      "preserve": true,
+      "role": ":background",
+      "uses": [
+        {
+          "path": "components/app/global-dialogs.tsx",
+          "line": 665,
+          "text": "bg-accent",
+          "property": "background-color"
+        },
+        {
+          "path": "components/app/notices.tsx",
+          "line": 89,
+          "text": "bg-accent",
+          "property": "background-color"
+        },
+        {
+          "path": "components/app/shell.tsx",
+          "line": 185,
+          "text": "bg-accent",
+          "property": "background-color"
+        },
+        {
+          "path": "components/booking/parts.tsx",
+          "line": 206,
+          "text": "bg-accent",
+          "property": "background-color"
+        },
+        {
+          "path": "components/inbox/inbox.tsx",
+          "line": 120,
+          "text": "bg-accent",
+          "property": "background-color"
+        },
+        {
+          "path": "components/kit/app.tsx",
+          "line": 443,
+          "text": "bg-accent",
+          "property": "background-color"
+        },
+        {
+          "path": "components/reserve/parts.tsx",
+          "line": 19,
+          "text": "bg-accent",
+          "property": "background-color"
+        },
+        {
+          "path": "components/ui/badge.tsx",
+          "line": 26,
+          "text": "bg-accent",
+          "property": "background-color"
+        }
+      ]
+    },
+    {
+      "family": "color",
+      "value": "#b42318",
+      "preserve": true,
+      "role": ":foreground",
+      "uses": [
+        {
+          "path": "app/(auth)/sign-in/page.tsx",
+          "line": 105,
+          "text": "text-destructive",
+          "property": "color"
+        },
+        {
+          "path": "components/booking/cancel-dialog.tsx",
+          "line": 136,
+          "text": "text-destructive",
+          "property": "color"
+        },
+        {
+          "path": "components/booking/cancel-dialog.tsx",
+          "line": 146,
+          "text": "text-destructive",
+          "property": "color"
+        },
+        {
+          "path": "components/booking/cancel-dialog.tsx",
+          "line": 154,
+          "text": "text-destructive",
+          "property": "color"
+        },
+        {
+          "path": "components/booking/cancel-dialog.tsx",
+          "line": 162,
+          "text": "text-destructive",
+          "property": "color"
+        },
+        {
+          "path": "components/booking/cancel-dialog.tsx",
+          "line": 170,
+          "text": "text-destructive",
+          "property": "color"
+        },
+        {
+          "path": "components/booking/cancel-dialog.tsx",
+          "line": 231,
+          "text": "!text-destructive",
+          "property": "color"
+        },
+        {
+          "path": "components/bookings/bookings-page.tsx",
+          "line": 287,
+          "text": "!text-destructive",
+          "property": "color"
+        },
+        {
+          "path": "components/clubs/parts.tsx",
+          "line": 30,
+          "text": "text-destructive",
+          "property": "color"
+        },
+        {
+          "path": "components/family/family-page.tsx",
+          "line": 190,
+          "text": "!text-destructive",
+          "property": "color"
+        },
+        {
+          "path": "components/family/member-profile.tsx",
+          "line": 304,
+          "text": "text-destructive",
+          "property": "color"
+        },
+        {
+          "path": "components/family/parts.tsx",
+          "line": 77,
+          "text": "!text-destructive",
+          "property": "color"
+        },
+        {
+          "path": "components/flows/parts.tsx",
+          "line": 199,
+          "text": "text-destructive",
+          "property": "color"
+        },
+        {
+          "path": "components/flows/parts.tsx",
+          "line": 348,
+          "text": "text-destructive",
+          "property": "color"
+        },
+        {
+          "path": "components/guest/guest-passes.tsx",
+          "line": 370,
+          "text": "!text-destructive",
+          "property": "color"
+        },
+        {
+          "path": "components/guest/guest-passes.tsx",
+          "line": 535,
+          "text": "!text-destructive",
+          "property": "color"
+        },
+        {
+          "path": "components/inbox/inbox.tsx",
+          "line": 294,
+          "text": "text-destructive",
+          "property": "color"
+        },
+        {
+          "path": "components/kit/ribs.tsx",
+          "line": 10,
+          "text": "text-destructive",
+          "property": "color"
+        },
+        {
+          "path": "components/kit/ui.tsx",
+          "line": 178,
+          "text": "text-destructive",
+          "property": "color"
+        },
+        {
+          "path": "components/kit/ui.tsx",
+          "line": 380,
+          "text": "text-destructive",
+          "property": "color"
+        },
+        {
+          "path": "components/reserve/confirmed-page.tsx",
+          "line": 113,
+          "text": "text-destructive",
+          "property": "color"
+        },
+        {
+          "path": "components/reserve/parts.tsx",
+          "line": 377,
+          "text": "text-destructive",
+          "property": "color"
+        },
+        {
+          "path": "components/settings/pages.tsx",
+          "line": 855,
+          "text": "!text-destructive",
+          "property": "color"
+        },
+        {
+          "path": "components/settings/parts.tsx",
+          "line": 99,
+          "text": "text-destructive",
+          "property": "color"
+        },
+        {
+          "path": "components/ui/badge.tsx",
+          "line": 25,
+          "text": "text-destructive",
+          "property": "color"
+        }
+      ]
+    },
+    {
+      "family": "color",
+      "value": "#b42318",
+      "preserve": true,
+      "role": ":background",
+      "uses": [
+        {
+          "path": "components/kit/ui.tsx",
+          "line": 482,
+          "text": "bg-destructive",
+          "property": "background-color"
+        },
+        {
+          "path": "components/ui/button.tsx",
+          "line": 37,
+          "text": "bg-destructive",
+          "property": "background-color"
+        }
+      ]
+    },
+    {
+      "family": "color",
+      "value": "#b4231833",
+      "preserve": true,
+      "role": "danger:background",
+      "uses": [
+        {
+          "path": "components/app/global-dialogs.tsx",
+          "line": 164,
+          "text": "bg-danger-subtle",
+          "property": "background-color"
+        },
+        {
+          "path": "components/booking/cancel-dialog.tsx",
+          "line": 231,
+          "text": "hover:!bg-danger-subtle",
+          "property": "background-color"
+        },
+        {
+          "path": "components/guest/guest-passes.tsx",
+          "line": 183,
+          "text": "bg-danger-subtle",
+          "property": "background-color"
+        },
+        {
+          "path": "components/kit/ui.tsx",
+          "line": 168,
+          "text": "bg-danger-subtle",
+          "property": "background-color"
+        },
+        {
+          "path": "components/ui/badge.tsx",
+          "line": 25,
+          "text": "bg-danger-subtle",
+          "property": "background-color"
+        }
+      ]
+    },
+    {
+      "family": "color",
+      "value": "#e0804f",
+      "preserve": true,
+      "role": ":stroke",
+      "uses": [
+        {
+          "path": "components/app/check-in-pass.tsx",
+          "line": 133,
+          "text": "border-dawn",
+          "property": "border-color"
+        }
+      ]
+    },
+    {
+      "family": "color",
+      "value": "#e0804f",
+      "preserve": true,
+      "role": ":foreground",
+      "uses": [
+        {
+          "path": "components/app/check-in-pass.tsx",
+          "line": 133,
+          "text": "text-dawn",
+          "property": "color"
+        }
+      ]
+    },
+    {
+      "family": "color",
+      "value": "#efe7da",
+      "preserve": true,
+      "role": ":background",
+      "uses": [
+        {
+          "path": "app/(auth)/sign-in/page.tsx",
+          "line": 105,
+          "text": "bg-muted",
+          "property": "background-color"
+        },
+        {
+          "path": "app/(auth)/sign-in/page.tsx",
+          "line": 144,
+          "text": "bg-muted",
+          "property": "background-color"
+        },
+        {
+          "path": "components/account/account-page.tsx",
+          "line": 67,
+          "text": "hover:bg-muted/40",
+          "property": "background-color"
+        },
+        {
+          "path": "components/app/screen-parts.tsx",
+          "line": 163,
+          "text": "bg-muted",
+          "property": "background-color"
+        },
+        {
+          "path": "components/app/shell.tsx",
+          "line": 186,
+          "text": "hover:bg-muted",
+          "property": "background-color"
+        },
+        {
+          "path": "components/app/shell.tsx",
+          "line": 211,
+          "text": "hover:bg-muted",
+          "property": "background-color"
+        },
+        {
+          "path": "components/app/shell.tsx",
+          "line": 274,
+          "text": "hover:!bg-muted",
+          "property": "background-color"
+        },
+        {
+          "path": "components/app/welcome.tsx",
+          "line": 372,
+          "text": "bg-muted",
+          "property": "background-color"
+        },
+        {
+          "path": "components/booking/class-row.tsx",
+          "line": 154,
+          "text": "hover:bg-muted",
+          "property": "background-color"
+        },
+        {
+          "path": "components/booking/parts.tsx",
+          "line": 32,
+          "text": "bg-muted/60",
+          "property": "background-color"
+        },
+        {
+          "path": "components/booking/parts.tsx",
+          "line": 205,
+          "text": "hover:bg-muted/40",
+          "property": "background-color"
+        },
+        {
+          "path": "components/booking/session-action.tsx",
+          "line": 488,
+          "text": "bg-muted",
+          "property": "background-color"
+        },
+        {
+          "path": "components/booking/session-action.tsx",
+          "line": 488,
+          "text": "hover:!bg-muted",
+          "property": "background-color"
+        },
+        {
+          "path": "components/booking/session-detail.tsx",
+          "line": 435,
+          "text": "bg-muted",
+          "property": "background-color"
+        },
+        {
+          "path": "components/clubs/clubs-page.tsx",
+          "line": 54,
+          "text": "bg-muted",
+          "property": "background-color"
+        },
+        {
+          "path": "components/family/family-page.tsx",
+          "line": 156,
+          "text": "hover:!bg-muted",
+          "property": "background-color"
+        },
+        {
+          "path": "components/flows/parts.tsx",
+          "line": 74,
+          "text": "hover:bg-muted/40",
+          "property": "background-color"
+        },
+        {
+          "path": "components/flows/parts.tsx",
+          "line": 151,
+          "text": "bg-muted/50",
+          "property": "background-color"
+        },
+        {
+          "path": "components/flows/parts.tsx",
+          "line": 267,
+          "text": "bg-muted/50",
+          "property": "background-color"
+        },
+        {
+          "path": "components/guest/guest-passes.tsx",
+          "line": 263,
+          "text": "bg-muted",
+          "property": "background-color"
+        },
+        {
+          "path": "components/guest/guest-passes.tsx",
+          "line": 342,
+          "text": "hover:!bg-muted",
+          "property": "background-color"
+        },
+        {
+          "path": "components/inbox/inbox.tsx",
+          "line": 81,
+          "text": "bg-muted",
+          "property": "background-color"
+        },
+        {
+          "path": "components/kit/app.tsx",
+          "line": 117,
+          "text": "bg-muted",
+          "property": "background-color"
+        },
+        {
+          "path": "components/kit/app.tsx",
+          "line": 168,
+          "text": "bg-muted",
+          "property": "background-color"
+        },
+        {
+          "path": "components/kit/app.tsx",
+          "line": 244,
+          "text": "bg-muted/50",
+          "property": "background-color"
+        },
+        {
+          "path": "components/kit/app.tsx",
+          "line": 284,
+          "text": "bg-muted/50",
+          "property": "background-color"
+        },
+        {
+          "path": "components/kit/app.tsx",
+          "line": 442,
+          "text": "hover:bg-muted/40",
+          "property": "background-color"
+        },
+        {
+          "path": "components/kit/app.tsx",
+          "line": 588,
+          "text": "hover:bg-muted",
+          "property": "background-color"
+        },
+        {
+          "path": "components/kit/app.tsx",
+          "line": 680,
+          "text": "hover:bg-muted",
+          "property": "background-color"
+        },
+        {
+          "path": "components/kit/app.tsx",
+          "line": 686,
+          "text": "bg-muted",
+          "property": "background-color"
+        },
+        {
+          "path": "components/kit/brand-art.tsx",
+          "line": 40,
+          "text": "bg-muted",
+          "property": "background-color"
+        },
+        {
+          "path": "components/kit/calendar.tsx",
+          "line": 181,
+          "text": "hover:bg-muted",
+          "property": "background-color"
+        },
+        {
+          "path": "components/kit/overlays.tsx",
+          "line": 51,
+          "text": "hover:bg-muted",
+          "property": "background-color"
+        },
+        {
+          "path": "components/kit/ui.tsx",
+          "line": 175,
+          "text": "bg-muted",
+          "property": "background-color"
+        },
+        {
+          "path": "components/kit/ui.tsx",
+          "line": 518,
+          "text": "bg-muted",
+          "property": "background-color"
+        },
+        {
+          "path": "components/map/brand-map.tsx",
+          "line": 243,
+          "text": "bg-muted",
+          "property": "background-color"
+        },
+        {
+          "path": "components/reserve/common.tsx",
+          "line": 61,
+          "text": "bg-muted",
+          "property": "background-color"
+        },
+        {
+          "path": "components/reserve/slot-grid.tsx",
+          "line": 146,
+          "text": "hover:bg-muted",
+          "property": "background-color"
+        },
+        {
+          "path": "components/schedule/day-strip.tsx",
+          "line": 154,
+          "text": "hover:!bg-muted",
+          "property": "background-color"
+        },
+        {
+          "path": "components/schedule/schedule-page.tsx",
+          "line": 150,
+          "text": "bg-muted/50",
+          "property": "background-color"
+        },
+        {
+          "path": "components/today/today-page.tsx",
+          "line": 137,
+          "text": "hover:bg-muted/40",
+          "property": "background-color"
+        },
+        {
+          "path": "components/training/book-page.tsx",
+          "line": 600,
+          "text": "hover:bg-muted",
+          "property": "background-color"
+        },
+        {
+          "path": "components/training/coach-profile.tsx",
+          "line": 153,
+          "text": "hover:bg-muted/40",
+          "property": "background-color"
+        },
+        {
+          "path": "components/training/training-page.tsx",
+          "line": 55,
+          "text": "focus-within:bg-muted/40",
+          "property": "background-color"
+        },
+        {
+          "path": "components/training/training-page.tsx",
+          "line": 55,
+          "text": "hover:bg-muted/40",
+          "property": "background-color"
+        },
+        {
+          "path": "components/ui/badge.tsx",
+          "line": 19,
+          "text": "bg-muted",
+          "property": "background-color"
+        },
+        {
+          "path": "components/ui/button.tsx",
+          "line": 24,
+          "text": "disabled:bg-muted",
+          "property": "background-color"
+        },
+        {
+          "path": "components/ui/button.tsx",
+          "line": 24,
+          "text": "disabled:hover:bg-muted",
+          "property": "background-color"
+        },
+        {
+          "path": "components/ui/button.tsx",
+          "line": 31,
+          "text": "hover:bg-secondary-hover",
+          "property": "background-color"
+        },
+        {
+          "path": "components/ui/button.tsx",
+          "line": 35,
+          "text": "hover:bg-secondary-hover",
+          "property": "background-color"
+        },
+        {
+          "path": "components/ui/input.tsx",
+          "line": 18,
+          "text": "disabled:bg-muted",
+          "property": "background-color"
+        },
+        {
+          "path": "components/ui/skeleton.tsx",
+          "line": 8,
+          "text": "bg-muted",
+          "property": "background-color"
+        },
+        {
+          "path": "components/ui/table.tsx",
+          "line": 50,
+          "text": "bg-muted/50",
+          "property": "background-color"
+        },
+        {
+          "path": "components/ui/textarea.tsx",
+          "line": 13,
+          "text": "disabled:bg-muted",
+          "property": "background-color"
+        },
+        {
+          "path": "lib/toast.tsx",
+          "line": 46,
+          "text": "hover:bg-muted",
+          "property": "background-color"
+        }
+      ]
+    },
+    {
+      "family": "color",
+      "value": "#f6f1e8",
+      "preserve": true,
+      "role": ":background",
+      "uses": [
+        {
+          "path": "components/ui/button.tsx",
+          "line": 31,
+          "text": "bg-secondary",
+          "property": "background-color"
+        }
+      ]
+    },
+    {
+      "family": "color",
+      "value": "#f6f1e833",
+      "preserve": true,
+      "role": ":background",
+      "uses": [
+        {
+          "path": "components/ui/button.tsx",
+          "line": 33,
+          "text": "hover:bg-hover",
+          "property": "background-color"
+        }
+      ]
+    },
+    {
+      "family": "color",
+      "value": "#fbf8f3",
+      "preserve": true,
+      "role": ":background",
+      "uses": [
+        {
+          "path": "components/app/shell.tsx",
+          "line": 482,
+          "text": "bg-sheet",
+          "property": "background-color"
+        },
+        {
+          "path": "components/app/shell.tsx",
+          "line": 570,
+          "text": "bg-sheet",
+          "property": "background-color"
+        },
+        {
+          "path": "components/app/shell.tsx",
+          "line": 574,
+          "text": "bg-sheet",
+          "property": "background-color"
+        },
+        {
+          "path": "components/reserve/slot-grid.tsx",
+          "line": 115,
+          "text": "bg-sheet",
+          "property": "background-color"
+        },
+        {
+          "path": "components/reserve/slot-grid.tsx",
+          "line": 135,
+          "text": "bg-sheet",
+          "property": "background-color"
+        },
+        {
+          "path": "components/reserve/slot-grid.tsx",
+          "line": 157,
+          "text": "bg-sheet",
+          "property": "background-color"
+        }
+      ]
+    },
+    {
+      "family": "color",
+      "value": "#ffffff",
+      "preserve": true,
+      "role": ":background",
+      "uses": [
+        {
+          "path": "components/app/check-in-pass.tsx",
+          "line": 64,
+          "text": "bg-white",
+          "property": "background-color"
+        }
+      ]
+    },
+    {
+      "family": "color",
+      "value": "#ffffff",
+      "preserve": true,
+      "role": ":foreground",
+      "uses": [
+        {
+          "path": "components/ui/button.tsx",
+          "line": 29,
+          "text": "text-primary-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/ui/button.tsx",
+          "line": 37,
+          "text": "text-primary-foreground",
+          "property": "color"
+        }
+      ]
+    },
+    {
+      "family": "color",
+      "value": "1.5",
+      "preserve": false,
+      "role": ":stroke",
+      "uses": [
+        {
+          "path": "components/map/brand-map.tsx",
+          "line": 310,
+          "text": "stroke-[1.5]",
+          "property": "stroke"
+        }
+      ]
+    },
+    {
+      "family": "color",
+      "value": "2px",
+      "preserve": true,
+      "role": ":stroke",
+      "uses": [
+        {
+          "path": "app/globals.css",
+          "line": 447,
+          "text": ":focus-visible {outline:var(--border-l) solid var(--ring)}",
+          "property": "outline"
+        }
+      ]
+    },
+    {
+      "family": "color",
+      "value": "color-mix(\n    in srgb,\n    var(--c) 10%,\n    var(--card)\n  )",
+      "preserve": true,
+      "role": ":background",
+      "uses": [
+        {
+          "path": "components/kit/category.tsx",
+          "line": 22,
+          "text": "bg-cat-tint",
+          "property": "background-color"
+        },
+        {
+          "path": "components/kit/ui.tsx",
+          "line": 413,
+          "text": "bg-cat-tint",
+          "property": "background-color"
+        }
+      ]
+    },
+    {
+      "family": "color",
+      "value": "color-mix(in oklab,currentColor 40%,transparent)",
+      "preserve": true,
+      "role": ":unknown",
+      "uses": [
+        {
+          "path": "app/globals.css",
+          "line": 459,
+          "text": "main :where(a,button).text-link {text-decoration-color:color-mix(in oklab,currentColor 40%,transparent)}",
+          "property": "text-decoration-color"
+        }
+      ]
+    },
+    {
+      "family": "color",
+      "value": "color-mix(in srgb,  #1c3328 80%, transparent)",
+      "preserve": true,
+      "role": ":background",
+      "uses": [
+        {
+          "path": "components/booking/class-row.tsx",
+          "line": 228,
+          "text": "bg-photo-band",
+          "property": "background-color"
+        },
+        {
+          "path": "components/kit/ribs.tsx",
+          "line": 319,
+          "text": "bg-photo-band",
+          "property": "background-color"
+        }
+      ]
+    },
+    {
+      "family": "color",
+      "value": "currentColor",
+      "preserve": true,
+      "role": ":unknown",
+      "uses": [
+        {
+          "path": "app/globals.css",
+          "line": 464,
+          "text": "main :where(a,button).text-link:hover {text-decoration-color:currentColor}",
+          "property": "text-decoration-color"
+        }
+      ]
+    },
+    {
+      "family": "color",
+      "value": "transparent",
+      "preserve": false,
+      "role": ":background",
+      "uses": [
+        {
+          "path": "app/globals.css",
+          "line": 627,
+          "text": "to {background-color:transparent}",
+          "property": "background-color"
+        },
+        {
+          "path": "components/app/global-dialogs.tsx",
+          "line": 611,
+          "text": "bg-transparent",
+          "property": "background-color"
+        },
+        {
+          "path": "components/app/shell.tsx",
+          "line": 271,
+          "text": "!bg-transparent",
+          "property": "background-color"
+        },
+        {
+          "path": "components/family/family-page.tsx",
+          "line": 156,
+          "text": "!bg-transparent",
+          "property": "background-color"
+        },
+        {
+          "path": "components/guest/guest-passes.tsx",
+          "line": 342,
+          "text": "!bg-transparent",
+          "property": "background-color"
+        },
+        {
+          "path": "components/schedule/day-strip.tsx",
+          "line": 154,
+          "text": "!bg-transparent",
+          "property": "background-color"
+        },
+        {
+          "path": "components/schedule/filters.tsx",
+          "line": 41,
+          "text": "!bg-transparent",
+          "property": "background-color"
+        },
+        {
+          "path": "components/ui/badge.tsx",
+          "line": 20,
+          "text": "bg-transparent",
+          "property": "background-color"
+        },
+        {
+          "path": "components/ui/badge.tsx",
+          "line": 22,
+          "text": "bg-transparent",
+          "property": "background-color"
+        },
+        {
+          "path": "components/ui/badge.tsx",
+          "line": 23,
+          "text": "bg-transparent",
+          "property": "background-color"
+        },
+        {
+          "path": "components/ui/button.tsx",
+          "line": 33,
+          "text": "bg-transparent",
+          "property": "background-color"
+        },
+        {
+          "path": "components/ui/button.tsx",
+          "line": 35,
+          "text": "bg-transparent",
+          "property": "background-color"
+        },
+        {
+          "path": "components/ui/button.tsx",
+          "line": 38,
+          "text": "bg-transparent",
+          "property": "background-color"
+        }
+      ]
+    },
+    {
+      "family": "color",
+      "value": "transparent",
+      "preserve": true,
+      "role": ":background",
+      "uses": [
+        {
+          "path": "components/ui/button.tsx",
+          "line": 33,
+          "text": "disabled:bg-transparent",
+          "property": "background-color"
+        },
+        {
+          "path": "components/ui/button.tsx",
+          "line": 33,
+          "text": "disabled:hover:bg-transparent",
+          "property": "background-color"
+        },
+        {
+          "path": "components/ui/button.tsx",
+          "line": 35,
+          "text": "disabled:bg-transparent",
+          "property": "background-color"
+        },
+        {
+          "path": "components/ui/button.tsx",
+          "line": 35,
+          "text": "disabled:hover:bg-transparent",
+          "property": "background-color"
+        }
+      ]
+    },
+    {
+      "family": "color",
+      "value": "var(--background)",
+      "preserve": true,
+      "role": ":foreground",
+      "uses": [
+        {
+          "path": "app/globals.css",
+          "line": 691,
+          "text": ".ui-part[data-ui-component=\"toggle\"][data-pressed]:not([data-disabled]) {color:var(--background)}",
+          "property": "color"
+        },
+        {
+          "path": "components/clubs/popular-times.tsx",
+          "line": 105,
+          "text": "text-background",
+          "property": "color"
+        }
+      ]
+    },
+    {
+      "family": "color",
+      "value": "var(--background)",
+      "preserve": true,
+      "role": ":stroke",
+      "uses": [
+        {
+          "path": "components/map/brand-map.tsx",
+          "line": 310,
+          "text": "stroke-background",
+          "property": "stroke"
+        }
+      ]
+    },
+    {
+      "family": "color",
+      "value": "var(--badge-danger-fg)",
+      "preserve": true,
+      "role": "danger:foreground",
+      "uses": [
+        {
+          "path": "components/app/shell.tsx",
+          "line": 103,
+          "text": "text-badge-danger-fg",
+          "property": "color"
+        },
+        {
+          "path": "components/app/shell.tsx",
+          "line": 216,
+          "text": "text-badge-danger-fg",
+          "property": "color"
+        }
+      ]
+    },
+    {
+      "family": "color",
+      "value": "var(--badge-danger)",
+      "preserve": true,
+      "role": "danger:background",
+      "uses": [
+        {
+          "path": "components/app/shell.tsx",
+          "line": 103,
+          "text": "bg-badge-danger",
+          "property": "background-color"
+        },
+        {
+          "path": "components/app/shell.tsx",
+          "line": 216,
+          "text": "bg-badge-danger",
+          "property": "background-color"
+        }
+      ]
+    },
+    {
+      "family": "color",
+      "value": "var(--border)",
+      "preserve": true,
+      "role": ":background",
+      "uses": [
+        {
+          "path": "components/kit/app.tsx",
+          "line": 330,
+          "text": "bg-border",
+          "property": "background-color"
+        },
+        {
+          "path": "components/kit/progress.tsx",
+          "line": 95,
+          "text": "bg-border",
+          "property": "background-color"
+        }
+      ]
+    },
+    {
+      "family": "color",
+      "value": "var(--c)",
+      "preserve": true,
+      "role": ":background",
+      "uses": [
+        {
+          "path": "components/booking/class-row.tsx",
+          "line": 153,
+          "text": "before:bg-cat",
+          "property": "background-color"
+        }
+      ]
+    },
+    {
+      "family": "color",
+      "value": "var(--c)",
+      "preserve": true,
+      "role": ":foreground",
+      "uses": [
+        {
+          "path": "components/kit/ribs.tsx",
+          "line": 12,
+          "text": "text-cat",
+          "property": "color"
+        }
+      ]
+    },
+    {
+      "family": "color",
+      "value": "var(--card)",
+      "preserve": true,
+      "role": ":background",
+      "uses": [
+        {
+          "path": "components/app/shell.tsx",
+          "line": 93,
+          "text": "bg-card",
+          "property": "background-color"
+        },
+        {
+          "path": "components/app/shell.tsx",
+          "line": 132,
+          "text": "bg-card",
+          "property": "background-color"
+        },
+        {
+          "path": "components/booking/session-action.tsx",
+          "line": 390,
+          "text": "bg-card",
+          "property": "background-color"
+        },
+        {
+          "path": "components/booking/session-action.tsx",
+          "line": 446,
+          "text": "bg-card",
+          "property": "background-color"
+        },
+        {
+          "path": "components/flows/parts.tsx",
+          "line": 72,
+          "text": "bg-card",
+          "property": "background-color"
+        },
+        {
+          "path": "components/kit/app.tsx",
+          "line": 355,
+          "text": "bg-card",
+          "property": "background-color"
+        },
+        {
+          "path": "components/kit/app.tsx",
+          "line": 599,
+          "text": "bg-card",
+          "property": "background-color"
+        },
+        {
+          "path": "components/kit/brand-art.tsx",
+          "line": 121,
+          "text": "bg-card",
+          "property": "background-color"
+        },
+        {
+          "path": "components/training/book-page.tsx",
+          "line": 600,
+          "text": "bg-card",
+          "property": "background-color"
+        },
+        {
+          "path": "components/training/training-page.tsx",
+          "line": 117,
+          "text": "bg-card",
+          "property": "background-color"
+        },
+        {
+          "path": "components/ui/input.tsx",
+          "line": 14,
+          "text": "bg-card",
+          "property": "background-color"
+        },
+        {
+          "path": "components/ui/textarea.tsx",
+          "line": 12,
+          "text": "bg-card",
+          "property": "background-color"
+        }
+      ]
+    },
+    {
+      "family": "color",
+      "value": "var(--ct)",
+      "preserve": true,
+      "role": ":foreground",
+      "uses": [
+        {
+          "path": "components/kit/category.tsx",
+          "line": 22,
+          "text": "text-cat-text",
+          "property": "color"
+        },
+        {
+          "path": "components/kit/ui.tsx",
+          "line": 420,
+          "text": "text-cat-text",
+          "property": "color"
+        }
+      ]
+    },
+    {
+      "family": "color",
+      "value": "var(--night-foreground)",
+      "preserve": true,
+      "role": ":stroke",
+      "uses": [
+        {
+          "path": "app/globals.css",
+          "line": 452,
+          "text": ".bg-night :focus-visible {outline-color:var(--night-foreground)}",
+          "property": "outline-color"
+        },
+        {
+          "path": "components/app/check-in-pass.tsx",
+          "line": 202,
+          "text": "border-night-foreground/15",
+          "property": "border-color"
+        }
+      ]
+    },
+    {
+      "family": "color",
+      "value": "var(--night-foreground)",
+      "preserve": true,
+      "role": ":foreground",
+      "uses": [
+        {
+          "path": "components/app/check-in-pass.tsx",
+          "line": 99,
+          "text": "text-night-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/app/check-in-pass.tsx",
+          "line": 104,
+          "text": "text-night-foreground/80",
+          "property": "color"
+        },
+        {
+          "path": "components/app/check-in-pass.tsx",
+          "line": 118,
+          "text": "text-night-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/app/check-in-pass.tsx",
+          "line": 151,
+          "text": "text-night-foreground/80",
+          "property": "color"
+        },
+        {
+          "path": "components/app/check-in-pass.tsx",
+          "line": 156,
+          "text": "text-night-foreground/80",
+          "property": "color"
+        },
+        {
+          "path": "components/app/check-in-pass.tsx",
+          "line": 163,
+          "text": "text-night-foreground/90",
+          "property": "color"
+        },
+        {
+          "path": "components/app/check-in-pass.tsx",
+          "line": 176,
+          "text": "text-night-foreground/90",
+          "property": "color"
+        },
+        {
+          "path": "components/app/check-in-pass.tsx",
+          "line": 178,
+          "text": "text-night-foreground/90",
+          "property": "color"
+        },
+        {
+          "path": "components/app/check-in-pass.tsx",
+          "line": 202,
+          "text": "text-night-foreground/90",
+          "property": "color"
+        },
+        {
+          "path": "components/app/shell.tsx",
+          "line": 560,
+          "text": "text-night-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/booking/class-row.tsx",
+          "line": 228,
+          "text": "text-night-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/inbox/inbox.tsx",
+          "line": 80,
+          "text": "text-night-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/inbox/inbox.tsx",
+          "line": 89,
+          "text": "text-night-foreground/80",
+          "property": "color"
+        },
+        {
+          "path": "components/kit/app.tsx",
+          "line": 242,
+          "text": "text-night-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/kit/brand-art.tsx",
+          "line": 112,
+          "text": "text-night-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/kit/calendar.tsx",
+          "line": 178,
+          "text": "text-night-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/kit/ribs.tsx",
+          "line": 319,
+          "text": "text-night-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/membership/membership-page.tsx",
+          "line": 255,
+          "text": "!text-night-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/reserve/parts.tsx",
+          "line": 18,
+          "text": "text-night-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/reserve/parts.tsx",
+          "line": 181,
+          "text": "text-night-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/training/book-page.tsx",
+          "line": 599,
+          "text": "text-night-foreground",
+          "property": "color"
+        },
+        {
+          "path": "components/training/training-page.tsx",
+          "line": 346,
+          "text": "!text-night-foreground",
+          "property": "color"
+        }
+      ]
+    },
+    {
+      "family": "color",
+      "value": "var(--night-foreground)",
+      "preserve": true,
+      "role": ":background",
+      "uses": [
+        {
+          "path": "components/app/check-in-pass.tsx",
+          "line": 168,
+          "text": "bg-night-foreground/10",
+          "property": "background-color"
+        },
+        {
+          "path": "components/kit/calendar.tsx",
+          "line": 194,
+          "text": "bg-night-foreground",
+          "property": "background-color"
+        },
+        {
+          "path": "components/membership/membership-page.tsx",
+          "line": 255,
+          "text": "hover:!bg-night-foreground/10",
+          "property": "background-color"
+        },
+        {
+          "path": "components/reserve/parts.tsx",
+          "line": 79,
+          "text": "bg-night-foreground",
+          "property": "background-color"
+        },
+        {
+          "path": "components/training/training-page.tsx",
+          "line": 346,
+          "text": "hover:!bg-night-foreground/10",
+          "property": "background-color"
+        }
+      ]
+    },
+    {
+      "family": "color",
+      "value": "var(--night-foreground)",
+      "preserve": true,
+      "mode": "dark",
+      "role": ":background",
+      "uses": [
+        {
+          "path": "components/clubs/popular-times.tsx",
+          "line": 116,
+          "text": "dark:bg-night-foreground/70",
+          "property": "background-color"
+        },
+        {
+          "path": "components/progress/progress-page.tsx",
+          "line": 104,
+          "text": "dark:bg-night-foreground",
+          "property": "background-color"
+        },
+        {
+          "path": "components/reserve/common.tsx",
+          "line": 65,
+          "text": "dark:bg-night-foreground",
+          "property": "background-color"
+        }
+      ]
+    },
+    {
+      "family": "color",
+      "value": "var(--night-foreground)",
+      "preserve": true,
+      "mode": "dark",
+      "role": ":foreground",
+      "uses": [
+        {
+          "path": "components/kit/ribs.tsx",
+          "line": 11,
+          "text": "dark:text-night-foreground",
+          "property": "color"
+        }
+      ]
+    },
+    {
+      "family": "color",
+      "value": "var(--night-muted)",
+      "preserve": true,
+      "role": ":foreground",
+      "uses": [
+        {
+          "path": "components/today/today-page.tsx",
+          "line": 468,
+          "text": "text-night-muted",
+          "property": "color"
+        },
+        {
+          "path": "components/today/today-page.tsx",
+          "line": 480,
+          "text": "text-night-muted",
+          "property": "color"
+        }
+      ]
+    },
+    {
+      "family": "font-family",
+      "value": "var(--font-archivo), system-ui, sans-serif",
+      "preserve": true,
+      "uses": [
+        {
+          "path": "app/globals.css",
+          "line": 484,
+          "text": ".font-display-wide {font-family:var(--font-display)}",
+          "property": "font-family"
+        },
+        {
+          "path": "app/globals.css",
+          "line": 495,
+          "text": ".tabular {font-family:var(--font-data)}",
+          "property": "font-family"
+        },
+        {
+          "path": "app/globals.css",
+          "line": 510,
+          "text": ".display-hero {font-family:var(--font-display)}",
+          "property": "font-family"
+        },
+        {
+          "path": "app/globals.css",
+          "line": 519,
+          "text": ".display-lead {font-family:var(--font-display)}",
+          "property": "font-family"
+        },
+        {
+          "path": "app/globals.css",
+          "line": 528,
+          "text": ".display-quiet {font-family:var(--font-display)}",
+          "property": "font-family",
+          "fontSize": 23
+        }
+      ]
+    },
+    {
+      "family": "font-family",
+      "value": "var(--font-inter), system-ui, sans-serif",
+      "preserve": true,
+      "uses": [
+        {
+          "path": "app/globals.css",
+          "line": 408,
+          "text": " {font-family:var(--font-body)}",
+          "property": "font-family"
+        }
+      ]
+    },
+    {
+      "family": "font-size",
+      "value": "14px",
+      "number": 14,
+      "preserve": false,
+      "uses": [
+        {
+          "path": "app/globals.css",
+          "line": 410,
+          "text": " {font-size:var(--size-s)}",
+          "property": "font-size"
+        }
+      ]
+    },
+    {
+      "family": "font-size",
+      "value": "18px",
+      "number": 18,
+      "preserve": true,
+      "uses": [
+        {
+          "path": "app/globals.css",
+          "line": 608,
+          "text": ":root[data-text=\"large\"] {font-size:18px}",
+          "property": "font-size",
+          "fontSize": 18
+        }
+      ]
+    },
+    {
+      "family": "font-size",
+      "value": "19px",
+      "number": 19,
+      "preserve": false,
+      "uses": [
+        {
+          "path": "app/globals.css",
+          "line": 503,
+          "text": ".lede {font-size:var(--size-l)}",
+          "property": "font-size",
+          "fontSize": 19
+        }
+      ]
+    },
+    {
+      "family": "font-size",
+      "value": "23px",
+      "number": 23,
+      "preserve": false,
+      "uses": [
+        {
+          "path": "app/globals.css",
+          "line": 531,
+          "text": ".display-quiet {font-size:var(--display-size-xxs)}",
+          "property": "font-size",
+          "fontSize": 23,
+          "fontFamily": "var(--font-display)"
+        }
+      ]
+    },
+    {
+      "family": "font-size",
+      "value": "clamp(2.25rem,4.6vw,4.25rem)",
+      "preserve": true,
+      "uses": [
+        {
+          "path": "app/globals.css",
+          "line": 522,
+          "text": ".display-lead {font-size:clamp(2.25rem,4.6vw,4.25rem)}",
+          "property": "font-size",
+          "fontFamily": "var(--font-display)"
+        }
+      ]
+    },
+    {
+      "family": "font-size",
+      "value": "clamp(2.75rem,7.4vw,6rem)",
+      "preserve": true,
+      "uses": [
+        {
+          "path": "app/globals.css",
+          "line": 513,
+          "text": ".display-hero {font-size:clamp(2.75rem,7.4vw,6rem)}",
+          "property": "font-size",
+          "fontFamily": "var(--font-display)"
+        }
+      ]
+    },
+    {
+      "family": "font-size",
+      "value": "Math.max(11, size * 0.38)",
+      "preserve": true,
+      "uses": [
+        {
+          "path": "components/kit/ui.tsx",
+          "line": 421,
+          "text": "fontSize: Math.max(11, size * 0.38)",
+          "property": "font-size"
+        }
+      ]
+    },
+    {
+      "family": "font-weight",
+      "value": "500",
+      "number": 500,
+      "preserve": false,
+      "uses": [
+        {
+          "path": "components/account/parts.tsx",
+          "line": 63,
+          "text": "font-medium",
+          "property": "font"
+        },
+        {
+          "path": "components/app/help.tsx",
+          "line": 27,
+          "text": "font-medium",
+          "property": "font"
+        },
+        {
+          "path": "components/app/help.tsx",
+          "line": 199,
+          "text": "font-medium",
+          "property": "font"
+        },
+        {
+          "path": "components/app/screen-parts.tsx",
+          "line": 26,
+          "text": "font-medium",
+          "property": "font"
+        },
+        {
+          "path": "components/app/screen-parts.tsx",
+          "line": 63,
+          "text": "font-medium",
+          "property": "font"
+        },
+        {
+          "path": "components/app/screen-parts.tsx",
+          "line": 110,
+          "text": "font-medium",
+          "property": "font"
+        },
+        {
+          "path": "components/app/screen-parts.tsx",
+          "line": 159,
+          "text": "font-medium",
+          "property": "font"
+        },
+        {
+          "path": "components/app/shell.tsx",
+          "line": 91,
+          "text": "font-medium",
+          "property": "font"
+        },
+        {
+          "path": "components/app/shell.tsx",
+          "line": 183,
+          "text": "font-medium",
+          "property": "font"
+        },
+        {
+          "path": "components/app/shell.tsx",
+          "line": 284,
+          "text": "font-medium",
+          "property": "font"
+        },
+        {
+          "path": "components/app/shell.tsx",
+          "line": 494,
+          "text": "font-medium",
+          "property": "font"
+        },
+        {
+          "path": "components/app/welcome.tsx",
+          "line": 241,
+          "text": "font-medium",
+          "property": "font"
+        },
+        {
+          "path": "components/app/welcome.tsx",
+          "line": 337,
+          "text": "font-medium",
+          "property": "font"
+        },
+        {
+          "path": "components/billing/billing-page.tsx",
+          "line": 147,
+          "text": "font-medium",
+          "property": "font"
+        },
+        {
+          "path": "components/billing/billing-page.tsx",
+          "line": 156,
+          "text": "font-medium",
+          "property": "font"
+        },
+        {
+          "path": "components/billing/billing-page.tsx",
+          "line": 443,
+          "text": "font-medium",
+          "property": "font"
+        },
+        {
+          "path": "components/billing/billing-page.tsx",
+          "line": 459,
+          "text": "font-medium",
+          "property": "font"
+        },
+        {
+          "path": "components/booking/parts.tsx",
+          "line": 45,
+          "text": "font-medium",
+          "property": "font"
+        },
+        {
+          "path": "components/booking/parts.tsx",
+          "line": 218,
+          "text": "font-medium",
+          "property": "font"
+        },
+        {
+          "path": "components/booking/session-detail.tsx",
+          "line": 319,
+          "text": "font-medium",
+          "property": "font"
+        },
+        {
+          "path": "components/booking/session-detail.tsx",
+          "line": 435,
+          "text": "font-medium",
+          "property": "font"
+        },
+        {
+          "path": "components/booking/session-detail.tsx",
+          "line": 494,
+          "text": "font-medium",
+          "property": "font"
+        },
+        {
+          "path": "components/booking/session-detail.tsx",
+          "line": 502,
+          "text": "font-medium",
+          "property": "font"
+        },
+        {
+          "path": "components/clubs/clubs-page.tsx",
+          "line": 136,
+          "text": "font-medium",
+          "property": "font"
+        },
+        {
+          "path": "components/clubs/parts.tsx",
+          "line": 42,
+          "text": "font-medium",
+          "property": "font"
+        },
+        {
+          "path": "components/clubs/popular-times.tsx",
+          "line": 104,
+          "text": "font-medium",
+          "property": "font"
+        },
+        {
+          "path": "components/clubs/popular-times.tsx",
+          "line": 128,
+          "text": "font-medium",
+          "property": "font"
+        },
+        {
+          "path": "components/clubs/popular-times.tsx",
+          "line": 142,
+          "text": "font-medium",
+          "property": "font"
+        },
+        {
+          "path": "components/clubs/popular-times.tsx",
+          "line": 146,
+          "text": "font-medium",
+          "property": "font"
+        },
+        {
+          "path": "components/family/family-page.tsx",
+          "line": 130,
+          "text": "font-medium",
+          "property": "font"
+        },
+        {
+          "path": "components/family/member-profile.tsx",
+          "line": 116,
+          "text": "font-medium",
+          "property": "font"
+        },
+        {
+          "path": "components/family/member-profile.tsx",
+          "line": 134,
+          "text": "font-medium",
+          "property": "font"
+        },
+        {
+          "path": "components/flows/parts.tsx",
+          "line": 83,
+          "text": "font-medium",
+          "property": "font"
+        },
+        {
+          "path": "components/flows/parts.tsx",
+          "line": 89,
+          "text": "font-medium",
+          "property": "font"
+        },
+        {
+          "path": "components/flows/parts.tsx",
+          "line": 207,
+          "text": "font-medium",
+          "property": "font"
+        },
+        {
+          "path": "components/flows/parts.tsx",
+          "line": 269,
+          "text": "font-medium",
+          "property": "font"
+        },
+        {
+          "path": "components/flows/parts.tsx",
+          "line": 348,
+          "text": "font-medium",
+          "property": "font"
+        },
+        {
+          "path": "components/guest/guest-passes.tsx",
+          "line": 154,
+          "text": "font-medium",
+          "property": "font"
+        },
+        {
+          "path": "components/kit/app.tsx",
+          "line": 109,
+          "text": "font-medium",
+          "property": "font"
+        },
+        {
+          "path": "components/kit/app.tsx",
+          "line": 160,
+          "text": "font-medium",
+          "property": "font"
+        },
+        {
+          "path": "components/kit/app.tsx",
+          "line": 306,
+          "text": "font-medium",
+          "property": "font"
+        },
+        {
+          "path": "components/kit/app.tsx",
+          "line": 421,
+          "text": "font-medium",
+          "property": "font"
+        },
+        {
+          "path": "components/kit/app.tsx",
+          "line": 426,
+          "text": "font-medium",
+          "property": "font"
+        },
+        {
+          "path": "components/kit/app.tsx",
+          "line": 493,
+          "text": "font-medium",
+          "property": "font"
+        },
+        {
+          "path": "components/kit/progress.tsx",
+          "line": 100,
+          "text": "font-medium",
+          "property": "font"
+        },
+        {
+          "path": "components/membership/cancel.tsx",
+          "line": 312,
+          "text": "font-medium",
+          "property": "font"
+        },
+        {
+          "path": "components/membership/change-plan.tsx",
+          "line": 350,
+          "text": "font-medium",
+          "property": "font"
+        },
+        {
+          "path": "components/membership/change-plan.tsx",
+          "line": 540,
+          "text": "font-medium",
+          "property": "font"
+        },
+        {
+          "path": "components/membership/membership-page.tsx",
+          "line": 268,
+          "text": "font-medium",
+          "property": "font"
+        },
+        {
+          "path": "components/progress/progress-page.tsx",
+          "line": 54,
+          "text": "font-medium",
+          "property": "font"
+        },
+        {
+          "path": "components/progress/progress-page.tsx",
+          "line": 101,
+          "text": "font-medium",
+          "property": "font"
+        },
+        {
+          "path": "components/progress/progress-page.tsx",
+          "line": 114,
+          "text": "font-medium",
+          "property": "font"
+        },
+        {
+          "path": "components/progress/progress-page.tsx",
+          "line": 152,
+          "text": "font-medium",
+          "property": "font"
+        },
+        {
+          "path": "components/reserve/courts-page.tsx",
+          "line": 554,
+          "text": "font-medium",
+          "property": "font"
+        },
+        {
+          "path": "components/reserve/kids-page.tsx",
+          "line": 151,
+          "text": "font-medium",
+          "property": "font"
+        },
+        {
+          "path": "components/reserve/kids-page.tsx",
+          "line": 460,
+          "text": "font-medium",
+          "property": "font"
+        },
+        {
+          "path": "components/reserve/parts.tsx",
+          "line": 193,
+          "text": "font-medium",
+          "property": "font"
+        },
+        {
+          "path": "components/reserve/parts.tsx",
+          "line": 202,
+          "text": "font-medium",
+          "property": "font"
+        },
+        {
+          "path": "components/reserve/parts.tsx",
+          "line": 252,
+          "text": "font-medium",
+          "property": "font"
+        },
+        {
+          "path": "components/reserve/parts.tsx",
+          "line": 377,
+          "text": "font-medium",
+          "property": "font"
+        },
+        {
+          "path": "components/reserve/slot-grid.tsx",
+          "line": 103,
+          "text": "font-medium",
+          "property": "font"
+        },
+        {
+          "path": "components/reserve/slot-grid.tsx",
+          "line": 157,
+          "text": "font-medium",
+          "property": "font"
+        },
+        {
+          "path": "components/reserve/slot-grid.tsx",
+          "line": 233,
+          "text": "font-medium",
+          "property": "font"
+        },
+        {
+          "path": "components/schedule/day-strip.tsx",
+          "line": 109,
+          "text": "font-medium",
+          "property": "font"
+        },
+        {
+          "path": "components/schedule/day-strip.tsx",
+          "line": 154,
+          "text": "font-medium",
+          "property": "font"
+        },
+        {
+          "path": "components/settings/pages.tsx",
+          "line": 349,
+          "text": "font-medium",
+          "property": "font"
+        },
+        {
+          "path": "components/settings/pages.tsx",
+          "line": 399,
+          "text": "font-medium",
+          "property": "font"
+        },
+        {
+          "path": "components/settings/parts.tsx",
+          "line": 90,
+          "text": "font-medium",
+          "property": "font"
+        },
+        {
+          "path": "components/settings/settings-shell.tsx",
+          "line": 43,
+          "text": "font-medium",
+          "property": "font"
+        },
+        {
+          "path": "components/today/today-page.tsx",
+          "line": 468,
+          "text": "font-medium",
+          "property": "font"
+        },
+        {
+          "path": "components/today/today-page.tsx",
+          "line": 495,
+          "text": "font-medium",
+          "property": "font"
+        },
+        {
+          "path": "components/today/today-page.tsx",
+          "line": 645,
+          "text": "font-medium",
+          "property": "font"
+        },
+        {
+          "path": "components/training/book-page.tsx",
+          "line": 274,
+          "text": "font-medium",
+          "property": "font"
+        },
+        {
+          "path": "components/training/book-page.tsx",
+          "line": 597,
+          "text": "font-medium",
+          "property": "font"
+        },
+        {
+          "path": "components/training/coach-profile.tsx",
+          "line": 306,
+          "text": "font-medium",
+          "property": "font"
+        },
+        {
+          "path": "components/training/training-page.tsx",
+          "line": 80,
+          "text": "font-medium",
+          "property": "font"
+        }
+      ]
+    },
+    {
+      "family": "font-weight",
+      "value": "600",
+      "number": 600,
+      "preserve": false,
+      "uses": [
+        {
+          "path": "app/globals.css",
+          "line": 409,
+          "text": " {font-weight:var(--weight-body-heavy)}",
+          "property": "font-weight"
+        }
+      ]
+    },
+    {
+      "family": "font-weight",
+      "value": "600",
+      "number": 600,
+      "preserve": true,
+      "uses": [
+        {
+          "path": "app/globals.css",
+          "line": 692,
+          "text": ".ui-part[data-ui-component=\"toggle\"][data-pressed]:not([data-disabled]) {font-weight:var(--weight-body-heavy)}",
+          "property": "font-weight"
+        }
+      ]
+    },
+    {
+      "family": "font-weight",
+      "value": "700",
+      "number": 700,
+      "preserve": true,
+      "uses": [
+        {
+          "path": "app/globals.css",
+          "line": 529,
+          "text": ".display-quiet {font-weight:var(--weight-display-medium)}",
+          "property": "font-weight",
+          "fontSize": 23
+        }
+      ]
+    },
+    {
+      "family": "font-weight",
+      "value": "800",
+      "number": 800,
+      "preserve": false,
+      "uses": [
+        {
+          "path": "app/globals.css",
+          "line": 511,
+          "text": ".display-hero {font-weight:var(--weight-display-heavy)}",
+          "property": "font-weight"
+        },
+        {
+          "path": "app/globals.css",
+          "line": 520,
+          "text": ".display-lead {font-weight:var(--weight-display-heavy)}",
+          "property": "font-weight"
+        }
+      ]
+    },
+    {
+      "family": "letter-spacing",
+      "value": "-0.02em",
+      "number": -0.02,
+      "preserve": false,
+      "uses": [
+        {
+          "path": "app/globals.css",
+          "line": 490,
+          "text": ".font-display-wide {letter-spacing:var(--tracking-s)}",
+          "property": "letter-spacing"
+        },
+        {
+          "path": "app/globals.css",
+          "line": 504,
+          "text": ".lede {letter-spacing:var(--tracking-s)}",
+          "property": "letter-spacing",
+          "fontSize": 19
+        },
+        {
+          "path": "app/globals.css",
+          "line": 532,
+          "text": ".display-quiet {letter-spacing:var(--tracking-s)}",
+          "property": "letter-spacing",
+          "fontSize": 23
+        }
+      ]
+    },
+    {
+      "family": "letter-spacing",
+      "value": "-0.03em",
+      "number": -0.03,
+      "preserve": false,
+      "uses": [
+        {
+          "path": "app/globals.css",
+          "line": 515,
+          "text": ".display-hero {letter-spacing:var(--tracking-xs)}",
+          "property": "letter-spacing"
+        },
+        {
+          "path": "app/globals.css",
+          "line": 524,
+          "text": ".display-lead {letter-spacing:var(--tracking-xs)}",
+          "property": "letter-spacing"
+        }
+      ]
+    },
+    {
+      "family": "letter-spacing",
+      "value": "0.01em",
+      "number": 0.01,
+      "preserve": false,
+      "uses": [
+        {
+          "path": "app/globals.css",
+          "line": 412,
+          "text": " {letter-spacing:var(--tracking-l)}",
+          "property": "letter-spacing"
+        }
+      ]
+    },
+    {
+      "family": "line-height",
+      "value": "0.98",
+      "number": 0.98,
+      "preserve": true,
+      "uses": [
+        {
+          "path": "app/globals.css",
+          "line": 514,
+          "text": ".display-hero {line-height:0.98}",
+          "property": "line-height"
+        }
+      ]
+    },
+    {
+      "family": "line-height",
+      "value": "1",
+      "number": 1,
+      "preserve": true,
+      "uses": [
+        {
+          "path": "app/globals.css",
+          "line": 523,
+          "text": ".display-lead {line-height:1}",
+          "property": "line-height"
+        },
+        {
+          "path": "components/kit/ribs.tsx",
+          "line": 233,
+          "text": "leading-none",
+          "property": "leading"
+        },
+        {
+          "path": "components/kit/ribs.tsx",
+          "line": 259,
+          "text": "leading-none",
+          "property": "leading"
+        },
+        {
+          "path": "components/kit/ribs.tsx",
+          "line": 304,
+          "text": "leading-none",
+          "property": "leading"
+        }
+      ]
+    },
+    {
+      "family": "line-height",
+      "value": "20px",
+      "number": 20,
+      "preserve": false,
+      "uses": [
+        {
+          "path": "app/globals.css",
+          "line": 411,
+          "text": " {line-height:var(--line-s)}",
+          "property": "line-height"
+        }
+      ]
+    },
+    {
+      "family": "line-height",
+      "value": "25px",
+      "number": 25,
+      "preserve": false,
+      "uses": [
+        {
+          "path": "app/globals.css",
+          "line": 505,
+          "text": ".lede {line-height:var(--line-l)}",
+          "property": "line-height",
+          "fontSize": 19
+        },
+        {
+          "path": "app/globals.css",
+          "line": 533,
+          "text": ".display-quiet {line-height:var(--display-line-xxs)}",
+          "property": "line-height",
+          "fontSize": 23
+        }
+      ]
+    },
+    {
+      "family": "radius",
+      "value": "0px",
+      "number": 0,
+      "preserve": false,
+      "uses": [
+        {
+          "path": "app/globals.css",
+          "line": 556,
+          "text": ".side-drawer {border-radius:var(--radius-zero)}",
+          "property": "border-radius"
+        },
+        {
+          "path": "app/globals.css",
+          "line": 572,
+          "text": ".nav-drawer {border-radius:var(--radius-zero)}",
+          "property": "border-radius"
+        }
+      ]
+    },
+    {
+      "family": "shadow",
+      "value": "0 0 #0000,0 0 #0000,0 0 #0000,var(--tw-ring-shadow), 0 0 #0000",
+      "preserve": true,
+      "uses": [
+        {
+          "path": "app/globals.css",
+          "line": 266,
+          "text": " {box-shadow:var(--tw-inset-shadow, 0 0 #0000),var(--tw-inset-ring-shadow, 0 0 #0000),var(--tw-ring-offset-shadow, 0 0 #0000),var(--tw-ring-shadow),var(--tw-shadow, 0 0 #0000)}",
+          "property": "box-shadow"
+        },
+        {
+          "path": "app/globals.css",
+          "line": 292,
+          "text": " {box-shadow:var(--tw-inset-shadow, 0 0 #0000),var(--tw-inset-ring-shadow, 0 0 #0000),var(--tw-ring-offset-shadow, 0 0 #0000),var(--tw-ring-shadow),var(--tw-shadow, 0 0 #0000)}",
+          "property": "box-shadow"
+        }
+      ]
+    },
+    {
+      "family": "shadow",
+      "value": "none",
+      "preserve": false,
+      "uses": [
+        {
+          "path": "components/app/shell.tsx",
+          "line": 271,
+          "text": "!shadow-none",
+          "property": "shadow"
+        },
+        {
+          "path": "components/schedule/filters.tsx",
+          "line": 34,
+          "text": "first:shadow-none",
+          "property": "shadow"
+        },
+        {
+          "path": "components/schedule/filters.tsx",
+          "line": 41,
+          "text": "!shadow-none",
+          "property": "shadow"
+        },
+        {
+          "path": "components/ui/button.tsx",
+          "line": 38,
+          "text": "shadow-none",
+          "property": "shadow"
+        },
+        {
+          "path": "components/ui/table.tsx",
+          "line": 40,
+          "text": "[&_tr:last-child>*]:shadow-none",
+          "property": "shadow"
+        }
+      ]
+    },
+    {
+      "family": "shadow",
+      "value": "none",
+      "preserve": true,
+      "uses": [
+        {
+          "path": "components/ui/button.tsx",
+          "line": 24,
+          "text": "disabled:shadow-none",
+          "property": "shadow"
+        }
+      ]
+    },
+    {
+      "family": "shadow",
+      "value": "var(--rule-t),var(--rule-r),var(--rule-b),var(--rule-l)",
+      "preserve": true,
+      "uses": [
+        {
+          "path": "app/globals.css",
+          "line": 336,
+          "text": " {box-shadow:var(--rule-t),var(--rule-r),var(--rule-b),var(--rule-l)}",
+          "property": "box-shadow"
+        },
+        {
+          "path": "app/globals.css",
+          "line": 341,
+          "text": " {box-shadow:var(--rule-t),var(--rule-r),var(--rule-b),var(--rule-l)}",
+          "property": "box-shadow"
+        },
+        {
+          "path": "app/globals.css",
+          "line": 346,
+          "text": " {box-shadow:var(--rule-t),var(--rule-r),var(--rule-b),var(--rule-l)}",
+          "property": "box-shadow"
+        },
+        {
+          "path": "app/globals.css",
+          "line": 351,
+          "text": " {box-shadow:var(--rule-t),var(--rule-r),var(--rule-b),var(--rule-l)}",
+          "property": "box-shadow"
+        },
+        {
+          "path": "app/globals.css",
+          "line": 358,
+          "text": " {box-shadow:var(--rule-t),var(--rule-r),var(--rule-b),var(--rule-l)}",
+          "property": "box-shadow"
+        },
+        {
+          "path": "app/globals.css",
+          "line": 395,
+          "text": "&>:where(:not(:first-child)) {box-shadow:var(--rule-t),var(--rule-r),var(--rule-b),var(--rule-l)}",
+          "property": "box-shadow"
+        },
+        {
+          "path": "app/globals.css",
+          "line": 401,
+          "text": "&>:where(:not(:first-child)) {box-shadow:var(--rule-t),var(--rule-r),var(--rule-b),var(--rule-l)}",
+          "property": "box-shadow"
+        }
+      ]
+    },
+    {
+      "family": "spacing",
+      "value": "0px",
+      "number": 0,
+      "preserve": false,
+      "uses": [
+        {
+          "path": "app/globals.css",
+          "line": 573,
+          "text": ".nav-drawer {padding:var(--space-zero)}",
+          "property": "padding"
+        }
+      ]
+    },
+    {
+      "family": "spacing",
+      "value": "1px",
+      "number": 1,
+      "preserve": true,
+      "uses": [
+        {
+          "path": "components/kit/app.tsx",
+          "line": 328,
+          "text": "gap-px",
+          "property": "gap"
+        }
+      ]
+    },
+    {
+      "family": "spacing",
+      "value": "calc(48px*2)",
+      "preserve": true,
+      "uses": [
+        {
+          "path": "components/app/shell.tsx",
+          "line": 606,
+          "text": "max-lg:pb-[calc(var(--space-xxl)*2)]",
+          "property": "pb"
+        }
+      ]
+    },
+    {
+      "family": "spacing",
+      "value": "calc(48px*4/3)",
+      "preserve": true,
+      "uses": [
+        {
+          "path": "components/app/auth-shell.tsx",
+          "line": 10,
+          "text": "lg:px-[calc(var(--space-xxl)*4/3)]",
+          "property": "px"
+        }
+      ]
+    },
+    {
+      "family": "spacing",
+      "value": "env(safe-area-inset-bottom)",
+      "preserve": true,
+      "uses": [
+        {
+          "path": "components/app/shell.tsx",
+          "line": 482,
+          "text": "pb-[env(safe-area-inset-bottom)]",
+          "property": "pb"
+        }
+      ]
+    }
+  ]
+}

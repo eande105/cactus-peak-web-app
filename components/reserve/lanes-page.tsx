@@ -1,20 +1,33 @@
 "use client"
-import Link from "next/link"
 import { useRouter, useSearchParams } from "next/navigation"
 import { Suspense, useEffect, useState } from "react"
 import { useApp } from "@/components/app/use-app"
-import { AddToCalendar } from "@/components/booking/calendar-menu"
+import { BookPage } from "@/components/book/book-tabs"
 import { SuccessPanel } from "@/components/booking/success-panel"
+import { Waves } from "@/components/icons"
+import {
+  Card,
+  Facts,
+  Panel,
+  PanelEmpty,
+  Split,
+  Toolbar,
+} from "@/components/kit/app"
 import {
   Banner,
   CheckRow,
   EmptyState,
   FormField,
   LoadingBlock,
-  PageHeader,
   SelectBox,
 } from "@/components/kit/ui"
-import { StickyBar } from "@/components/reserve/common"
+import { BookingList } from "@/components/reserve/booking-list"
+import {
+  CancelLine,
+  PanelError,
+  QuietLine,
+  SlotLegend,
+} from "@/components/reserve/parts"
 import {
   type CellInfo,
   SlotGrid,
@@ -38,13 +51,13 @@ import {
   dateKey,
   dayStart,
   fmtDay,
+  fmtDayLong,
   fmtDowTime,
   fmtRange,
   fmtTime,
   fromKey,
   HOUR,
   MIN,
-  minutesOfDay,
 } from "@/lib/time"
 import { toast } from "@/lib/toast"
 import type { Booking } from "@/lib/types"
@@ -113,6 +126,7 @@ function Inner() {
     const best = opts.sort(
       (a, b) => (b.i.swimmers ?? 0) - (a.i.swimmers ?? 0) || a.r.id - b.r.id
     )[0]
+    setError("")
     setSel({ row: best.r.id, slot })
     announce(`Lane ${best.r.id} selected at ${fmtTime(slot)}`)
   }
@@ -190,206 +204,67 @@ function Inner() {
     ? s.members[me.parentId].firstName
     : "your parent"
   const pu = pausedUntil(s, me.id, now)
+  const pick = (r: number, sl: number) => {
+    setError("")
+    setSel({ row: r, slot: sl })
+    announce(`Lane ${r} selected, ${fmtTime(sl)}`)
+  }
+  const clear = () => setSel(null)
   if (done)
     return (
-      <div className="max-w-[560px]">
-        <SuccessPanel
-          pill="Reserved"
-          headline={`${done.resource}, ${fmtRange(done.start, done.end)}`}
-          summary={[
-            {
-              label: "When",
-              value: `${fmtDay(done.start)} · ${fmtRange(done.start, done.end)}`,
-            },
-            { label: "Where", value: `${club.name} · ${club.pool?.label}` },
-            { label: "Lane", value: done.resource },
-            { label: "Reference", value: done.ref },
-          ]}
-          event={{
-            title: `Lap lane, ${done.resource}`,
-            start: done.start,
-            end: done.end,
-            location: club.address,
-          }}
-          shareText="https://my.cactuspeakathletic.example/lane"
-          onDone={() => {
-            setDone(null)
-            setSel(null)
-          }}
-          extra={(() => {
-            const c = cancelNote(s, me.id, done.start, now, "lane")
-            return (
-              <p
-                className={
-                  c.late
-                    ? "rounded-md bg-warning-subtle px-3 py-2 text-caption"
-                    : "text-caption text-muted-foreground"
-                }
-              >
-                {c.text}
-                {c.late ? "" : " Late cancels count as strikes."}
-              </p>
-            )
-          })()}
-        />
-      </div>
+      <BookPage>
+        <div className="max-w-xl">
+          <SuccessPanel
+            pill="Reserved"
+            headline={done.resource ?? "Lap lane"}
+            summary={[
+              {
+                label: "When",
+                value: `${fmtDay(done.start)} · ${fmtRange(done.start, done.end)}`,
+              },
+              { label: "Where", value: `${club.name} · ${club.pool?.label}` },
+              { label: "Reference", value: done.ref },
+            ]}
+            event={{
+              title: `Lap lane, ${done.resource}`,
+              start: done.start,
+              end: done.end,
+              location: club.address,
+            }}
+            shareText="https://my.cactuspeakathletic.example/lane"
+            onDone={() => {
+              setDone(null)
+              setSel(null)
+            }}
+            extra={
+              <CancelLine
+                note={cancelNote(s, me.id, done.start, now, "lane")}
+              />
+            }
+          />
+        </div>
+      </BookPage>
     )
   if (!club.pool) return null
-  return (
-    <div className="flex flex-col gap-5 pb-28">
-      <PageHeader
-        eyebrow="Reserve"
-        title={moving ? "Move your lane" : "Lap lanes"}
-        description={`${club.pool.label} · ${lanes} lanes · 45-minute slots`}
-        backHref="/reserve"
-        backLabel="Reserve"
-        actions={<AddToCalendarPlaceholder />}
-      />
-      {moving ? (
-        <Banner
-          tone="neutral"
-          title={`Original selection: ${fmtDay(moving.start)}, ${fmtRange(moving.start, moving.end)}, ${moving.resource}`}
-        />
-      ) : null}
-      {pu ? (
-        <Banner tone="warning" title={`Booking is paused until ${fmtDay(pu)}.`}>
-          You can still look at lanes.
-        </Banner>
-      ) : null}
-      <div className="flex flex-wrap items-end gap-x-6 gap-y-3">
-        <SelectBox
-          label="Club"
-          value={clubSlug}
-          onChange={(v) => setParam({ club: v })}
-          options={pools.map((c) => ({ value: c.slug, label: c.name }))}
-          className="min-w-52"
-        />
-        <CheckRow checked={any} onChange={setAny} className="max-md:min-h-11">
-          Any lane: tap a time to pick the best lane
-        </CheckRow>
-      </div>
-      <div className="flex flex-col gap-1">
-        <DayStrip
-          selected={date}
-          onSelect={(d) => setParam({ date: d === today ? "" : dateKey(d) })}
-          now={now}
-          windowDays={win}
-          label="Choose a day"
-        />
-        <p className="text-detail text-muted-foreground">
-          <span className="rounded-xs bg-muted px-2 py-0.5">
-            Arizona time (no daylight saving)
-          </span>{" "}
-          The warm-water therapy pool is not reservable here.{" "}
-          <Link className="text-link underline" href="/schedule?cat=aqua">
-            See Aqua classes
-          </Link>
-        </p>
-      </div>
-      <h2 className="sr-only">Choose a lane and start time</h2>
-      {loading ? (
-        <LoadingBlock text="Checking availability…" rows={6} />
-      ) : notOpen ? (
-        <EmptyState
-          object="wave"
-          title={`${fmtDay(date)} lanes open ${fmtDay(opens)} at ${fmtTime(opens)}`}
-          body="Lane slots open at the same time as classes."
-        />
-      ) : noneAtAll ? (
-        <EmptyState
-          object="pool"
-          title={`All ${lanes} lanes are taken`}
-          body="Try another day."
-        />
-      ) : (
-        <div className="flex flex-col gap-3">
-          {wide ? (
-            <SlotGrid
-              kind="lane"
-              rows={rows}
-              slots={slots}
-              info={info}
-              selected={sel}
-              onSelect={(r, sl) => {
-                setSel({ row: r, slot: sl })
-                announce(`Lane ${r} selected, ${fmtTime(sl)}`)
-              }}
-              onHeaderClick={any ? pickAny : undefined}
-              label="Choose a lane and start time"
-              disabled={offline || !!pu}
-              now={now}
-            />
-          ) : (
-            <SlotList
-              kind="lane"
-              rows={rows}
-              slots={slots.filter(
-                (sl) =>
-                  sl > now && rows.some((r) => info(r.id, sl).status === "open")
-              )}
-              info={info}
-              selected={sel}
-              onSelect={(r, sl) => setSel({ row: r, slot: sl })}
-              label="Choose a lane and start time"
-              disabled={offline || !!pu}
-            />
-          )}
-          <p className="text-detail text-muted-foreground">
-            Two dots show the two swimmers a lane holds. Up to 2 swimmers share
-            a lane, in circle swim. Pools close 30 minutes before the club. Lap
-            lanes have no waitlist.
-          </p>
-          {sel ? (
-            <div className="max-w-sm">
-              <FormField
-                label="Swimming with someone? Add a lane partner (optional)"
-                help="A partner uses the 2nd place."
-              >
-                {(f) => (
-                  <Input
-                    {...f}
-                    value={partner}
-                    onChange={(e) => setPartner(e.target.value)}
-                    placeholder="Partner's name"
-                  />
-                )}
-              </FormField>
-            </div>
-          ) : null}
-        </div>
-      )}
-      <StickyBar>
-        <div className="mx-auto flex max-w-[1200px] flex-wrap items-center justify-between gap-3 lg:px-8">
-          <p className="min-w-0 flex-1 basis-64 text-caption">
-            {waiting ? (
-              <>
-                <span className="text-label">Waiting for {parentName}.</span>{" "}
-                {waiting.title}. Held until {fmtDay(waiting.expiresAt)},{" "}
-                {fmtTime(waiting.expiresAt)}
-              </>
-            ) : sel ? (
-              <>
-                <span className="text-label">Lane {sel.row}</span> ·{" "}
-                <span className="num">
-                  {fmtDay(sel.slot)} · {fmtRange(sel.slot, sel.slot + 45 * MIN)}
-                </span>{" "}
-                · {club.name} · {sw === 1 ? "1 swimmer already" : "Empty lane"}
-              </>
-            ) : (
-              "Pick a lane and time."
-            )}
-            {error ? (
-              <span
-                role="alert"
-                className="mt-1 block font-semibold text-destructive"
-              >
-                {error}
-              </span>
-            ) : null}
-          </p>
+  // The household's coming lane reservations, at every club.
+  const upcoming = s.bookings.filter(
+    (b) =>
+      b.kind === "lane" &&
+      b.status === "booked" &&
+      b.end > now &&
+      s.members[b.memberId].householdId === hh.id
+  )
+  const note = sel ? cancelNote(s, me.id, sel.slot, now, "lane") : null
+  const panel = sel ? (
+    <Panel
+      title={moving ? "Move your lane" : "Reserve a lane"}
+      onClose={clear}
+      footer={
+        <>
+          <PanelError>{error}</PanelError>
           <Button
-            size="lg"
-            disabled={!sel || offline || !!pu || !!waiting}
+            className="w-full"
+            disabled={offline || !!pu || !!waiting}
             loading={busy}
             onClick={() => void reserve()}
           >
@@ -401,16 +276,198 @@ function Inner() {
                   ? "Move lane"
                   : "Reserve lane"}
           </Button>
+          {waiting ? null : (
+            <Button className="w-full" variant="ghost" onClick={clear}>
+              Clear
+            </Button>
+          )}
+        </>
+      }
+    >
+      <Facts
+        items={[
+          {
+            label: "Lane",
+            value: `Lane ${sel.row}`,
+            hint: sw === 1 ? "1 swimmer already" : "Empty lane",
+          },
+          { label: "Day", value: fmtDay(sel.slot) },
+          {
+            label: "Time",
+            value: (
+              <span className="tabular">
+                {fmtRange(sel.slot, sel.slot + 45 * MIN)}
+              </span>
+            ),
+          },
+          { label: "Duration", value: <span className="tabular">45 min</span> },
+          { label: "Club", value: club.name, hint: club.pool.label },
+        ]}
+      />
+      {needsParent || moving ? null : (
+        <FormField label="Lane partner (optional)" help="Uses the 2nd place.">
+          {(f) => (
+            <Input
+              {...f}
+              value={partner}
+              onChange={(e) => setPartner(e.target.value)}
+              placeholder="Partner's name"
+            />
+          )}
+        </FormField>
+      )}
+      {needsParent ? (
+        <QuietLine>Lanes need {parentName}&apos;s OK.</QuietLine>
+      ) : note ? (
+        <CancelLine note={note} />
+      ) : null}
+    </Panel>
+  ) : null
+  // The quiet line under a lane name: how many start times are still open on this day.
+  const openLine = (lane: number) => {
+    const open = slots.filter((x) => info(lane, x).status === "open").length
+    return open ? `${open} open` : "Full"
+  }
+  return (
+    <BookPage>
+      {moving ? (
+        <Banner
+          tone="neutral"
+          title={`Moving ${moving.resource}: ${fmtDay(moving.start)}, ${fmtRange(moving.start, moving.end)}`}
+        />
+      ) : null}
+      {pu ? (
+        <Banner tone="warning" title={`Booking is paused until ${fmtDay(pu)}.`}>
+          You can still look at lanes.
+        </Banner>
+      ) : null}
+      {waiting ? (
+        <Banner
+          tone="neutral"
+          title={`Waiting for ${parentName}: ${waiting.title}. Held until ${fmtDay(waiting.expiresAt)}, ${fmtTime(waiting.expiresAt)}.`}
+        />
+      ) : null}
+      <Split
+        label="Your reservation"
+        open={!!sel}
+        onClose={clear}
+        panel={panel}
+        empty={
+          <PanelEmpty icon={Waves}>
+            {offline ? "Reconnect to reserve." : "Pick a lane and a time."}
+          </PanelEmpty>
+        }
+      >
+        <div className="gap-s flex flex-col">
+          <Toolbar>
+            <SelectBox
+              label="Club"
+              value={clubSlug}
+              onChange={(v) => setParam({ club: v })}
+              options={pools.map((c) => ({ value: c.slug, label: c.name }))}
+              hideLabel
+              className="min-w-52"
+            />
+            {wide ? (
+              <CheckRow checked={any} onChange={setAny} className="min-h-9">
+                Any lane: select a time to get the best lane
+              </CheckRow>
+            ) : null}
+          </Toolbar>
+          <DayStrip
+            selected={date}
+            onSelect={(d) => setParam({ date: d === today ? "" : dateKey(d) })}
+            now={now}
+            windowDays={win}
+            label="Choose a day"
+          />
         </div>
-      </StickyBar>
-    </div>
+
+        <Card
+          id="lane-times"
+          tone="bare"
+          title={fmtDayLong(date)}
+          description={`${club.pool.label} · ${lanes} lanes · 45 min`}
+        >
+          {loading ? (
+            <div className="py-m">
+              <LoadingBlock text="Checking availability…" rows={6} />
+            </div>
+          ) : notOpen ? (
+            <EmptyState
+              object="wave"
+              title={`${fmtDay(date)} lanes open ${fmtDay(opens)} at ${fmtTime(opens)}`}
+              body="Lane slots open at the same time as classes."
+            />
+          ) : noneAtAll ? (
+            <EmptyState
+              object="pool"
+              title={`All ${lanes} lanes are taken`}
+              body="Lap lanes have no waitlist."
+            />
+          ) : (
+            <div className="gap-s flex flex-col">
+              {wide ? (
+                <SlotGrid
+                  kind="lane"
+                  rows={rows.map((r) => ({ ...r, sub: openLine(r.id) }))}
+                  slots={slots}
+                  info={info}
+                  selected={sel}
+                  onSelect={pick}
+                  onHeaderClick={any ? pickAny : undefined}
+                  label="Choose a lane and start time"
+                  disabled={offline || !!pu}
+                  now={now}
+                />
+              ) : (
+                <SlotList
+                  kind="lane"
+                  rows={rows}
+                  slots={slots.filter(
+                    (sl) =>
+                      sl > now &&
+                      rows.some((r) => info(r.id, sl).status === "open")
+                  )}
+                  info={info}
+                  selected={sel}
+                  onSelect={(r, sl) => {
+                    setError("")
+                    setSel({ row: r, slot: sl })
+                  }}
+                  label="Choose a lane and start time"
+                  disabled={offline || !!pu}
+                  className="rule-b"
+                />
+              )}
+              <SlotLegend
+                items={
+                  wide
+                    ? [
+                        { tone: "free", label: "Empty", swimmers: 0 },
+                        { tone: "free", label: "1 of 2 swimmers", swimmers: 1 },
+                        { tone: "selected", label: "Selected" },
+                        { tone: "mine", label: "Yours" },
+                        { tone: "taken", label: "Full" },
+                      ]
+                    : undefined
+                }
+                note="2 swimmers share a lane, in circle swim"
+              />
+            </div>
+          )}
+        </Card>
+
+        <BookingList
+          id="your-lanes"
+          label="Your lanes"
+          list={upcoming}
+          empty="No lane reserved."
+        />
+      </Split>
+    </BookPage>
   )
 }
-function AddToCalendarPlaceholder() {
-  return null
-}
-void AddToCalendar
-void minutesOfDay
 export default function LanesPage() {
   return (
     <Suspense fallback={null}>

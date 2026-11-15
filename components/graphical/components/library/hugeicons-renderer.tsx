@@ -14,7 +14,11 @@ import {
   hugeiconsVariantFor,
   type HugeiconsVariant,
 } from "../../lib/hugeicons-options";
-import type { ThemeIconRenderProps } from "./icon";
+import type {
+  ThemeIconName,
+  ThemeIconRenderer,
+  ThemeIconRenderProps,
+} from "./icon";
 
 /** Matches the vendor's SVG data without importing or distributing its artwork. */
 export type HugeiconsGlyph = readonly (readonly [
@@ -66,10 +70,12 @@ function LicensedIcon({
     emptyServerSnapshot,
   );
   useEffect(() => {
-    // Remounting an icon or switching style can retry a failed catalog.
+    // The shared store reports failure and lets the picker retry the catalog.
     void load(variant).catch(() => {});
   }, [load, variant]);
-  const glyphName = HUGEICONS_NAMES[name];
+  const glyphName = name.startsWith('hugeicons:')
+    ? name.slice('hugeicons:'.length)
+    : HUGEICONS_NAMES[name as keyof typeof HUGEICONS_NAMES];
   const glyph = current?.catalog?.[glyphName];
   const identity = {
     'data-icon-family': 'Hugeicons',
@@ -116,7 +122,7 @@ export function createHugeiconsRenderer({
 }: {
   loadCatalog: LoadCatalog;
   renderGlyph: RenderGlyph;
-}) {
+}): ThemeIconRenderer {
   const requests: Partial<Record<Variant, Promise<Catalog>>> = {};
   const states: Partial<Record<Variant, CatalogState>> = {};
   const listeners = new Set<() => void>();
@@ -160,9 +166,14 @@ export function createHugeiconsRenderer({
         publish(variant, { failed: true });
         throw error;
       }));
+  const aliases = new Map<string, string>(
+    Object.entries(HUGEICONS_NAMES).map(([name, glyph]) => [glyph, name]),
+  );
   return {
-    renderIcon: (props: ThemeIconRenderProps) => {
-      if (props.family !== 'Hugeicons') return undefined;
+    families: ['Hugeicons'],
+    renderIcon: (props) => {
+      if (props.family !== 'Hugeicons' && !props.name.startsWith('hugeicons:'))
+        return undefined;
       return (
         <LicensedIcon
           {...props}
@@ -170,6 +181,16 @@ export function createHugeiconsRenderer({
           store={store}
           renderGlyph={renderGlyph}
         />
+      );
+    },
+    loadNames: async (family, variant) => {
+      if (family !== 'Hugeicons') return [];
+      // Every variant publishes the same names, so the picker reads the plain one.
+      const catalog = await load(
+        variant === 'filled' ? 'solid-standard' : 'stroke-standard',
+      );
+      return Object.keys(catalog).map(
+        (name) => (aliases.get(name) ?? `hugeicons:${name}`) as ThemeIconName,
       );
     },
   };

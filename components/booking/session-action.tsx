@@ -79,16 +79,16 @@ export function WaitlistDialog({
       <CheckRow checked={ok} onChange={setOk}>
         I understand the late-cancel rule.
       </CheckRow>
-      <p className="text-caption text-muted-foreground">
+      <p className="text-body-s text-muted-foreground">
         Notify me by: Push, Email.{" "}
         <Link href="/settings/notifications" className="text-link underline">
           Change
         </Link>
       </p>
-      <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
+      <div className="flex flex-wrap items-center justify-between gap-s pt-xs">
         <button
           type="button"
-          className="text-link min-h-11 text-label underline-offset-4 hover:underline"
+          className="min-h-11 text-body-s font-heavy text-link underline-offset-4 hover:underline"
           onClick={() => onOpenChange(false)}
         >
           Pick another class
@@ -137,13 +137,13 @@ function ConflictDialog({
       open={open}
       onOpenChange={onOpenChange}
       title="Replace your booking?"
-      description={`You're booked for ${clash.title} at ${fmtTime(clash.start)} ${se.name} starts at ${fmtTime(se.start)} and ends at ${fmtTime(se.end)} Replace it?`}
+      description={`You're booked for ${clash.title} at ${fmtTime(clash.start)}. ${se.name} starts at ${fmtTime(se.start)} and ends at ${fmtTime(se.end)}. Replace it?`}
     >
-      <p className="text-caption text-muted-foreground">
+      <p className="text-body-s text-muted-foreground">
         Replacing cancels the first booking with no strike if it is more than 2
         hours away.
       </p>
-      <div className="flex flex-wrap justify-end gap-2">
+      <div className="flex flex-wrap justify-end gap-xs">
         <Button variant="outline" onClick={() => onOpenChange(false)}>
           Keep {clash.title.split(" ").pop()}
         </Button>
@@ -184,7 +184,7 @@ export function SessionAction({
   const name = `${se.name}, ${fmtTime(se.start)}`
   const btn = cn(
     "min-w-[8.5rem] justify-center",
-    size === "lg" && "min-h-12 px-8",
+    size === "lg" && "min-h-12 px-xl",
     className
   )
 
@@ -248,13 +248,16 @@ export function SessionAction({
   const note = st.state === "book" && st.dropIn ? st.reason : null
   const linkEl = st.link ? (
     st.link.href ? (
-      <Link href={st.link.href} className="text-link text-detail underline">
+      <Link
+        href={st.link.href}
+        className="text-body-m text-link underline sm:text-body-s"
+      >
         {st.link.label}
       </Link>
     ) : (
       <button
         type="button"
-        className="text-link min-h-6 text-detail underline"
+        className="min-h-6 text-body-m text-link underline sm:text-body-s"
         onClick={() => {
           if (st.link?.action === "remind") {
             addRemind(se.id)
@@ -275,13 +278,15 @@ export function SessionAction({
   const wrapReason = (btnEl: React.ReactNode) => (
     <div
       className={cn(
-        "flex flex-col gap-1",
+        "flex flex-col gap-xxs",
         bar ? "items-end text-right" : "items-stretch"
       )}
     >
       {btnEl}
       {reason || note ? (
-        <p className="text-detail text-muted-foreground">{reason ?? note}</p>
+        <p className="text-body-m text-muted-foreground sm:text-body-s">
+          {reason ?? note}
+        </p>
       ) : null}
       {linkEl}
       {dialogs}
@@ -331,7 +336,7 @@ export function SessionAction({
     case "hold": {
       const left = (st.booking?.holdExpiresAt ?? 0) - now
       return wrapReason(
-        <div className="flex flex-col gap-1">
+        <div className="flex flex-col gap-xxs">
           <Button
             className={btn}
             aria-label={`Confirm spot, ${Math.ceil(left / 60000)} minutes left`}
@@ -341,7 +346,7 @@ export function SessionAction({
               else toast({ type: "error", title: r.message })
             }}
           >
-            Confirm spot · <span className="num">{fmtCountdown(left)}</span>
+            Confirm spot · <span className="tabular">{fmtCountdown(left)}</span>
           </Button>
           <Button
             variant="ghost"
@@ -364,8 +369,8 @@ export function SessionAction({
       const late = st.state === "late-cancel"
       if (bar)
         return (
-          <div className="flex items-center gap-3">
-            <span className="inline-flex items-center gap-1.5 text-label">
+          <div className="flex items-center gap-s">
+            <span className="inline-flex items-center gap-xs text-body-s font-heavy">
               <Check className="size-5 text-success" aria-hidden="true" />
               Booked
             </span>
@@ -384,7 +389,11 @@ export function SessionAction({
           <Menu.Trigger
             aria-label={`Booked. ${name}. Manage booking`}
             className={cn(
-              "inline-flex min-h-11 items-center justify-center gap-1.5 rounded-md bg-card px-4 text-label edge ring-input hover:ring-input-hover",
+              "inline-flex min-h-11 items-center justify-center gap-xs hairline",
+              "corner-s px-m",
+              "text-body-s font-heavy",
+              "bg-card ring-input",
+              "hover:ring-input-hover",
               btn
             )}
           >
@@ -436,12 +445,16 @@ export function SessionAction({
           <Menu.Trigger
             aria-label={`On waitlist, position ${st.booking?.position}. ${name}. Manage`}
             className={cn(
-              "inline-flex min-h-11 items-center justify-center rounded-md bg-card px-4 text-label edge ring-input hover:ring-input-hover",
+              "inline-flex min-h-11 items-center justify-center hairline",
+              "corner-s px-m",
+              "text-body-s font-heavy",
+              "bg-card ring-input",
+              "hover:ring-input-hover",
               btn
             )}
           >
             On waitlist{" "}
-            <span className="ml-1 num">#{st.booking?.position}</span>
+            <span className="tabular ml-xxs">#{st.booking?.position}</span>
           </Menu.Trigger>
           <Menu.Portal>
             <Menu.Positioner align="end" sideOffset={6}>

@@ -26,7 +26,7 @@ export function ProgressRibs({
   const over = visits > target
   const met = visits >= target
   return (
-    <div className={cn("flex items-center gap-3", className)}>
+    <div className={cn("flex items-center gap-s", className)}>
       <RibMeter
         value={met ? 5 : filled}
         tone={met ? "success" : "brand"}
@@ -38,14 +38,14 @@ export function ProgressRibs({
       <p
         className={cn(
           variant === "hero"
-            ? "font-heading text-h2 display-stretch"
-            : "num text-body-strong"
+            ? "font-display-wide text-body-xxl font-heavy"
+            : "tabular text-body-m font-heavy"
         )}
       >
-        <span className="num">{visits}</span> of{" "}
-        <span className="num">{target}</span> visits
+        <span className="tabular">{visits}</span> of{" "}
+        <span className="tabular">{target}</span> visits
         {over ? (
-          <span className="ml-2 text-caption font-normal text-success">
+          <span className="ml-xs text-body-s font-regular text-success">
             +{visits - target} bonus
           </span>
         ) : null}
@@ -73,7 +73,7 @@ export function VisitStrip({
     <div
       role="img"
       aria-label={`This week: ${count} visits so far, goal ${goal}. ${days.map((d, i) => `${DOW[(i + 1) % 7]} ${visits.has(dateKey(d)) ? "visited" : planned.has(dateKey(d)) ? "booked" : "no visit"}`).join(", ")}`}
-      className="flex gap-1.5"
+      className="flex gap-xs"
     >
       {days.map((d, i) => {
         const k = dateKey(d)
@@ -82,12 +82,12 @@ export function VisitStrip({
         return (
           <span
             key={d}
-            className="flex flex-col items-center gap-1"
+            className="flex flex-col items-center gap-xxs"
             aria-hidden="true"
           >
             <span
               className={cn(
-                "size-3.5 rounded-full",
+                "size-3.5 corner-full",
                 v
                   ? "bg-success"
                   : p
@@ -97,7 +97,7 @@ export function VisitStrip({
                   "outline-2 outline-offset-2 outline-foreground"
               )}
             />
-            <span className="text-tab text-muted-foreground">
+            <span className="text-body-xs font-medium text-muted-foreground">
               {["M", "T", "W", "T", "F", "S", "S"][i]}
             </span>
           </span>
