@@ -1,27 +1,26 @@
 "use client"
+import Link from "next/link"
 import { useRouter, useSearchParams } from "next/navigation"
 import { Suspense, useEffect, useState } from "react"
 import { useApp } from "@/components/app/use-app"
 import { BookPage } from "@/components/book/book-tabs"
+import { FilterBar } from "@/components/book/filter-bar"
 import { SuccessPanel } from "@/components/booking/success-panel"
-import { Waves } from "@/components/icons"
-import {
-  Card,
-  Facts,
-  Panel,
-  PanelEmpty,
-  Split,
-  Toolbar,
-} from "@/components/kit/app"
+import { Card, Facts, Panel, PanelEmpty, Split } from "@/components/kit/app"
 import {
   Banner,
-  CheckRow,
-  EmptyState,
   FormField,
   LoadingBlock,
   SelectBox,
+  SwitchRow,
 } from "@/components/kit/ui"
 import { BookingList } from "@/components/reserve/booking-list"
+import {
+  NoticeCount,
+  NoticeTile,
+  ReserveNotice,
+  soonerPlan,
+} from "@/components/reserve/empty"
 import {
   CancelLine,
   PanelError,
@@ -37,9 +36,15 @@ import { DayStrip } from "@/components/schedule/day-strip"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { useMedia } from "@/hooks/use-media"
-import { cancelBooking, moveReservation, reserveLane } from "@/lib/actions"
+import {
+  addRemind,
+  cancelBooking,
+  moveReservation,
+  reserveLane,
+} from "@/lib/actions"
 import { announce } from "@/lib/announce"
 import { CLUB_BY_SLUG, CLUBS } from "@/lib/data/catalog"
+import { useEmptyPreview } from "@/lib/empty-preview"
 import {
   cancelNote,
   gridSlots,
@@ -48,6 +53,7 @@ import {
   windowDays,
 } from "@/lib/engine"
 import {
+  addDays,
   dateKey,
   dayStart,
   fmtDay,
@@ -65,6 +71,8 @@ import { openDialog, useOffline } from "@/lib/ui-state"
 
 function Inner() {
   const { s, me, hh, now, club: viewing } = useApp()
+  // TEMPORARY design review switch (lib/empty-preview.ts).
+  const preview = useEmptyPreview()
   const router = useRouter()
   const sp = useSearchParams()
   const wide = useMedia("(min-width: 1024px)")
@@ -106,6 +114,7 @@ function Inner() {
   const slots = gridSlots(date, "lane").filter((x) => x + 45 * MIN > now)
   const win = windowDays(hh.plan)
   const opens = dayStart(date) - win * 86400000 + 6 * HOUR
+  const sooner = now < opens ? soonerPlan(hh.plan, date, now) : undefined
   const notOpen = now < opens
   const info = (lane: number, slot: number): CellInfo => {
     if (slot < now) return { status: "past" }
@@ -351,35 +360,50 @@ function Inner() {
         label="Your reservation"
         open={!!sel}
         onClose={clear}
+        collapseEmpty
+        bp="xl"
         panel={panel}
         empty={
-          <PanelEmpty icon={Waves}>
+          <PanelEmpty object="wave">
             {offline ? "Reconnect to reserve." : "Pick a lane and a time."}
           </PanelEmpty>
         }
       >
         <div className="gap-s flex flex-col">
-          <Toolbar>
-            <SelectBox
-              label="Club"
-              value={clubSlug}
-              onChange={(v) => setParam({ club: v })}
-              options={pools.map((c) => ({ value: c.slug, label: c.name }))}
-              hideLabel
-              className="min-w-52"
-            />
-            {wide ? (
-              <CheckRow checked={any} onChange={setAny} className="min-h-9">
-                Any lane: select a time to get the best lane
-              </CheckRow>
-            ) : null}
-          </Toolbar>
-          <DayStrip
-            selected={date}
-            onSelect={(d) => setParam({ date: d === today ? "" : dateKey(d) })}
-            now={now}
-            windowDays={win}
-            label="Choose a day"
+          {/* The toolbar every Book tab shares (FilterBar). Lanes have no filters beyond the club, so there is no drawer;
+              "Any lane" is a choice of how to pick, shown where the lane grid is. */}
+          <FilterBar
+            club={(className) => (
+              <SelectBox
+                label="Club"
+                value={clubSlug}
+                onChange={(v) => setParam({ club: v })}
+                options={pools.map((c) => ({ value: c.slug, label: c.name }))}
+                hideLabel
+                className={className}
+              />
+            )}
+            quick={
+              wide ? (
+                <div className="px-xs flex min-h-9 items-center">
+                  <SwitchRow checked={any} onChange={setAny}>
+                    Any lane
+                  </SwitchRow>
+                </div>
+              ) : null
+            }
+            day={(stepper) => (
+              <DayStrip
+                stepper={stepper}
+                selected={date}
+                onSelect={(d) =>
+                  setParam({ date: d === today ? "" : dateKey(d) })
+                }
+                now={now}
+                windowDays={win}
+                label="Choose a day"
+              />
+            )}
           />
         </div>
 
@@ -388,22 +412,95 @@ function Inner() {
           tone="bare"
           title={fmtDayLong(date)}
           description={`${club.pool.label} · ${lanes} lanes · 45 min`}
+          action={
+            <SlotLegend
+              items={
+                wide
+                  ? [
+                      { tone: "free", label: "Empty", swimmers: 0 },
+                      { tone: "free", label: "1 of 2", swimmers: 1 },
+                      { tone: "mine", label: "Yours" },
+                      { tone: "taken", label: "Full" },
+                      ...(date === today
+                        ? [{ tone: "past" as const, label: "Past" }]
+                        : []),
+                    ]
+                  : // The phone chips say "1 of 2" in words, so their key needs only the two looks.
+                    [
+                      { tone: "free", label: "Open" },
+                      { tone: "taken", label: "Full" },
+                    ]
+              }
+              note={
+                offline
+                  ? "Reconnect to reserve."
+                  : any && wide
+                    ? "2 swimmers share a lane. With Any lane, pick a time at the top to get the best lane."
+                    : "2 swimmers share a lane, in circle swim."
+              }
+            />
+          }
         >
           {loading ? (
             <div className="py-m">
               <LoadingBlock text="Checking availability…" rows={6} />
             </div>
-          ) : notOpen ? (
-            <EmptyState
-              object="wave"
+          ) : notOpen || preview === "notopen" ? (
+            <ReserveNotice
+              className="pt-s"
+              art={<NoticeTile id="schedule" />}
               title={`${fmtDay(date)} lanes open ${fmtDay(opens)} at ${fmtTime(opens)}`}
-              body="Lane slots open at the same time as classes."
+              line={
+                sooner
+                  ? `On ${sooner.name}, lanes open ${sooner.window} days ahead, so this day is open now.`
+                  : "Lane slots open at the same time as classes."
+              }
+              actions={
+                <>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => {
+                      addRemind(`lane-${dateKey(date)}`)
+                      toast({ title: "We'll remind you" })
+                    }}
+                  >
+                    Remind me
+                  </Button>
+                  {sooner && me.role === "primary" ? (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      render={<Link href="/membership/change-plan" />}
+                    >
+                      Compare plans
+                    </Button>
+                  ) : null}
+                </>
+              }
             />
-          ) : noneAtAll ? (
-            <EmptyState
-              object="pool"
-              title={`All ${lanes} lanes are taken`}
-              body="Lap lanes have no waitlist."
+          ) : noneAtAll || preview === "full" ? (
+            <ReserveNotice
+              className="pt-s"
+              tone="warning"
+              art={
+                <NoticeCount
+                  id="wave"
+                  count={lanes}
+                  label={`${lanes} lanes, all taken`}
+                />
+              }
+              title={`All ${lanes} lanes are taken on ${fmtDay(date)}`}
+              line="Lap lanes have no waitlist."
+              actions={
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setParam({ date: dateKey(addDays(date, 1)) })}
+                >
+                  Try the next day
+                </Button>
+              }
             />
           ) : (
             <div className="gap-s flex flex-col">
@@ -440,20 +537,6 @@ function Inner() {
                   className="rule-b"
                 />
               )}
-              <SlotLegend
-                items={
-                  wide
-                    ? [
-                        { tone: "free", label: "Empty", swimmers: 0 },
-                        { tone: "free", label: "1 of 2 swimmers", swimmers: 1 },
-                        { tone: "selected", label: "Selected" },
-                        { tone: "mine", label: "Yours" },
-                        { tone: "taken", label: "Full" },
-                      ]
-                    : undefined
-                }
-                note="2 swimmers share a lane, in circle swim"
-              />
             </div>
           )}
         </Card>

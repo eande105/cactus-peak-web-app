@@ -37,6 +37,7 @@ export function SlotGrid({
   onHeaderClick,
   label,
   disabled,
+  now,
   className,
 }: {
   kind: "court" | "lane"
@@ -133,25 +134,31 @@ export function SlotGrid({
             </div>
           ) : null}
           <div className="sticky left-0 z-10 bg-sheet rule-b" />
-          {slots.map((s, c) => (
-            <div
-              key={s}
-              className={cn("rule-b", c === am.length && c > 0 && "rule-l")}
-            >
-              {onHeaderClick ? (
-                <button
-                  type="button"
-                  onClick={() => onHeaderClick(s)}
-                  aria-label={`Any lane at ${fmtTime(s)}`}
-                  className={cn(head, "hover:bg-muted hover:text-foreground")}
-                >
-                  {fmtTime(s, false)}
-                </button>
-              ) : (
-                <div className={head}>{fmtTime(s, false)}</div>
-              )}
-            </div>
-          ))}
+          {slots.map((s, c) => {
+            // A start time that has gone by: its header dims with its cells (the "past" tone).
+            const gone = now !== undefined && s < now
+            return (
+              <div
+                key={s}
+                className={cn("rule-b", c === am.length && c > 0 && "rule-l")}
+              >
+                {onHeaderClick && !gone ? (
+                  <button
+                    type="button"
+                    onClick={() => onHeaderClick(s)}
+                    aria-label={`Any lane at ${fmtTime(s)}`}
+                    className={cn(head, "hover:bg-muted hover:text-foreground")}
+                  >
+                    {fmtTime(s, false)}
+                  </button>
+                ) : (
+                  <div className={cn(head, gone && "opacity-50")}>
+                    {fmtTime(s, false)}
+                  </div>
+                )}
+              </div>
+            )
+          })}
           {rows.map((row, r) => (
             <div key={row.id} className="contents">
               <div className="pr-s py-xxs sticky left-0 z-10 flex min-h-11 flex-col justify-center bg-sheet text-body-s font-medium rule-b">

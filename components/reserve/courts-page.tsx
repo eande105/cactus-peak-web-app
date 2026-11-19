@@ -3,7 +3,11 @@ import { useRouter, useSearchParams } from "next/navigation"
 import { Suspense, useEffect, useMemo, useState } from "react"
 import { useApp } from "@/components/app/use-app"
 import { BookPage } from "@/components/book/book-tabs"
-import { Clock } from "@/components/icons"
+import {
+  FilterBar,
+  FilterGroup,
+  FilterSheet,
+} from "@/components/book/filter-bar"
 import {
   Card,
   Facts,
@@ -11,19 +15,23 @@ import {
   Panel,
   PanelEmpty,
   Split,
-  Toolbar,
 } from "@/components/kit/app"
 import { Modal } from "@/components/kit/overlays"
 import {
   Banner,
-  EmptyState,
   FormField,
   LoadingBlock,
   Segmented,
   SelectBox,
 } from "@/components/kit/ui"
 import { BookingList } from "@/components/reserve/booking-list"
-import { LockedCard, SlotHoldTimer, Stepper } from "@/components/reserve/common"
+import { SlotHoldTimer, Stepper } from "@/components/reserve/common"
+import { CourtsLocked, SPORT_OBJECT } from "@/components/reserve/courts-locked"
+import {
+  NoticeCount,
+  NoticeTile,
+  ReserveNotice,
+} from "@/components/reserve/empty"
 import {
   CancelLine,
   PanelError,
@@ -42,6 +50,7 @@ import { useMedia } from "@/hooks/use-media"
 import { addRemind, moveReservation, reserveCourt } from "@/lib/actions"
 import { announce } from "@/lib/announce"
 import { CLUB_BY_SLUG, CLUBS } from "@/lib/data/catalog"
+import { useEmptyPreview } from "@/lib/empty-preview"
 import {
   cancelNote,
   courtBlocks,
@@ -68,6 +77,10 @@ import { toast } from "@/lib/toast"
 import { openDialog, useOffline } from "@/lib/ui-state"
 import { cn } from "@/lib/utils"
 
+const DURATIONS: { value: 60 | 90; label: string }[] = [
+  { value: 60, label: "60 min" },
+  { value: 90, label: "90 min" },
+]
 const SPORTS = {
   pickleball: "Pickleball",
   tennis: "Tennis",
@@ -143,6 +156,9 @@ function PlayerRow({
 
 function Inner() {
   const { s, me, hh, now, club: viewing } = useApp()
+  // TEMPORARY design review switch (lib/empty-preview.ts).
+  const preview = useEmptyPreview()
+  const [filtersOpen, setFiltersOpen] = useState(false)
   const router = useRouter()
   const sp = useSearchParams()
   const wide = useMedia("(min-width: 1024px)")
@@ -402,13 +418,10 @@ function Inner() {
       </ul>
     </Group>
   ) : null
-  if (hh.plan === "trailhead")
+  if (hh.plan === "trailhead" || preview === "gate")
     return (
       <BookPage>
-        <LockedCard
-          title="Courts come with Ridge and Summit."
-          body="Trailhead covers pools and classes at your home club."
-        />
+        <CourtsLocked />
       </BookPage>
     )
   const pu = pausedUntil(s, me.id, now)
@@ -517,13 +530,44 @@ function Inner() {
           title={`Waiting for ${parentName}: ${waiting.title}. Held until ${fmtDay(waiting.expiresAt)}, ${fmtTime(waiting.expiresAt)}.`}
         />
       ) : null}
+      <FilterSheet
+        open={filtersOpen}
+        onOpenChange={setFiltersOpen}
+        label="Court filters"
+        show={`Show ${SPORTS[sport].toLowerCase()} courts`}
+      >
+        <search className="flex flex-col" aria-label="Court filters">
+          {sports.length > 1 ? (
+            <FilterGroup title="Sport">
+              <Segmented
+                label="Sport"
+                value={sport}
+                onChange={(v) => setParam({ sport: v })}
+                size="sm"
+                options={sports.map((v) => ({ value: v, label: SPORTS[v] }))}
+              />
+            </FilterGroup>
+          ) : null}
+          <FilterGroup title="Length">
+            <Segmented
+              label="Length"
+              value={dur}
+              onChange={(v) => setParam({ dur: String(v) })}
+              size="sm"
+              options={DURATIONS}
+            />
+          </FilterGroup>
+        </search>
+      </FilterSheet>
       <Split
         label="Your reservation"
         open={!!sel}
         onClose={release}
+        collapseEmpty
+        bp="xl"
         panel={panel}
         empty={
-          <PanelEmpty icon={Clock}>
+          <PanelEmpty object={SPORT_OBJECT[sport]}>
             {offline
               ? "Reconnect to reserve."
               : "Pick a free time to hold a court for 5 minutes."}
@@ -531,47 +575,61 @@ function Inner() {
         }
       >
         <div className="gap-s flex flex-col">
-          <Toolbar>
-            <SelectBox
-              label="Club"
-              value={clubSlug}
-              onChange={(v) => setParam({ club: v, sport: "" })}
-              options={withCourts.map((c) => ({
-                value: c.slug,
-                label: c.name,
-              }))}
-              hideLabel
-              className="min-w-52"
-            />
-            {sports.length > 1 ? (
-              <Segmented
-                label="Sport"
-                value={sport}
-                onChange={(v) => setParam({ sport: v })}
-                options={sports.map((v) => ({ value: v, label: SPORTS[v] }))}
+          {/* The toolbar every Book tab shares (FilterBar). Wide, the sport and the length sit beside the club; narrow,
+              they are in the drawer and the badge counts the ones changed from the default. */}
+          <FilterBar
+            club={(className) => (
+              <SelectBox
+                label="Club"
+                value={clubSlug}
+                onChange={(v) => setParam({ club: v, sport: "" })}
+                options={withCourts.map((c) => ({
+                  value: c.slug,
+                  label: c.name,
+                }))}
+                hideLabel
+                className={className}
               />
-            ) : (
-              <p className="flex min-h-9 items-center text-body-m font-medium max-md:min-h-11 sm:text-body-s">
-                {SPORTS[sport]}
-              </p>
             )}
-            <Segmented
-              label="Duration"
-              value={dur}
-              onChange={(v) => setParam({ dur: String(v) })}
-              options={[
-                { value: 60, label: "60 min" },
-                { value: 90, label: "90 min" },
-              ]}
-            />
-          </Toolbar>
-          <DayStrip
-            selected={date}
-            onSelect={(d) => setParam({ date: d === today ? "" : dateKey(d) })}
-            now={now}
-            windowDays={3}
-            days={5}
-            label="Choose a day"
+            quick={
+              <>
+                {sports.length > 1 ? (
+                  <SelectBox
+                    label="Sport"
+                    hideLabel
+                    className="min-w-0 flex-none"
+                    value={sport}
+                    onChange={(v) => setParam({ sport: v })}
+                    options={sports.map((v) => ({
+                      value: v,
+                      label: SPORTS[v],
+                    }))}
+                  />
+                ) : null}
+                <Segmented
+                  label="Length"
+                  value={dur}
+                  onChange={(v) => setParam({ dur: String(v) })}
+                  options={DURATIONS}
+                />
+              </>
+            }
+            onFilters={() => setFiltersOpen(true)}
+            wideSheet={false}
+            count={(sport !== sports[0] ? 1 : 0) + (dur !== 60 ? 1 : 0)}
+            day={(stepper) => (
+              <DayStrip
+                stepper={stepper}
+                selected={date}
+                onSelect={(d) =>
+                  setParam({ date: d === today ? "" : dateKey(d) })
+                }
+                now={now}
+                windowDays={3}
+                days={5}
+                label="Choose a day"
+              />
+            )}
           />
         </div>
 
@@ -580,19 +638,40 @@ function Inner() {
           tone="bare"
           title={fmtDayLong(date)}
           description={`${SPORTS[sport]} · ${n} ${n === 1 ? "court" : "courts"}`}
+          action={
+            <SlotLegend
+              // The phone chips use the same tones as the table, so the key is the same at every width.
+              items={[
+                { tone: "free", label: "Free" },
+                { tone: "mine", label: "Yours" },
+                { tone: "taken", label: "Taken" },
+                { tone: "short", label: `Under ${dur} min free` },
+                ...(date === today && wide
+                  ? [{ tone: "past" as const, label: "Past" }]
+                  : []),
+              ]}
+              note={
+                offline
+                  ? "Reconnect to reserve."
+                  : "Picking a time holds the court for 5 minutes."
+              }
+            />
+          }
         >
           {loading ? (
             <div className="py-m">
               <LoadingBlock text="Checking availability…" rows={6} />
             </div>
-          ) : notOpen ? (
-            <EmptyState
-              object="paddle"
+          ) : notOpen || preview === "notopen" ? (
+            <ReserveNotice
+              className="pt-s"
+              art={<NoticeTile id="schedule" />}
               title={`${fmtDay(date)} courts open ${fmtDay(opens)} at ${fmtTime(opens)}`}
-              body="Courts open 3 days ahead at 6 am."
-              action={
+              line="Courts open 3 days ahead at 6 am."
+              actions={
                 <Button
                   size="sm"
+                  variant="outline"
                   onClick={() => {
                     addRemind(`court-${dateKey(date)}`)
                     toast({ title: "We'll remind you" })
@@ -602,59 +681,55 @@ function Inner() {
                 </Button>
               }
             />
-          ) : noneOpen ? (
-            <div className="py-m">
-              <Banner
-                tone="warning"
-                title={`Every court is taken on ${fmtDay(date)}.`}
-                actions={
-                  <>
+          ) : noneOpen || preview === "full" ? (
+            <ReserveNotice
+              className="pt-s"
+              tone="warning"
+              art={
+                <NoticeCount
+                  id={SPORT_OBJECT[sport]}
+                  count={n}
+                  label={`${n} ${SPORTS[sport].toLowerCase()} courts, all taken`}
+                />
+              }
+              title={`Every ${SPORTS[sport].toLowerCase()} court is taken on ${fmtDay(date)}`}
+              line="Courts have no waitlist."
+              actions={
+                <>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() =>
+                      setParam({ date: dateKey(addDays(date, 1)) })
+                    }
+                  >
+                    Try the next day
+                  </Button>
+                  {club.slug !== "dobson-southern" ? (
                     <Button
                       size="sm"
                       variant="outline"
-                      onClick={() =>
-                        setParam({ date: dateKey(addDays(date, 1)) })
-                      }
+                      onClick={() => setParam({ club: "dobson-southern" })}
                     >
-                      Try the next day
+                      Dobson & Southern
                     </Button>
-                    {club.slug !== "dobson-southern" ? (
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => setParam({ club: "dobson-southern" })}
-                      >
-                        Dobson & Southern
-                      </Button>
-                    ) : null}
-                  </>
-                }
-              />
-            </div>
+                  ) : null}
+                </>
+              }
+            />
           ) : wide ? (
-            <div className="gap-s flex flex-col">
-              <SlotGrid
-                kind="court"
-                rows={rows}
-                slots={slots}
-                info={info}
-                selected={sel}
-                rangeCells={dur / 30}
-                onSelect={select}
-                label="Choose a court and start time"
-                disabled={offline || !!pu}
-                now={now}
-              />
-              <SlotLegend
-                items={[
-                  { tone: "free", label: "Free" },
-                  { tone: "selected", label: "Selected" },
-                  { tone: "mine", label: "Yours" },
-                  { tone: "taken", label: "Taken or closed" },
-                  { tone: "short", label: `Under ${dur} min free` },
-                ]}
-              />
-            </div>
+            <SlotGrid
+              kind="court"
+              rows={rows}
+              slots={slots}
+              info={info}
+              selected={sel}
+              rangeCells={dur / 30}
+              onSelect={select}
+              label="Choose a court and start time"
+              disabled={offline || !!pu}
+              now={now}
+            />
           ) : (
             <SlotList
               kind="court"

@@ -18,14 +18,9 @@ import {
 import { Facts, Group, Task } from "@/components/kit/app"
 import { CoachArt } from "@/components/kit/brand-art"
 import { MiniCalendar } from "@/components/kit/calendar"
-import {
-  Banner,
-  EmptyState,
-  FormField,
-  LoadingBlock,
-  SelectBox,
-} from "@/components/kit/ui"
+import { Banner, FormField, LoadingBlock, SelectBox } from "@/components/kit/ui"
 import { SlotHoldTimer } from "@/components/reserve/common"
+import { NoticeTile, ReserveNotice } from "@/components/reserve/empty"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { bookPT, moveReservation } from "@/lib/actions"
@@ -36,6 +31,7 @@ import {
   PT_PACKS,
   PT_PRICE,
 } from "@/lib/data/catalog"
+import { useEmptyPreview } from "@/lib/empty-preview"
 import { cancelNote, ptCreditsLeft, ptOpenSlots } from "@/lib/engine"
 import {
   dateKey,
@@ -58,6 +54,8 @@ type Pay = "credit" | "intro" | "single" | "pack"
 
 function Inner({ slug }: { slug: string }) {
   const { s, me, hh, now } = useApp()
+  // TEMPORARY design review switch (lib/empty-preview.ts).
+  const preview = useEmptyPreview()
   const router = useRouter()
   const sp = useSearchParams()
   const offline = useOffline()
@@ -419,7 +417,7 @@ function Inner({ slug }: { slug: string }) {
                 </div>
                 <div className="gap-s p-m flex min-w-0 flex-col rule-t @lg:rule-l @lg:rule-t-0">
                   <h3 className="font-heavy">{fmtDayLong(day)}</h3>
-                  {daySlots.length ? (
+                  {daySlots.length && preview !== "notimes" ? (
                     <div
                       role="radiogroup"
                       aria-label="Open times"
@@ -439,10 +437,11 @@ function Inner({ slug }: { slug: string }) {
                       />
                     </div>
                   ) : (
-                    <EmptyState
-                      title={`No open times with ${first1} this day.`}
-                      body="Pick a day with a dot, or try another coach."
-                      action={
+                    <ReserveNotice
+                      art={<NoticeTile id="stopwatch" />}
+                      title={`No open times with ${first1} this day`}
+                      line="Pick a day with a dot, or try another coach."
+                      actions={
                         <Button
                           size="sm"
                           variant="outline"
@@ -451,7 +450,6 @@ function Inner({ slug }: { slug: string }) {
                           See other coaches
                         </Button>
                       }
-                      className="px-zero py-zero"
                     />
                   )}
                 </div>
@@ -593,7 +591,7 @@ function TimeList({
               aria-checked={value === t}
               onClick={() => onChoose(t)}
               className={cn(
-                "tabular px-s flex min-h-11 w-full items-center justify-center corner-s font-medium hairline ring-input sm:min-h-9",
+                "tabular px-s corner-s flex min-h-11 w-full items-center justify-center font-medium hairline ring-input sm:min-h-9",
                 value === t
                   ? "bg-night text-night-foreground"
                   : "bg-card hover:bg-muted"

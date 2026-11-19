@@ -18,7 +18,7 @@ redesign.
 | Shell | `components/app/` | `shell.tsx`, `household-gate.tsx`, `banners.tsx`, `global-dialogs.tsx` | `StoreGate`, `FRAME`, `ShellSkeleton`, `PaymentBanners`, `GlobalDialogs` |
 | Home | `components/today/` | `today-page.tsx` | default `TodayPage` (`/today`) |
 | Book | `components/book/`, `components/schedule/`, `components/booking/`, `components/reserve/`, `components/training/` | `book-tabs.tsx`, `schedule-page.tsx`, `class-row.tsx`, `session-action.tsx`, `session-detail.tsx`, `courts-page.tsx`, `lanes-page.tsx`, `kids-page.tsx`, `training-page.tsx` | `BookTabs`, `BookHeader`, `ScheduleRow`, `SessionAction` |
-| Bookings | `components/bookings/` | `bookings-page.tsx` | default `BookingsPage` (`/bookings`, `?tab=past`, `?who=`) |
+| Bookings | `components/bookings/` | `bookings-page.tsx`, `upcoming.tsx`, `past.tsx`, `booking-panel.tsx` | default `BookingsPage` (`/bookings`, `?tab=past`, `?who=`) |
 | Clubs | `components/clubs/` | `clubs-page.tsx`, `club-detail.tsx`, `club-map.tsx` | default `ClubsPage` |
 | Account | `components/account/`, `components/membership/`, `components/billing/`, `components/family/`, `components/guest/`, `components/settings/` | `account-page.tsx` and the detail pages | default `AccountPage` (`/account`), `SettingsShell` |
 | Inbox, Help, Pass, Progress | `components/inbox/`, `components/app/`, `components/progress/` | `inbox.tsx`, `help.tsx`, `pass-page.tsx`, `progress-page.tsx` | |

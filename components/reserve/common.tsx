@@ -1,9 +1,7 @@
 "use client"
-import Link from "next/link"
 import { useEffect, useId, useRef, useState } from "react"
 import { NumberField } from "@/components/graphical"
-import { Lock, Minus, Plus } from "@/components/icons"
-import { Card } from "@/components/kit/app"
+import { Minus, Plus } from "@/components/icons"
 import { Modal } from "@/components/kit/overlays"
 import { Button } from "@/components/ui/button"
 import { fmtCountdown, MIN } from "@/lib/time"
@@ -159,42 +157,5 @@ export function Stepper({
         </p>
       ) : null}
     </NumberField.Root>
-  )
-}
-
-/** The card a member sees when the plan does not include what the tab books. */
-export function LockedCard({
-  title,
-  body,
-  cta = "Compare plans",
-  href = "/membership/change-plan",
-  className,
-}: {
-  title: string
-  body: string
-  cta?: string
-  href?: string
-  className?: string
-}) {
-  return (
-    <Card className={cn("max-w-xl", className)}>
-      <div className="gap-m flex flex-col items-start">
-        <div className="gap-s flex items-start">
-          <Lock
-            className="mt-xxs size-4 shrink-0 text-muted-foreground sm:mt-xxs"
-            aria-hidden="true"
-          />
-          <div className="min-w-0">
-            <h2 className="text-body-m font-heavy text-balance sm:text-body-s">
-              {title}
-            </h2>
-            <p className="text-body-m text-pretty text-muted-foreground sm:text-body-s">
-              {body}
-            </p>
-          </div>
-        </div>
-        <Button render={<Link href={href} />}>{cta}</Button>
-      </div>
-    </Card>
   )
 }

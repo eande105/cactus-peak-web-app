@@ -4,17 +4,12 @@ import { useRouter } from "next/navigation"
 import { useState } from "react"
 import { useApp } from "@/components/app/use-app"
 import { BookPage } from "@/components/book/book-tabs"
-import { SuccessPanel } from "@/components/booking/success-panel"
-import { Toggle } from "@/components/graphical"
 import {
-  Check,
-  ChildHead,
-  Moon,
-  Sun,
-  Sunrise,
-  Sunset,
-  TriangleAlert,
-} from "@/components/icons"
+  FilterBar,
+  FilterGroup,
+  FilterSheet,
+} from "@/components/book/filter-bar"
+import { SuccessPanel } from "@/components/booking/success-panel"
 import {
   Card,
   Facts,
@@ -24,21 +19,24 @@ import {
   Split,
 } from "@/components/kit/app"
 import { Modal } from "@/components/kit/overlays"
-import {
-  Banner,
-  CheckRow,
-  EmptyState,
-  PersonAvatar,
-  RadioList,
-} from "@/components/kit/ui"
+import { CheckRow, Segmented, SelectBox, SwitchRow } from "@/components/kit/ui"
 import { BookingList } from "@/components/reserve/booking-list"
+import {
+  NoticeTile,
+  ReserveNotice,
+  soonerPlan,
+} from "@/components/reserve/empty"
+import { BlockPicker } from "@/components/reserve/kids-blocks"
+import { KIDS_DAY_LIMIT, WhosGoing } from "@/components/reserve/kids-children"
+import { KidsGate } from "@/components/reserve/kids-gate"
 import { PanelError, QuietLine } from "@/components/reserve/parts"
 import { DayStrip } from "@/components/schedule/day-strip"
 import { Button } from "@/components/ui/button"
 import { useMedia } from "@/hooks/use-media"
-import { bookKidsClub, joinKidsWaitlist } from "@/lib/actions"
+import { addRemind, bookKidsClub, joinKidsWaitlist } from "@/lib/actions"
 import { announce } from "@/lib/announce"
 import { CLUB_BY_SLUG, CLUBS } from "@/lib/data/catalog"
+import { useEmptyPreview } from "@/lib/empty-preview"
 import {
   householdMembers,
   KIDS_BLOCKS,
@@ -47,7 +45,9 @@ import {
   windowDays,
 } from "@/lib/engine"
 import {
+  addDays,
   atTime,
+  dateKey,
   dayStart,
   fmtDay,
   fmtDayLong,
@@ -59,135 +59,35 @@ import {
 import { toast } from "@/lib/toast"
 import type { Booking } from "@/lib/types"
 import { useOffline } from "@/lib/ui-state"
-import { cn } from "@/lib/utils"
 
-const BLOCK_ICON = { k1: Sunrise, k2: Sun, k3: Sunset, k4: Moon } as const
-function BlockIcon({ id }: { id: string }) {
-  const I = BLOCK_ICON[id as keyof typeof BLOCK_ICON]
-  return <I className="size-4 shrink-0" aria-hidden="true" />
-}
-
-/**
- * One zone of the booking block: a title, one short fact at the right, and the choice.
- * The zone stays visible but cannot be used until the choice before it is set.
- */
-function Zone({
-  title,
-  need,
-  hint,
-  id,
-  children,
-  className,
-}: {
-  title: string
-  /** What the member must set first. When it is given, the zone content is inert. */
-  need?: string
-  hint?: string
-  id?: string
-  children: React.ReactNode
-  className?: string
-}) {
-  const side = need ?? hint
-  return (
-    <section
-      id={id}
-      aria-label={title}
-      className={cn("gap-s p-m flex min-w-0 flex-col", className)}
-    >
-      <div className="gap-s flex items-baseline justify-between">
-        <h2 className="shrink-0 text-body-m font-heavy sm:text-body-s">
-          {title}
-        </h2>
-        {side ? (
-          <p className="min-w-0 text-right text-body-m text-muted-foreground sm:text-body-s">
-            {side}
-          </p>
-        ) : null}
-      </div>
-      <div
-        inert={!!need}
-        className={cn("gap-s flex min-w-0 flex-col", need && "opacity-50")}
-      >
-        {children}
-      </div>
-    </section>
-  )
-}
-
-/** One kids club block as a full-width time button: the time at the left, the spots left at the right. */
-function BlockButton({
-  id,
-  time,
-  left,
-  need,
-  on,
-  past,
-  onPress,
-  className,
-}: {
-  id: string
-  time: string
-  left: number
-  /** How many children need a spot. */
-  need: number
-  on: boolean
-  past: boolean
-  onPress: () => void
-  className?: string
-}) {
-  const short = left < need
-  return (
-    <Toggle
-      pressed={on}
-      disabled={past}
-      onPressedChange={onPress}
-      className={cn(
-        "gap-s flex min-h-11 w-full items-center justify-between text-left text-body-m whitespace-normal sm:text-body-s",
-        className
-      )}
-    >
-      <span className="gap-xs flex min-w-0 items-center">
-        <BlockIcon id={id} />
-        <span className="tabular font-medium">{time}</span>
-        {on ? (
-          <Check className="size-4 shrink-0" aria-label="Selected" />
-        ) : null}
-      </span>
-      <span
-        className={cn(
-          "tabular gap-xs flex shrink-0 items-center",
-          left < 3 && !on && "text-warning"
-        )}
-      >
-        {left === 0 ? (
-          "Full"
-        ) : short ? (
-          `${left} left. Need ${need}.`
-        ) : left < 3 ? (
-          <>
-            <TriangleAlert className="size-4 shrink-0" aria-hidden="true" />
-            Only {left} left
-          </>
-        ) : (
-          `${left} spots left`
-        )}
-        {short ? <span className="underline">Join waitlist</span> : null}
-      </span>
-    </Toggle>
-  )
-}
+type When = "any" | "morning" | "evening"
+// Mornings are the two blocks before noon, evenings the two after 4 pm (KIDS_BLOCKS).
+const WHEN_OPTIONS: { value: When; label: string }[] = [
+  { value: "any", label: "Any time" },
+  { value: "morning", label: "Mornings" },
+  { value: "evening", label: "Evenings" },
+]
 
 export default function KidsClubPage() {
-  const { s, hh, now, club: viewing } = useApp()
+  const { s, me, hh, now, club: viewing } = useApp()
+  // TEMPORARY design review switch (lib/empty-preview.ts).
+  const preview = useEmptyPreview()
   const router = useRouter()
   const offline = useOffline()
-  const wide = useMedia("(min-width: 1024px)")
+  // The booking summary is a column beside the blocks from 1280px (Split bp="xl"); below, a sheet opened by Review.
+  const wide = useMedia("(min-width: 1280px)")
   // The pass is scanned at the front desk from a phone, so it is offered on a touch device only.
   const onTouch = useMedia("(pointer: coarse)")
   const kidsClubs = CLUBS.filter((c) => c.kidsClub)
   const [clubSlug, setClubSlug] = useState(
     CLUB_BY_SLUG[viewing].kidsClub ? viewing : kidsClubs[0].slug
   )
+  // The filters, as on Book › Classes. `clubsF` is the kids clubs shown (one by default); `clubSlug` stays the one club
+  // the booking is for, and moves to another club when the member picks a block there.
+  const [clubsF, setClubsF] = useState<string[]>([clubSlug])
+  const [when, setWhen] = useState<When>("any")
+  const [roomOnly, setRoomOnly] = useState(false)
+  const [filtersOpen, setFiltersOpen] = useState(false)
   const members = householdMembers(s, hh.id)
   const children = members.filter((m) => m.role === "child")
   const adults = members.filter(
@@ -214,21 +114,12 @@ export default function KidsClubPage() {
   const sunday = parts(day).dow === 0
   const opens = opensAt(day + 9 * HOUR, win)
   const notOpen = now < opens
+  const sooner = notOpen ? soonerPlan(hh.plan, day, now) : undefined
   const club = CLUB_BY_SLUG[clubSlug]
-  if (!children.length)
+  if (!children.length || preview === "gate")
     return (
       <BookPage>
-        <Card>
-          <EmptyState
-            object="playground"
-            title="No children on your plan yet."
-            action={
-              <Button size="sm" render={<Link href="/family/add" />}>
-                Add a child
-              </Button>
-            }
-          />
-        </Card>
+        <KidsGate />
       </BookPage>
     )
   const chosen = children.filter((c) => kids.includes(c.id))
@@ -319,6 +210,93 @@ export default function KidsClubPage() {
     setReview(false)
     setError("")
   }
+  // The blocks a club shows under the filters: the time of day, and room for every chosen child.
+  const need = Math.max(1, kids.length)
+  const visible = (slug: string) =>
+    KIDS_BLOCKS.filter(
+      (k) =>
+        (when === "any" || (when === "morning") === k.from < "12:00") &&
+        (!roomOnly || kidsLeft(s, slug, day, k) >= need)
+    )
+  const roomIn = (slug: string) =>
+    KIDS_BLOCKS.filter(
+      (k) => atTime(day, k.from) > now && kidsLeft(s, slug, day, k) >= need
+    ).length
+  const shownClubs = kidsClubs.filter((c) => clubsF.includes(c.slug))
+  const shownBlocks = shownClubs.reduce((n, c) => n + visible(c.slug).length, 0)
+  const countText = `${shownBlocks} ${shownBlocks === 1 ? "block" : "blocks"}`
+  // On a narrow row the club stays on the page, so the badge counts the rest. Wide, the time of day is on the page too.
+  const phoneCount = (when !== "any" ? 1 : 0) + (roomOnly ? 1 : 0)
+  const moreCount = roomOnly ? 1 : 0
+  const filtered = when !== "any" || roomOnly || clubsF.length > 1
+  const clearFilters = () => {
+    setWhen("any")
+    setRoomOnly(false)
+    setClubsF([clubSlug])
+  }
+  const goClub = (slug: string) => {
+    if (slug === clubSlug) return
+    setClubSlug(slug)
+    setBlocks([])
+  }
+  const toggleClub = (slug: string) => {
+    const next = clubsF.includes(slug)
+      ? clubsF.filter((x) => x !== slug)
+      : [...clubsF, slug]
+    if (!next.length) return
+    setClubsF(next)
+    if (!next.includes(clubSlug)) goClub(next[0])
+  }
+  // A block at another club moves the booking there, so the summary always names one club.
+  const pick = (slug: string, id: string) => {
+    if (slug !== clubSlug) {
+      setClubSlug(slug)
+      setError("")
+      setBlocks([id])
+      setReview(true)
+      return
+    }
+    toggleBlock(id)
+  }
+  // A child's kids club blocks on the chosen day, for the 2-a-day rule.
+  const blocksOn = (id: string, on = day) =>
+    s.bookings.filter(
+      (b) =>
+        b.kind === "kids" &&
+        b.memberId === id &&
+        b.status === "booked" &&
+        dayStart(b.start) === dayStart(on)
+    ).length
+  const toggleKid = (id: string, on: boolean) => {
+    const next = on ? [...kids, id] : kids.filter((x) => x !== id)
+    setKids(next)
+    // A block stays chosen only while it has a spot for each child.
+    setBlocks((b) =>
+      b.filter((bid) => {
+        const k = KIDS_BLOCKS.find((x) => x.id === bid)!
+        return next.length > 0 && kidsLeft(s, clubSlug, day, k) >= next.length
+      })
+    )
+  }
+  const clubSelect = (className: string) => (
+    <SelectBox
+      label="Kids club"
+      hideLabel
+      className={className}
+      value={clubsF.length === 1 ? clubsF[0] : "several"}
+      onChange={(v) => {
+        if (v === "several") return
+        setClubsF([v])
+        goClub(v)
+      }}
+      options={[
+        ...(clubsF.length > 1
+          ? [{ value: "several", label: `${clubsF.length} kids clubs` }]
+          : []),
+        ...kidsClubs.map((c) => ({ value: c.slug, label: c.name })),
+      ]}
+    />
+  )
   const panel = ready ? (
     <Panel
       title="Kids club"
@@ -385,175 +363,178 @@ export default function KidsClubPage() {
         label="Your kids club booking"
         open={ready && (wide || review)}
         onClose={() => setReview(false)}
+        collapseEmpty
+        bp="xl"
         panel={panel}
         empty={
-          <PanelEmpty icon={ChildHead}>
-            {kids.length ? "Pick a day and a block." : "Choose a child first."}
+          <PanelEmpty object="playground">
+            {kids.length ? "Pick a block." : "Choose a child first."}
           </PanelEmpty>
         }
       >
-        <div className="@container">
-          <div className="grid corner-m raised @2xl:grid-cols-[minmax(0,5fr)_minmax(0,6fr)]">
-            <div className="flex min-w-0 flex-col [&>*+*]:rule-t">
-              <Zone id="k1" title="Club">
-                <RadioList
-                  label="Club"
-                  value={clubSlug}
-                  onChange={(v) => {
-                    if (v === clubSlug) return
-                    setClubSlug(v)
-                    setBlocks([])
-                  }}
-                  options={CLUBS.map((c) => ({
-                    value: c.slug,
-                    label: c.name,
-                    disabled: !c.kidsClub,
-                    help: (
-                      <span className="tabular">
-                        {c.kidsClub
-                          ? `${kidsLeft(s, c.slug, day, KIDS_BLOCKS[0])} spots left at ${fmtTime(atTime(day, "08:00"))}`
-                          : "No kids club"}
-                      </span>
-                    ),
-                  }))}
-                />
-              </Zone>
+        {/* The first step: who is going. It comes before the filters, because it decides which blocks have room. */}
+        <WhosGoing
+          childList={children}
+          value={kids}
+          onChange={toggleKid}
+          blocksOn={blocksOn}
+          dayWord={fmtDay(day).split(",")[0]}
+        />
 
-              <Zone id="k2" title="Children">
-                <ul className="gap-s flex flex-col" aria-label="Children">
-                  {children.map((c) => (
-                    <li
-                      key={c.id}
-                      className="gap-s flex min-w-0 items-center justify-between"
-                    >
-                      <CheckRow
-                        className="min-w-0"
-                        checked={kids.includes(c.id)}
-                        disabled={!c.allergyNotes}
-                        onChange={(on) => {
-                          const next = on
-                            ? [...kids, c.id]
-                            : kids.filter((x) => x !== c.id)
-                          setKids(next)
-                          // A block stays chosen only while it has a spot for each child.
-                          setBlocks((b) =>
-                            b.filter((id) => {
-                              const k = KIDS_BLOCKS.find((x) => x.id === id)!
-                              return (
-                                next.length > 0 &&
-                                kidsLeft(s, clubSlug, day, k) >= next.length
-                              )
-                            })
-                          )
-                        }}
-                      >
-                        <span className="gap-s flex min-w-0 items-center">
-                          <PersonAvatar
-                            name={c.firstName}
-                            hue={c.hue}
-                            size={28}
-                            className="shrink-0"
-                          />
-                          <span className="min-w-0">
-                            <span className="block truncate font-medium">
-                              {c.firstName}, {c.age}
-                            </span>
-                            <span className="block text-body-m font-regular text-muted-foreground sm:text-body-s">
-                              {c.allergyNotes
-                                ? "Allergy notes on file"
-                                : "Needs allergy notes"}
-                            </span>
-                          </span>
-                        </span>
-                      </CheckRow>
-                      {c.allergyNotes ? null : (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          render={<Link href={`/family/${c.id}`} />}
-                        >
-                          Add notes
-                        </Button>
-                      )}
-                    </li>
-                  ))}
-                </ul>
-              </Zone>
-            </div>
-
-            <div className="flex min-w-0 flex-col rule-t @2xl:rule-l @2xl:rule-t-0 [&>*+*]:rule-t">
-              <Zone
-                id="k3"
-                title="Day"
-                need={kids.length ? undefined : "Choose a child first"}
-                hint={fmtDay(day)}
-              >
-                <DayStrip
-                  selected={day}
-                  onSelect={(d) => {
-                    setDay(d)
-                    setBlocks([])
-                  }}
-                  now={now}
-                  windowDays={win}
-                  label="Choose a day"
-                />
-              </Zone>
-
-              <Zone
-                id="k4"
-                title="Block"
-                need={kids.length ? undefined : "Choose a child first"}
-                hint="Up to 2 blocks for each child"
-                className="flex-1"
-              >
-                {sunday ? (
-                  <Banner tone="neutral" title="Closed Sundays">
-                    Kids club runs Monday to Saturday.
-                  </Banner>
-                ) : notOpen ? (
-                  <Banner
-                    tone="neutral"
-                    title={`${fmtDay(day)} kids club opens ${fmtDay(opens)} at ${fmtTime(opens)}`}
-                  />
-                ) : (
-                  // biome-ignore lint/a11y/useSemanticElements: labelled list of toggle buttons, a fieldset would change the list markup and styles
-                  <ul
-                    className="gap-xs flex flex-col"
-                    role="group"
-                    aria-label="Kids club blocks"
-                  >
-                    {KIDS_BLOCKS.map((k) => (
-                      <li key={k.id}>
-                        <BlockButton
-                          id={k.id}
-                          time={fmtRange(
-                            atTime(day, k.from),
-                            atTime(day, k.to)
-                          )}
-                          left={kidsLeft(s, clubSlug, day, k)}
-                          need={kids.length}
-                          on={blocks.includes(k.id)}
-                          past={atTime(day, k.from) < now}
-                          onPress={() =>
-                            kidsLeft(s, clubSlug, day, k) < kids.length
-                              ? setWl(k.id)
-                              : toggleBlock(k.id)
-                          }
-                        />
-                      </li>
-                    ))}
-                  </ul>
-                )}
-                {ready && !wide ? (
-                  <Button className="w-full" onClick={() => setReview(true)}>
-                    Review booking
-                  </Button>
-                ) : null}
-              </Zone>
-            </div>
-          </div>
+        <div className="gap-s flex flex-col">
+          {/* The toolbar every Book tab shares (FilterBar): the kids club and the time of day, then the drawer. */}
+          <FilterBar
+            club={clubSelect}
+            quick={
+              <SelectBox
+                label="Time of day"
+                hideLabel
+                className="min-w-0 flex-none"
+                value={when}
+                onChange={setWhen}
+                options={WHEN_OPTIONS}
+              />
+            }
+            onFilters={() => setFiltersOpen(true)}
+            count={phoneCount}
+            more={moreCount}
+            active={filtered}
+            onClear={clearFilters}
+            day={(stepper) => (
+              <DayStrip
+                stepper={stepper}
+                selected={day}
+                onSelect={(d) => {
+                  setDay(d)
+                  setBlocks([])
+                  // A child who already has 2 blocks on the new day cannot go again that day.
+                  setKids((k) =>
+                    k.filter((id) => blocksOn(id, d) < KIDS_DAY_LIMIT)
+                  )
+                }}
+                now={now}
+                windowDays={win}
+                label="Choose a day"
+              />
+            )}
+          />
         </div>
+
+        <section
+          aria-labelledby="kids-day"
+          className="gap-m flex min-w-0 flex-col"
+        >
+          <div className="gap-s px-xs flex min-h-9 items-center justify-between text-body-s">
+            <h2 id="kids-day" className="min-w-0 truncate font-heavy">
+              {fmtDayLong(day)}
+            </h2>
+            {sunday || notOpen ? null : kids.length ? (
+              <span className="tabular shrink-0 text-muted-foreground">
+                Up to 2 blocks for each child
+              </span>
+            ) : (
+              <span className="shrink-0 text-warning">
+                Choose a child to pick a block
+              </span>
+            )}
+          </div>
+          {sunday || preview === "sunday" ? (
+            <ReserveNotice
+              art={<NoticeTile id="sun" />}
+              title="Closed Sundays"
+              line="Kids club runs Monday to Saturday."
+              actions={
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => {
+                    setDay(addDays(day, 1))
+                    setBlocks([])
+                  }}
+                >
+                  See Monday
+                </Button>
+              }
+            />
+          ) : notOpen || preview === "notopen" ? (
+            <ReserveNotice
+              art={<NoticeTile id="schedule" />}
+              title={`${fmtDay(day)} kids club opens ${fmtDay(opens)} at ${fmtTime(opens)}`}
+              line={
+                sooner
+                  ? `On ${sooner.name}, blocks open ${sooner.window} days ahead, so this day is open now.`
+                  : "Blocks open at the same time as classes."
+              }
+              actions={
+                <>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => {
+                      addRemind(`kids-${dateKey(day)}`)
+                      toast({ title: "We'll remind you" })
+                    }}
+                  >
+                    Remind me
+                  </Button>
+                  {sooner && me.role === "primary" ? (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      render={<Link href="/membership/change-plan" />}
+                    >
+                      Compare plans
+                    </Button>
+                  ) : null}
+                </>
+              }
+            />
+          ) : shownBlocks ? (
+            // The clubs and their blocks in one picker, laid out like the court and lane tables (BlockPicker).
+            <Card>
+              <BlockPicker
+                clubs={shownClubs}
+                blocks={KIDS_BLOCKS.filter(
+                  (k) =>
+                    when === "any" || (when === "morning") === k.from < "12:00"
+                )}
+                cell={(slug, k) => {
+                  const left = kidsLeft(s, slug, day, k)
+                  return { left, shown: !roomOnly || left >= need }
+                }}
+                day={day}
+                now={now}
+                need={kids.length}
+                homeClub={me.homeClub}
+                picked={{ club: clubSlug, ids: blocks }}
+                onPick={(slug, k) => {
+                  // Not enough spots for every child: the waitlist, at this block's club.
+                  if (kidsLeft(s, slug, day, k) < kids.length) {
+                    goClub(slug)
+                    setWl(k.id)
+                  } else pick(slug, k.id)
+                }}
+                disabled={!kids.length}
+              />
+            </Card>
+          ) : (
+            <ReserveNotice
+              art={<NoticeTile id="playground" />}
+              title="No blocks match these filters"
+              line={`${kidsClubs.length} clubs run kids club on ${fmtDayLong(day).split(",")[0]}.`}
+              actions={
+                <Button size="sm" variant="outline" onClick={clearFilters}>
+                  Clear filters
+                </Button>
+              }
+            />
+          )}
+          {ready && !wide ? (
+            <Button className="w-full" onClick={() => setReview(true)}>
+              Review booking
+            </Button>
+          ) : null}
+        </section>
 
         <BookingList
           id="your-kids-club"
@@ -598,6 +579,63 @@ export default function KidsClubPage() {
           </Button>
         </div>
       </Modal>
+
+      <FilterSheet
+        open={filtersOpen}
+        onOpenChange={setFiltersOpen}
+        label="Kids club filters"
+        show={`Show ${countText}`}
+      >
+        <search className="flex flex-col" aria-label="Kids club filters">
+          <FilterGroup title="Kids clubs">
+            {kidsClubs.map((c) => (
+              <CheckRow
+                key={c.slug}
+                checked={clubsF.includes(c.slug)}
+                onChange={() => toggleClub(c.slug)}
+              >
+                <span className="flex min-w-0 flex-col">
+                  <span>
+                    {c.name}
+                    {c.slug === me.homeClub ? (
+                      <span className="text-primary"> · Your club</span>
+                    ) : null}
+                  </span>
+                  <span className="tabular text-muted-foreground">
+                    {roomIn(c.slug)} of {KIDS_BLOCKS.length} blocks have room
+                  </span>
+                </span>
+              </CheckRow>
+            ))}
+          </FilterGroup>
+          <FilterGroup title="Time of day">
+            <Segmented
+              label="Time of day"
+              value={when}
+              onChange={setWhen}
+              size="sm"
+              options={WHEN_OPTIONS}
+            />
+          </FilterGroup>
+          <FilterGroup title="Availability">
+            <SwitchRow checked={roomOnly} onChange={setRoomOnly}>
+              {kids.length > 1
+                ? `Room for all ${kids.length} children`
+                : "Blocks with room only"}
+            </SwitchRow>
+          </FilterGroup>
+          <div className="pt-s rule-t">
+            <Button
+              variant="ghost"
+              size="sm"
+              disabled={!filtered}
+              onClick={clearFilters}
+            >
+              Clear all
+            </Button>
+          </div>
+        </search>
+      </FilterSheet>
     </BookPage>
   )
 }

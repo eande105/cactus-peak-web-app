@@ -8,7 +8,7 @@ import {
   categoryObject,
   ObjectCrop,
 } from "@/components/brand/graphics"
-import { Check, Clock3, TriangleAlert } from "@/components/icons"
+import { Check, Clock3, Lock, TriangleAlert } from "@/components/icons"
 import { ArtFrame } from "@/components/kit/brand-art"
 import { CategoryBadge } from "@/components/kit/category"
 import { CapacityIndicator, IntensityRibs } from "@/components/kit/ribs"
@@ -33,17 +33,21 @@ export function ClassTags({ se }: { se: Session }) {
 /**
  * One class in the day list: the time and length, the category tile, the class with its coach, room and level, the
  * spots left, and the one action. The name opens the class sheet. On a phone the action is in the sheet, so the row
- * stays one tap.
+ * stays one tap, and the row is compact: smaller text, the coach and room without the level, and a short pill
+ * ("8 left", "Full").
  */
 export function ScheduleRow({
   se,
   showClub,
   query = "",
+  inset,
   className,
 }: {
   se: Session
   showClub?: boolean
   query?: string
+  /** `m` when the row sits in a card, so the time lines up with the card's title. */
+  inset?: "s" | "m"
   className?: string
 }) {
   const { s, me, now } = useApp()
@@ -68,14 +72,24 @@ export function ScheduleRow({
     own ??
     (st.state === "started" ? (
       <StatusPill>Started</StatusPill>
-    ) : st.state === "paused" || st.state === "restricted" ? (
+    ) : st.state === "restricted" ? (
+      // A lock, so a plan or age rule reads as a lock and not as a tag.
+      <StatusPill icon={Lock} className={PILL_ICON}>
+        {st.label}
+      </StatusPill>
+    ) : st.state === "paused" ? (
       <StatusPill>{st.label}</StatusPill>
     ) : left === 0 ? (
-      <StatusPill>Full · {waitCount(s, se)} waiting</StatusPill>
+      <StatusPill>
+        Full
+        {/* A phone keeps the pill short so the name has room; the words stay for screen readers. */}
+        <span className="max-sm:sr-only"> · {waitCount(s, se)} waiting</span>
+      </StatusPill>
     ) : (
       <StatusPill tone={left <= 5 ? "warning" : "outline"}>
         {left <= 5 ? <span className="sr-only">Low. </span> : null}
-        {left} {unit} left
+        {left}
+        <span className="max-sm:sr-only"> {unit}</span> left
       </StatusPill>
     ))
   // A member acts on a row when a spot is free, a waitlist is open, a held spot waits, or a booking is theirs.
@@ -88,6 +102,8 @@ export function ScheduleRow({
   return (
     <ListRow
       heading
+      compact
+      inset={inset}
       className={className}
       quiet={st.state === "started"}
       href={`/schedule/${se.id}${query}`}
@@ -101,14 +117,20 @@ export function ScheduleRow({
       }
       title={se.name}
       sr={`, ${fmtTime(se.start)}, ${inst?.name}`}
-      line={[
-        inst?.name,
-        se.studio,
-        showClub ? CLUB_BY_SLUG[se.clubSlug].name : "",
-        LEVEL_WORDS[se.intensity],
-      ]
-        .filter(Boolean)
-        .join(" · ")}
+      line={
+        <>
+          {[
+            inst?.name,
+            se.studio,
+            showClub ? CLUB_BY_SLUG[se.clubSlug].name : "",
+          ]
+            .filter(Boolean)
+            .join(" · ")}
+          {/* On a phone the line keeps to the coach and the room, so it fits on one line; the class panel and screen
+              readers still have the level. */}
+          <span className="max-sm:sr-only"> · {LEVEL_WORDS[se.intensity]}</span>
+        </>
+      }
       end={
         <>
           <span className={cn("tabular", own && control && "md:hidden")}>
@@ -119,7 +141,7 @@ export function ScheduleRow({
               {/* The list has many of these, so the control is the small size and "Book" is an outline. */}
               <SessionAction
                 se={se}
-                className="!min-h-7 !min-w-28 !px-s !py-xxs"
+                className="!px-s !py-xxs !min-h-7 !min-w-28"
               />
             </span>
           ) : null}
@@ -147,7 +169,7 @@ export function CompactClass({
       scroll={false}
       className={cn(
         `cat-${se.category}`,
-        "relative flex min-w-52 flex-col gap-xxs",
+        "gap-xxs relative flex min-w-52 flex-col",
         "py-xxs pr-xs pl-s",
         "text-body-m",
         "before:absolute before:inset-y-0 before:left-0 before:w-1 before:bg-cat",
@@ -160,9 +182,9 @@ export function CompactClass({
         {label ?? fmtDowTime(se.start)}
       </span>
       <span className="font-heavy">{se.name}</span>
-      <span className="flex items-center gap-xs text-muted-foreground">
+      <span className="gap-xs flex items-center text-muted-foreground">
         {st.state === "booked" || st.state === "late-cancel" ? (
-          <span className="inline-flex items-center gap-xxs text-foreground">
+          <span className="gap-xxs inline-flex items-center text-foreground">
             <Check
               className="size-4 shrink-0 text-success"
               aria-hidden="true"
@@ -170,12 +192,12 @@ export function CompactClass({
             Booked
           </span>
         ) : bk?.status === "waitlisted" ? (
-          <span className="inline-flex items-center gap-xxs text-foreground">
+          <span className="gap-xxs inline-flex items-center text-foreground">
             <Clock3 className="size-4 shrink-0" aria-hidden="true" />
             Waitlist {bk.position === 2 ? "2nd" : `#${bk.position}`}
           </span>
         ) : st.state === "hold" ? (
-          <span className="inline-flex items-center gap-xxs text-warning">
+          <span className="gap-xxs inline-flex items-center text-warning">
             <TriangleAlert className="size-4 shrink-0" aria-hidden="true" />
             Spot held
           </span>
@@ -203,11 +225,11 @@ export function SuggestedCard({ se }: { se: Session }) {
       scroll={false}
       className={cn(
         `cat-${se.category}`,
-        "group flex min-w-64 snap-start flex-col gap-xs"
+        "group gap-xs flex min-w-64 snap-start flex-col"
       )}
     >
       <ArtFrame
-        className="aspect-[16/9] corner-s"
+        className="corner-s aspect-[16/9]"
         art={
           <ObjectCrop
             id={categoryObject[se.category]}
@@ -223,7 +245,7 @@ export function SuggestedCard({ se }: { se: Session }) {
         <span
           className={cn(
             "tabular absolute right-2 bottom-2",
-            "corner-xs px-xs py-xxs",
+            "px-xs py-xxs corner-xs",
             "text-body-xs",
             "bg-photo-band text-night-foreground"
           )}
@@ -248,7 +270,7 @@ export function SuggestedCard({ se }: { se: Session }) {
         <p className="text-body-m font-heavy group-hover:underline">
           {se.name}
         </p>
-        <p className="mt-xxs flex flex-wrap items-center gap-x-s gap-y-xxs">
+        <p className="mt-xxs gap-x-s gap-y-xxs flex flex-wrap items-center">
           <CategoryBadge id={se.category} />
           <IntensityRibs level={se.intensity} category={se.category} />
         </p>

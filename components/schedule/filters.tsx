@@ -1,8 +1,9 @@
 "use client"
 import { useState } from "react"
 import { useApp } from "@/components/app/use-app"
-import { Collapsible, Toggle } from "@/components/graphical"
-import { ChevronDown, Lock, Minus, Plus } from "@/components/icons"
+import { FilterGroup as Group } from "@/components/book/filter-bar"
+import { Toggle } from "@/components/graphical"
+import { Lock, Minus, Plus } from "@/components/icons"
 import { CategoryBadge } from "@/components/kit/category"
 import { CheckRow, Segmented, SelectBox, SwitchRow } from "@/components/kit/ui"
 import { Button } from "@/components/ui/button"
@@ -15,45 +16,6 @@ import {
   type TimeBand,
 } from "@/lib/schedule-filters"
 import type { CategoryId } from "@/lib/types"
-import { cn } from "@/lib/utils"
-
-function Group({
-  title,
-  children,
-  defaultOpen = true,
-  className,
-}: {
-  title: string
-  children: React.ReactNode
-  defaultOpen?: boolean
-  className?: string
-}) {
-  return (
-    <Collapsible.Root
-      defaultOpen={defaultOpen}
-      className={cn("py-s rule-t first:pt-zero first:shadow-none", className)}
-    >
-      <Collapsible.Trigger
-        className={cn(
-          "group flex min-h-9 w-full items-center justify-between",
-          "!p-zero",
-          "text-body-m font-heavy",
-          "!bg-transparent !shadow-none",
-          "sm:text-body-s"
-        )}
-      >
-        {title}
-        <ChevronDown
-          className="size-4 shrink-0 transition-transform group-data-[panel-open]:rotate-180 motion-reduce:transition-none"
-          aria-hidden="true"
-        />
-      </Collapsible.Trigger>
-      <Collapsible.Content className="pt-xs">
-        <div className="gap-xs flex flex-col">{children}</div>
-      </Collapsible.Content>
-    </Collapsible.Root>
-  )
-}
 
 const BANDS: { value: TimeBand; label: string; sr: string }[] = [
   { value: "early", label: "Early", sr: "Early, 4:30 to 7 am" },

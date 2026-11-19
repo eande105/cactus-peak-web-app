@@ -9,8 +9,8 @@
  * graphical/role-map.json:
  *
  *   shadcn and app color roles (:root, used as bg-card, text-muted-foreground, ring-border, ...):
- *   background = neutral-3 (Sand; dark neutral-1), foreground = neutral-10 (Ink), sheet = neutral-2,
- *   card and popover = neutral-1 (dark neutral-3), muted = neutral-4,
+ *   background = neutral-4 (Sand; dark neutral-1), foreground = neutral-10 (Ink), sheet = neutral-3 (dark neutral-1),
+ *   card = neutral-2 (dark neutral-3), popover = neutral-1 (dark neutral-3), muted = neutral-4,
  *   border = neutral-5 (dark neutral-4, Caliche), primary = color-1 (Arizona Copper) with on-color-1 text,
  *   primary-hover and link = color-2 (Copper Deep), secondary = neutral-3, muted-foreground = neutral-8,
  *   accent = color-1 transparent, destructive = error, destructive-hover = color-4 (Chili), input = neutral-6,
@@ -25,6 +25,11 @@
  * Figures: Archivo (font-data, .tabular). Each role's weights come from its font class: font-regular, font-medium,
  * font-heavy.
  */
+/* ui-sdk adds its behavior CSS (hidden popups, the sheet dim) in this layer when a component mounts. It is declared
+   first, so it has the lowest priority and the app's styles win over it. Graphical styles the components; the app
+   does not load ui-sdk's optional default look (@ui-sdk/core/web.css), because that sheet styles shared data-slot
+   names (button, select-trigger, table, ...) and Graphical's --ui-* variables. */
+@layer ui-sdk;
 /* Cascade layers, in order. graphical-editor holds the development editor's stylesheet (graphical/editor.css): above
    the preflight reset, below the app's components and utilities. */
 @layer theme, base, graphical-editor, components, utilities;
@@ -44,12 +49,32 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  --background: var(--neutral-3);
+  /* Surfaces step down from the white of floating menus and popovers, so a menu or a popover never takes the color
+     of the content it opens over: the Sand page (neutral-4), the content sheet (neutral-3), cards (neutral-2), and
+     menus and popovers in white (neutral-1, the theme's own popup fill). Dialogs and sheets take the card fill, so a
+     menu inside one stands off it too. */
+  --background: var(--neutral-4);
   --foreground: var(--neutral-10);
-  --card: var(--neutral-1);
+  --card: var(--neutral-2);
   --card-foreground: var(--neutral-10);
   --popover: var(--neutral-1);
   --popover-foreground: var(--neutral-10);
+  /* What lifts a floating surface off the content behind it: an outline in the text color at 14% (firmer than a
+     card's 10%), a tight contact shadow and a soft wide one. --overlay-drop is the same shadow as a filter, for a
+     popup that writes its own box-shadow. */
+  --overlay-edge: color-mix(in oklab, var(--foreground) 14%, transparent);
+  --overlay-shadow:
+    0 0 0 var(--border-s) var(--overlay-edge),
+    0 1px 3px color-mix(in oklab, var(--neutral-10) 8%, transparent),
+    0 12px 32px -8px color-mix(in oklab, var(--neutral-10) 18%, transparent);
+  --overlay-drop: drop-shadow(
+      0 1px 2px color-mix(in oklab, var(--neutral-10) 8%, transparent)
+    )
+    drop-shadow(
+      0 10px 16px color-mix(in oklab, var(--neutral-10) 12%, transparent)
+    );
+  /* The dim behind a modal dialog or sheet: Ink at 40%. */
+  --scrim: color-mix(in oklab, var(--neutral-10) 40%, transparent);
   --primary: var(--color-1);
   --primary-foreground: var(--on-color-1);
   --secondary: var(--neutral-3);
@@ -82,14 +107,30 @@
   --link: var(--color-2);
   /* The content sheet beside the sidebar. Cards sit on it one step lighter (light) or one step raised (dark), so a
      card always reads as a surface of its own. */
-  --sheet: var(--neutral-2);
+  --sheet: var(--neutral-3);
 }
 /* Dark mode: the page is the dark canvas and surfaces are raised from it, each one step lighter: the sheet, then cards
    and popovers, then muted fills inside a card. On Saguaro Night the text stays light. */
 .dark {
   --background: var(--neutral-1);
+  /* The theme's popups are neutral-2 in dark mode, so the sheet steps down to the canvas (its ring still draws its
+     edge) and a menu or a popover differs from both the sheet and the cards (neutral-3). */
+  --sheet: var(--neutral-1);
   --card: var(--neutral-3);
   --popover: var(--neutral-3);
+  /* On the dark canvas a shadow is the darkest neutral, and stronger, or it does not show. */
+  --overlay-shadow:
+    0 0 0 var(--border-s) var(--overlay-edge),
+    0 1px 3px color-mix(in oklab, var(--neutral-1) 40%, transparent),
+    0 12px 32px -8px color-mix(in oklab, var(--neutral-1) 70%, transparent);
+  --overlay-drop: drop-shadow(
+      0 1px 2px color-mix(in oklab, var(--neutral-1) 40%, transparent)
+    )
+    drop-shadow(
+      0 10px 16px color-mix(in oklab, var(--neutral-1) 60%, transparent)
+    );
+  /* The dark canvas at 70%: Ink would read as a grey film on a dark page. */
+  --scrim: color-mix(in oklab, var(--neutral-1) 70%, transparent);
   --muted: var(--neutral-4);
   --border: var(--neutral-4);
   --night-foreground: var(--neutral-10);
@@ -184,7 +225,7 @@
   --color-night-rule: var(--night-rule);
   --color-link: var(--color-2);
   --color-focus: var(--color-3);
-  --color-sheet: var(--neutral-2);
+  --color-sheet: var(--sheet);
 
   --color-dawn: var(--dawn);
   --color-photo-band: var(--photo-band);
@@ -451,8 +492,9 @@
   .bg-night :focus-visible {
     outline-color: var(--night-foreground);
   }
-  /* A link in page content is underlined at rest, so colour alone never marks an action. */
-  main :where(a, button).text-link {
+  /* A link in page content is underlined at rest, so colour alone never marks an action. A styled Button
+     (data-slot="button") can use text-link for its color only: its fill and edge already mark it as an action. */
+  main :where(a, button).text-link:not([data-slot="button"]) {
     text-decoration-line: underline;
     text-decoration-thickness: from-font;
     text-underline-offset: 4px;
@@ -460,7 +502,7 @@
     transition: text-decoration-color var(--motion-duration)
       var(--motion-easing);
   }
-  main :where(a, button).text-link:hover {
+  main :where(a, button).text-link:not([data-slot="button"]):hover {
     text-decoration-color: currentColor;
   }
   /* Grid items may shrink below their content width, so a scrolling row never widens the page. */
@@ -723,5 +765,44 @@
   }
   .brand-map .maplibregl-cooperative-gesture-screen {
     @apply bg-night/70 text-body-m;
+  }
+}
+
+/* Overlays stand off the content behind them. The surfaces behind them carry the color step (see --background,
+   --sheet and --card); these rules add the outline and the soft shadow. None needs !important:
+   - Menus, popovers, dialogs, sheets and toasts draw box-shadow: var(--ui-shadow) and background-color:
+     var(--ui-background), both set by the runtime's base-layer rules, so components-layer values win by layer order.
+   - The select popup writes its own box-shadow inline. Its outline and its positioner's filter are not inline, so
+     they draw its edge and shadow instead. */
+@layer components {
+  :is(
+    .ui-popup.ui-menu,
+    .ui-popup.ui-popover,
+    .ui-popup.ui-modal,
+    .ui-popup.ui-drawer,
+    .ui-popup.ui-toast
+  ) {
+    --ui-shadow: var(--overlay-shadow);
+  }
+  /* Dialogs and sheets hold menus and selects of their own (the class panel's "More actions"), so they take the card
+     fill and the white menus stand off them too. Their fill also reads --ui-background. */
+  :is(.ui-popup.ui-modal, .ui-popup.ui-drawer) {
+    --ui-background: var(--card);
+  }
+  :is(.themed-select-popup, .combobox-popover) {
+    outline: var(--border-s) solid var(--overlay-edge);
+  }
+  :is(.themed-select-positioner, .combobox-positioner) {
+    filter: var(--overlay-drop);
+  }
+  /* A menu, select or popover can open inside a dialog or sheet (the class panel's "More actions", the filter sheet's
+     selects). The runtime stacks positioners at 40, under dialogs and sheets at 51, so those menus opened out of
+     sight. 55 puts them over dialogs and sheets and still under toasts at 60. */
+  :is(.ui-positioner, .themed-select-positioner, .combobox-positioner) {
+    z-index: 55;
+  }
+  /* The dim behind a modal dialog or sheet. */
+  .ui-backdrop {
+    background-color: var(--scrim);
   }
 }

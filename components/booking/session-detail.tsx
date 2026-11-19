@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
 import { useApp } from "@/components/app/use-app"
 import { calEventFor, SessionAction } from "@/components/booking/session-action"
+import { type ClubId, ClubSet } from "@/components/brand/graphics"
 import { ClubMap } from "@/components/clubs/club-map"
 import { Menu } from "@/components/graphical"
 import { ChevronDown } from "@/components/icons"
@@ -18,6 +19,7 @@ import {
   PersonAvatar,
   SelectBox,
 } from "@/components/kit/ui"
+import { ReserveNotice } from "@/components/reserve/empty"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -218,6 +220,12 @@ export function SessionDetail({
     }
   })
 
+  // A plan lock (Trailhead at another club) gets the plan notice, not a disabled button: what the plan covers, the
+  // way to Ridge and the way back to the home club. Other locks (ages) keep the disabled button and its reason.
+  const planLock =
+    st.state === "restricted" && st.link?.href === "/membership/change-plan"
+  const home = CLUB_BY_SLUG[me.homeClub]
+
   // The time is shown once, under the title. Each fact is listed once, in the details.
   const when = `${fmtDayLong(se.start)} · ${fmtRange(se.start, se.end)}`
   const cancelBy = fmtTime(se.start - 2 * HOUR)
@@ -368,17 +376,44 @@ export function SessionDetail({
         />
       ) : null}
       {/* `SessionAction` aligns its parts to the right in `bar` mode. This block is a column, so they stretch. */}
-      <div className="flex flex-col [&>div]:items-stretch [&>div]:justify-between [&>div]:text-left">
-        <SessionAction
-          featured
-          se={se}
-          forId={who.id}
-          bar
-          showReason
-          className="w-full"
-          onBooked={(bk) => setConfirmed(bk)}
+      {planLock ? (
+        <ReserveNotice
+          art={<ClubSet club={se.clubSlug as ClubId} className="w-28" />}
+          title={`${club.name} classes come with Ridge`}
+          line={st.reason}
+          actions={
+            <>
+              {me.role === "primary" ? (
+                <Button
+                  size="sm"
+                  render={<Link href="/membership/change-plan" />}
+                >
+                  Switch to Ridge
+                </Button>
+              ) : null}
+              <Button
+                size="sm"
+                variant="outline"
+                render={<Link href={`/schedule?club=${home.slug}`} />}
+              >
+                See {home.name} classes
+              </Button>
+            </>
+          }
         />
-      </div>
+      ) : (
+        <div className="flex flex-col [&>div]:items-stretch [&>div]:justify-between [&>div]:text-left">
+          <SessionAction
+            featured
+            se={se}
+            forId={who.id}
+            bar
+            showReason
+            className="w-full"
+            onBooked={(bk) => setConfirmed(bk)}
+          />
+        </div>
+      )}
       {ruleLine ? (
         <p className="tabular text-body-m text-muted-foreground sm:text-body-s">
           {ruleLine}

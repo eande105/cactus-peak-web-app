@@ -2,6 +2,7 @@
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import type { ReactNode } from "react"
+import { GymObject, type ObjectId } from "@/components/brand/graphics"
 import {
   ArrowLeft,
   ChevronRight,
@@ -221,6 +222,8 @@ export function Toolbar({
  * `flush` removes the body padding so rows or a table can run to the card edge.
  * `display` sets the title in the display face, one step larger, with the header's top inset to match: the card
  * header of a dashboard such as Home. Without it the title stays a small heavy label.
+ * `compact` is for a card that holds compact rows (`ListRow compact`): below `sm`, the head's title and description and
+ * the footer step down one size with the rows, so the head does not tower over them.
  */
 export function Card({
   title,
@@ -230,6 +233,7 @@ export function Card({
   flush,
   tone = "default",
   display,
+  compact,
   as: T = "section",
   children,
   className,
@@ -244,6 +248,7 @@ export function Card({
   footer?: ReactNode
   flush?: boolean
   display?: boolean
+  compact?: boolean
   tone?: "default" | "bare" | "night" | "plain"
   as?: "section" | "div" | "aside"
   children?: ReactNode
@@ -276,7 +281,7 @@ export function Card({
             bare
               ? "pb-xs"
               : display
-                ? "pt-m pb-xs"
+                ? cn("pt-m pb-xs", compact && "max-sm:pt-s")
                 : description
                   ? "py-s"
                   : "pt-xs"
@@ -287,14 +292,25 @@ export function Card({
               className={cn(
                 "font-heavy text-pretty",
                 display
-                  ? "font-display-wide text-body-l"
-                  : "text-body-m sm:text-body-s"
+                  ? cn(
+                      "font-display-wide text-body-l",
+                      compact && "max-sm:text-body-m"
+                    )
+                  : cn(
+                      "text-body-m sm:text-body-s",
+                      compact && "max-sm:text-body-s"
+                    )
               )}
             >
               {title}
             </h2>
             {description ? (
-              <p className="text-body-m text-pretty text-muted-foreground sm:text-body-s">
+              <p
+                className={cn(
+                  "text-body-m text-pretty text-muted-foreground sm:text-body-s",
+                  compact && "max-sm:text-body-s"
+                )}
+              >
                 {description}
               </p>
             ) : null}
@@ -324,6 +340,7 @@ export function Card({
           className={cn(
             "gap-xs py-s flex items-center justify-end rule-t",
             !bare && tone !== "night" && "corner-b-m bg-muted/50",
+            compact && "max-sm:py-xs max-sm:[&_a]:text-body-s",
             pad
           )}
         >
@@ -372,26 +389,39 @@ export function CardFooterLink({
 }
 
 /**
- * A row of numbers that belong together. One bordered block with hairlines between the tiles, not a card for each
- * number. The columns follow the width of the block, not the viewport.
+ * A row of numbers that belong together. The columns follow the width of the row, not the viewport.
+ * - `joined` (default): one bordered block with hairlines between the tiles, not a card for each number.
+ * - `cards`: a separate raised card for each number, as Home's top row and its Streak card, on the plain card fill.
+ *   Use it where each number is a thing of its own with its own actions (a pack, its expiry, the next session).
  */
 export function Stats({
   children,
+  variant = "joined",
+  dense,
   className,
 }: {
   children: ReactNode
+  variant?: "joined" | "cards"
+  /**
+   * Two columns from the narrowest width, as Home's prompts, so a summary row over a list stays short on a phone.
+   * With an odd count the first tile spans the row, because it leads.
+   */
+  dense?: boolean
   className?: string
 }) {
   return (
     <div className={cn("@container", className)}>
       <dl
         className={cn(
-          "grid grid-cols-1 gap-px overflow-hidden shadow-s hairline ring-foreground/10",
-          "corner-m",
-          "bg-border",
-          "@md:grid-cols-2 @3xl:grid-flow-col @3xl:grid-cols-[repeat(auto-fit,minmax(0,1fr))]",
-          // In two columns, an odd count would leave an empty cell that shows the divider fill.
-          "@md:@max-3xl:[&>*:last-child:nth-child(odd)]:col-span-2"
+          "grid @3xl:grid-flow-col @3xl:grid-cols-[repeat(auto-fit,minmax(0,1fr))]",
+          dense
+            ? "grid-cols-2 @max-3xl:[&>*:first-child:nth-last-child(odd)]:col-span-2"
+            : // In two columns, an odd count would leave an empty cell (the divider fill, or a gap): the last tile spans.
+              "grid-cols-1 @md:grid-cols-2 @md:@max-3xl:[&>*:last-child:nth-child(odd)]:col-span-2",
+          variant === "joined"
+            ? "gap-px overflow-hidden corner-m bg-border shadow-s hairline ring-foreground/10"
+            : // Each tile is a raised card of its own, without the joined block's tint.
+              "gap-s @3xl:gap-m [&>*]:corner-m [&>*]:raised [&>*]:bg-none"
         )}
       >
         {children}
@@ -403,12 +433,15 @@ export function Stats({
 /** One number with its label: visits this week, passes left, the next charge. Put it inside `Stats`. */
 export function Stat({
   label,
+  icon: Icon,
   value,
   hint,
   actions,
   className,
 }: {
   label: string
+  /** A Copper icon before the label, as on Home's cards. */
+  icon?: IconComponent
   value: ReactNode
   hint?: ReactNode
   /** Small buttons for the thing the tile shows, in one row under the text. */
@@ -422,8 +455,11 @@ export function Stat({
         className
       )}
     >
-      <dt className="truncate text-body-m text-muted-foreground sm:text-body-s">
-        {label}
+      <dt className="gap-xs flex min-w-0 items-center text-body-m text-muted-foreground sm:text-body-s">
+        {Icon ? (
+          <Icon aria-hidden="true" className="size-4.5 shrink-0 text-primary" />
+        ) : null}
+        <span className="truncate">{label}</span>
       </dt>
       <dd className="tabular font-display-wide truncate text-body-xl font-heavy">
         {value}
@@ -434,7 +470,10 @@ export function Stat({
         </dd>
       ) : null}
       {actions ? (
-        <dd className="gap-xs pt-xs flex flex-wrap items-center">{actions}</dd>
+        // At the foot of the tile, so the actions line up when the tiles stretch to one height.
+        <dd className="gap-xs pt-xs mt-auto flex flex-wrap items-center">
+          {actions}
+        </dd>
       ) : null}
     </div>
   )
@@ -582,6 +621,8 @@ export function Split({
   onClose,
   label,
   empty,
+  collapseEmpty,
+  bp = "lg",
   className,
 }: {
   children: ReactNode
@@ -590,25 +631,39 @@ export function Split({
   onClose: () => void
   label: string
   empty?: ReactNode
+  /**
+   * The side column only while `open`: before a pick, the content takes the full width (a slot table needs it), and
+   * `empty` is not drawn.
+   */
+  collapseEmpty?: boolean
+  /** From which width the panel is a column beside the content. Below it, the panel is a sheet. */
+  bp?: "lg" | "xl"
   className?: string
 }) {
-  const wide = useMedia("(min-width: 1024px)")
+  const wide = useMedia(
+    bp === "xl" ? "(min-width: 1280px)" : "(min-width: 1024px)"
+  )
+  const column = wide && (open || !collapseEmpty)
   return (
     <div
       className={cn(
-        "gap-l grid items-start lg:grid-cols-[minmax(0,1fr)_22.5rem]",
+        "gap-l grid items-start",
+        column &&
+          (bp === "xl"
+            ? "xl:grid-cols-[minmax(0,1fr)_22.5rem]"
+            : "lg:grid-cols-[minmax(0,1fr)_22.5rem]"),
         className
       )}
     >
       <div className="gap-l flex min-w-0 flex-col">{children}</div>
-      {wide ? (
+      {column ? (
         <aside
           aria-label={label}
           className="sticky top-[calc(var(--bar-h)+var(--space-m))] max-h-[calc(100dvh-var(--bar-h)-2*var(--space-m))] overflow-y-auto corner-m raised"
         >
           {open ? panel : empty}
         </aside>
-      ) : (
+      ) : wide ? null : (
         <SideSheet
           open={open}
           onOpenChange={(o) => !o && onClose()}
@@ -676,14 +731,21 @@ export function Panel({
 /** What the panel column shows when nothing is selected. */
 export function PanelEmpty({
   icon: Icon,
+  object,
   children,
 }: {
   icon?: IconComponent
+  /** The gym object of what the panel will hold, in a cut tile, as on the empty screens. Wins over `icon`. */
+  object?: ObjectId
   children: ReactNode
 }) {
   return (
     <div className="gap-s p-xl flex min-h-60 flex-col items-center justify-center text-center text-body-m text-pretty text-muted-foreground sm:text-body-s">
-      {Icon ? <Icon className="size-4 shrink-0" aria-hidden="true" /> : null}
+      {object ? (
+        <GymObject id={object} cut className="size-14 shrink-0" />
+      ) : Icon ? (
+        <Icon className="size-4 shrink-0" aria-hidden="true" />
+      ) : null}
       <p className="max-w-[24ch]">{children}</p>
     </div>
   )

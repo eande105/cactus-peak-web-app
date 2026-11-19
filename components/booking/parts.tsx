@@ -29,7 +29,7 @@ export function DateTile({
     <div
       aria-hidden="true"
       className={cn(
-        "tabular flex shrink-0 flex-col items-center justify-center corner-s bg-muted/60 text-center",
+        "tabular corner-s flex shrink-0 flex-col items-center justify-center bg-muted/60 text-center",
         big ? "size-16" : "size-12",
         className
       )}
@@ -142,7 +142,12 @@ export function ListRows({
   return (
     <ul
       aria-label={label}
-      className={cn("flex flex-col rule-t [&>li+li]:rule-t", className)}
+      className={cn(
+        "flex flex-col rule-t [&>li+li]:rule-t",
+        // A selected first row hides the list's top rule, as a selected row hides the rules beside it (ListRow).
+        "[&:has(>li[data-selected]:first-child)]:!shadow-none",
+        className
+      )}
     >
       {children}
     </ul>
@@ -153,6 +158,8 @@ export function ListRows({
  * One row: the lead (a time, a date), an optional mark (the category tile), the strong name with one quiet line,
  * and the status and controls at the right. `href` or `onSelect` makes the whole row the hit area. A control in `end`
  * stays on top of that hit area. `selected` tints the row whose detail panel is open. `quiet` is for a row that is over.
+ * `compact` is for a long list a member scans on a phone: below `sm`, the text is one step smaller, the time column
+ * and the gaps are narrower, so the name and its facts fit beside the status.
  */
 export function ListRow({
   lead,
@@ -167,6 +174,7 @@ export function ListRow({
   quiet,
   heading,
   inset = "s",
+  compact,
   className,
 }: {
   lead?: ReactNode
@@ -177,12 +185,14 @@ export function ListRow({
   line?: ReactNode
   end?: ReactNode
   href?: string
-  onSelect?: () => void
+  /** Gets the click, so a caller can anchor a popover to the row (`event.currentTarget.closest("li")`). */
+  onSelect?: (event: React.MouseEvent<HTMLButtonElement>) => void
   selected?: boolean
   quiet?: boolean
   /** The name is an `h3`. Use it in a long list that a member scans by heading. */
   heading?: boolean
   inset?: "s" | "m"
+  compact?: boolean
   className?: string
 }) {
   const Name = heading ? "h3" : "p"
@@ -196,19 +206,31 @@ export function ListRow({
   )
   return (
     <li
+      data-selected={selected || undefined}
       className={cn(
         "gap-s relative flex min-h-16 items-center",
         "py-s",
         "text-body-m",
         "sm:text-body-s",
         inset === "m" ? "px-m" : "px-s",
-        (href || onSelect) && "hover:bg-muted/40",
-        selected && "bg-accent rule-l rule-primary",
+        compact &&
+          "max-sm:gap-xs max-sm:py-xs max-sm:min-h-14 max-sm:text-body-s",
+        (href || onSelect) && !selected && "hover:bg-muted/40",
+        // The selection is a rounded tile inset from the row's edges, not an edge or a full-bleed fill: a row in a
+        // rounded card would carry a fill into the card's corners and an edge that meets no other edge.
+        // - The inset is the same 4 px (`--space-xxs`) on all four sides. With the tile's `corner-s` (10 px) it is
+        //   concentric with a card's `corner-m` (14 px) when the row is the last one in the card.
+        // - The hairlines above and below the row are hidden, so a rule does not run 4 px from the tile.
+        // - `isolate` keeps the tile behind the row's content and above the card.
+        selected &&
+          "before:corner-s isolate !shadow-none before:absolute before:inset-1 before:-z-10 before:bg-accent [&+li]:!shadow-none",
         className
       )}
     >
       {lead !== undefined ? (
-        <div className="w-18 shrink-0 sm:w-16">{lead}</div>
+        <div className={cn("w-18 shrink-0 sm:w-16", compact && "max-sm:w-15")}>
+          {lead}
+        </div>
       ) : null}
       {mark}
       <div className="min-w-0 flex-1">

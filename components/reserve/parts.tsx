@@ -11,7 +11,14 @@ import { fmtTime } from "@/lib/time"
 import { cn } from "@/lib/utils"
 
 /** How a slot looks. The grid cell, the phone chip and the legend all use the same set. */
-export type SlotTone = "free" | "selected" | "mine" | "taken" | "short" | "idle"
+export type SlotTone =
+  | "free"
+  | "selected"
+  | "mine"
+  | "taken"
+  | "short"
+  | "past"
+  | "idle"
 
 const TONE: Record<SlotTone, string> = {
   free: "bg-success-subtle",
@@ -19,6 +26,10 @@ const TONE: Record<SlotTone, string> = {
   mine: "bg-accent text-accent-foreground",
   taken: "hatch opacity-60",
   short: "bg-success-subtle opacity-40",
+  // A start time that has gone by: a plain muted chip, quieter than the green free slots, as Kids club dims a block
+  // that has begun. A blank cell would read as "not part of the grid". Dark mode's muted step is lighter than the free
+  // tint, so it drops to 40% there.
+  past: "bg-muted dark:bg-muted/40",
   idle: "",
 }
 
@@ -27,6 +38,7 @@ export function slotTone(info: CellInfo, selected?: boolean): SlotTone {
   if (info.status === "open") return "free"
   if (info.status === "mine") return "mine"
   if (info.status === "short") return "short"
+  if (info.status === "past") return "past"
   if (
     info.status === "taken" ||
     info.status === "full" ||
@@ -68,7 +80,7 @@ export function Swimmers({
   className?: string
 }) {
   return (
-    <span className={cn("flex gap-xxs", className)} aria-hidden="true">
+    <span className={cn("gap-xxs flex", className)} aria-hidden="true">
       {[0, 1].map((k) => (
         <span
           key={k}
@@ -161,7 +173,7 @@ export function SlotCell({
               ? "inset-0"
               : range
                 ? cn("inset-y-0.5", RANGE[range])
-                : "inset-0.5 corner-s",
+                : "corner-s inset-0.5",
             TONE[tone],
             tone === "free" &&
               "hairline ring-transparent" +
@@ -249,10 +261,12 @@ export function SlotChip({
         if (live) onSelect(row.id, slot)
       }}
       className={cn(
-        "px-s relative grid min-h-11 min-w-20 place-items-center overflow-hidden corner-s text-body-m font-medium hairline ring-transparent",
+        "px-s corner-s relative grid min-h-11 min-w-20 place-items-center overflow-hidden text-body-m font-medium hairline ring-transparent",
         tone === "taken" || tone === "idle"
           ? "text-muted-foreground"
-          : TONE[tone],
+          : tone === "past"
+            ? cn(TONE.past, "text-muted-foreground")
+            : TONE[tone],
         live && !selected && "hover:ring-success",
         className
       )}
@@ -271,7 +285,10 @@ export function SlotChip({
   )
 }
 
-/** The key for the slot grid: one quiet line under it. `note` is a rule in words at the end of the line. */
+/**
+ * The key for the slot grid, in the head of the table's card (its `action`), so it takes no row of its own: small
+ * swatches with their words, then `note`, a rule in words. It wraps under the title when the head is narrow.
+ */
 export function SlotLegend({
   items,
   note,
@@ -285,7 +302,7 @@ export function SlotLegend({
     <ul
       aria-label="Legend"
       className={cn(
-        "gap-x-m gap-y-xs flex flex-wrap items-center text-body-m text-muted-foreground sm:text-body-s",
+        "gap-x-s gap-y-xxs flex flex-wrap items-center text-body-s text-muted-foreground",
         className
       )}
     >
@@ -294,7 +311,7 @@ export function SlotLegend({
           <span
             aria-hidden="true"
             className={cn(
-              "grid h-4 w-6 shrink-0 place-items-center overflow-hidden corner-xs",
+              "grid h-3 w-5 shrink-0 place-items-center overflow-hidden corner-xs",
               TONE[it.tone]
             )}
           >
@@ -305,7 +322,7 @@ export function SlotLegend({
           {it.label}
         </li>
       ))}
-      {note ? <li>{note}</li> : null}
+      {note ? <li className="text-pretty">{note}</li> : null}
     </ul>
   )
 }
@@ -333,7 +350,7 @@ export function QuietLine({
       <Icon
         aria-hidden="true"
         className={cn(
-          "mt-xxs size-4 shrink-0 sm:mt-xxs",
+          "mt-xxs sm:mt-xxs size-4 shrink-0",
           tone === "warning" && "text-warning"
         )}
       />

@@ -10,7 +10,7 @@
     {
       "variable": "--background",
       "token": {
-        "light": "neutral-3",
+        "light": "neutral-4",
         "dark": "neutral-1"
       },
       "format": "css",
@@ -31,7 +31,7 @@
     {
       "variable": "--card",
       "token": {
-        "light": "neutral-1",
+        "light": "neutral-2",
         "dark": "neutral-3"
       },
       "format": "css",
@@ -336,7 +336,10 @@
     },
     {
       "variable": "--sheet",
-      "token": "neutral-2",
+      "token": {
+        "light": "neutral-3",
+        "dark": "neutral-1"
+      },
       "format": "css",
       "defined": {
         "path": "app/globals.css",
