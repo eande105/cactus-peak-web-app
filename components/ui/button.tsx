@@ -4,7 +4,7 @@ import { Loader2Icon } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 
-// Button, converted to the Graphical assignments in gui/components/cactus-peak-athletic/button.md.
+// Button, converted to the Graphical assignments.
 // Common to every variant: radius s, ui font, label type role (size s, line s, heavy), 1px edge drawn as a shadow,
 // hover and focus states, 1px press movement, small motion. Variants:
 //   primary    fill color-1, padding s / l (44px tall), hover fill color-6 plus elevation s

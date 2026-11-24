@@ -5,7 +5,7 @@ import type { ComponentProps } from "react"
 
 import { Accordion as GraphicalAccordion } from "@/components/graphical"
 
-// Accordion on the Graphical Accordion (gui/components/cactus-peak-athletic/accordion.md). The runtime owns the
+// Accordion on the Graphical Accordion. The runtime owns the
 // trigger, panel and content parts, the item divider, the grid-row panel motion and the right chevron that turns
 // 90 degrees when open. The exports keep the shadcn names that the screens already use.
 function Accordion(props: ComponentProps<typeof GraphicalAccordion.Root>) {

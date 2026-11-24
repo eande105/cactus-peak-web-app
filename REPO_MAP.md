@@ -46,7 +46,7 @@ The interface layer has no tests. Check it with `pnpm typecheck`, `pnpm lint` an
 
 ## iOS parity parts and routes (Nov 22, 2026)
 
-- `components/kit/detail.tsx`: shared detail parts ported from the iOS app (`SectionHeader`, `FactRow`, `StatStrip`/`StatItem`, `DateBadge`, `RowPill`, `BookingTile`, `HeroHeader`, `PassCard`, `CancelPolicy`, `BookingListRow`, `OutcomeMark`). Presentational: plain props, never `useApp()`. Plan: `IOS-PARITY-PLAN.md`.
+- `components/kit/detail.tsx`: shared detail parts ported from the iOS app (`SectionHeader`, `FactRow`, `StatStrip`/`StatItem`, `DateBadge`, `RowPill`, `BookingTile`, `HeroHeader`, `PassCard`, `CancelPolicy`, `BookingListRow`, `OutcomeMark`). Presentational: plain props, never `useApp()`.
 - `app/(app)/bookings/[bookingId]/page.tsx` → `components/bookings/booking-page.tsx` → `booking-detail.tsx`: the booking as a pass. On `lg+` the Bookings page shows the same `BookingDetail` in a `Split` panel (`?open=<id>`); on phones `?open=` redirects to the route.
 - `app/(app)/bookings/strikes/page.tsx` → `components/bookings/strikes-page.tsx`: late cancels and the rules.
 - `components/reserve/slot-rows.tsx`: phone slot rows (time column, court tiles, lane strips, kids meter); `lg+` keeps `SlotGrid`.

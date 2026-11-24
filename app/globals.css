@@ -298,7 +298,7 @@
   );
 }
 
-/* Graphical draws a visible edge as a zero-blur shadow, never a native border (gui/foundations.md).
+/* Graphical draws a visible edge as a zero-blur shadow, never a native border.
    `hairline` is that edge at the theme's small stroke. Set its color with a ring color utility (ring-input,
    ring-accent) and add an elevation with shadow-s. It composes with both. Graphical's own `edge-*` classes set a
    native border width; use them only where a real border is meant, such as a dashed rule. */
@@ -336,7 +336,7 @@
     var(--tw-shadow, 0 0 #0000);
 }
 
-/* Dividers are one-sided inset shadows (gui/foundations.md), never native borders. Each side is its own
+/* Dividers are one-sided inset shadows, never native borders. Each side is its own
    custom property, and every rule utility draws all four, so sides combine (rule-t with md:rule-l) and turn off
    per breakpoint (sm:rule-t-0) the way border sides do. The properties do not inherit, so a parent's rule never
    reaches its children. The colour is --border; rule-strong, rule-night and rule-heavy change it on the same

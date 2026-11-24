@@ -28,7 +28,7 @@ import type { CategoryId } from "@/lib/types"
 import { cn } from "@/lib/utils"
 
 /**
- * Presentational parts ported from the iOS detail screens (IOS-PARITY-PLAN.md, section 1).
+ * Presentational parts ported from the iOS detail screens.
  * They take plain props and never read `useApp()`: a page adapts its data to them.
  */
 

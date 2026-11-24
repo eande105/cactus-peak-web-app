@@ -6,7 +6,7 @@ import { Popover as GraphicalPopover } from "@/components/graphical"
 import { cn } from "@/lib/utils"
 
 // The shadcn popover (base-nova: Popover, PopoverTrigger, PopoverContent, PopoverHeader, PopoverTitle,
-// PopoverDescription) on the Graphical Popover (gui/components/cactus-peak-athletic/popover.md). The theme owns the
+// PopoverDescription) on the Graphical Popover. The theme owns the
 // surface: the card fill, the edge as a box shadow, the M elevation, M corners and padding, the S gap, the width caps
 // and the scroll at the available height. shadcn's own surface classes are left out, so they do not compete with it.
 

@@ -3,12 +3,12 @@
 - **The account theme is the source; each app installs a copy.** The theme saved on graphicalui.com is the source
   of truth. Each app keeps its installed copy in `graphical/themes/graphical.json`, because the editor and the
   installer read the theme from the app's own `graphical/` folder. Nothing checks that a copy still matches the
-  account: after a change on the website, install it in both apps (GUI.md, "This project").
+  account: after a change on the website, install it in both apps.
 - **Dark mode is this app's own.** The marketing site is light only, so the shared theme's dark values were tuned
   here. The surface and Saguaro Night text roles change step with the mode (`app/globals.css`). In dark mode
   `--night` is the theme's color-5 (#3e6b55), not the fixed #1c3328 the app used before.
 - **Converted with the check-mode conversion.** `npx graphical-install` refits the theme's units to the app, so this
-  app was converted with `graphical/install/convert.mjs` instead (see GUI.md). Off-scale spacing snapped to the
+  app was converted with `graphical/install/convert.mjs` instead. Off-scale spacing snapped to the
   nearest step (for example `p-0.5` to `p-xxs`, `mt-5` to `mt-l`).
 - **App layouts, not website layouts.** The shell is a Sand sidebar beside one white content sheet. A screen sits on
   the sheet and uses the parts in `components/kit/app.tsx`. Lists and tables sit on the sheet with rules between
@@ -23,8 +23,7 @@
   `moveReservation` does not use. `EmptyState` has no small size. `NoticeRow` and the dialogs in `global-dialogs.tsx` keep their older markup.
 
 - **Stubs.** Card payments, push, Wallet, photo upload, the calendar feed, passkeys, "Download my data" and PDF
-  invoices are simulated (see BUILD-NOTES.md).
-- **BUILD-NOTES.md is out of date** for navigation: it describes the sidebar and 14 destinations.
+  invoices are simulated.
 - **The password check is a browser-side gate.** `StepUpGate` (`components/app/step-up.tsx`) draws the password
   form in place of Billing and the plan flows when the last check is older than 30 minutes. The shell applies it
   by path (`needsStepUp`). The time of the last check is in `localStorage`, so the gate does not stop a member who
