@@ -74,8 +74,8 @@ export function PopularTimesChart({
       </div>
       {table ? (
         <PairTable
-          caption={`Typical busyness by hour, ${DOW[dow]}`}
-          head={["Hour", "Typical busyness"]}
+          caption={`Typical crowd level by hour, ${DOW[dow]}`}
+          head={["Hour", "Typical crowd level"]}
           rows={hours.map((x) => ({
             key: x.h,
             label: <span className="tabular">{hourLabel(x.h)}</span>,
@@ -86,7 +86,7 @@ export function PopularTimesChart({
         <div className="gap-xs flex flex-col">
           <div
             role="img"
-            aria-label={`Typical busyness by hour on ${DAY_NAMES[dow]}. Busiest ${range(peak)}`}
+            aria-label={`Typical crowd level by hour on ${DAY_NAMES[dow]}. Busiest ${range(peak)}`}
             className="gap-xxs pt-m flex h-32 items-end rule-b"
           >
             {hours.map((x) => {
@@ -100,7 +100,7 @@ export function PopularTimesChart({
                     <span
                       className={cn(
                         "absolute -top-3 left-1/2",
-                        "corner-xs px-xxs",
+                        "px-xxs corner-xs",
                         "text-body-xs font-medium",
                         "-translate-x-1/2 bg-foreground text-background"
                       )}

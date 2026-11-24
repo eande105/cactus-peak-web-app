@@ -2,6 +2,7 @@ import type {
   CategoryId,
   ClassType,
   Club,
+  ClubArea,
   Coach,
   Instructor,
   PlanId,
@@ -32,6 +33,7 @@ export interface CatalogData {
   ptPacks: PtPack[]
   prices: { adultAddon: number; childAddon: number; ptSingle: number }
   clubs: Club[]
+  areas: ClubArea[]
   instructors: Instructor[]
   coaches: Coach[]
   classTypes: Record<string, ClassType>
@@ -61,6 +63,10 @@ export let PT_PRICE = 0
 export const PT_PACKS: PtPack[] = []
 export const CLUBS: Club[] = []
 export const CLUB_BY_SLUG: Record<string, Club> = {}
+export const CLUB_AREAS: ClubArea[] = []
+/** The crowd-level areas of one club, in display order. */
+export const areasOf = (slug: string): ClubArea[] =>
+  CLUB_AREAS.filter((a) => a.clubSlug === slug)
 export const INSTRUCTORS: Instructor[] = []
 export const INSTRUCTOR_BY_ID: Record<string, Instructor> = {}
 export const COACHES: Coach[] = []
@@ -103,6 +109,10 @@ export function hydrateCatalog(data: CatalogData) {
   refillMap(
     CLUB_BY_SLUG,
     data.clubs.map((c) => [c.slug, c])
+  )
+  refill(
+    CLUB_AREAS,
+    [...data.areas].sort((a, b) => a.sort - b.sort)
   )
   refill(INSTRUCTORS, data.instructors)
   refillMap(

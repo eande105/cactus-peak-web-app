@@ -1,15 +1,15 @@
 "use client"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { useApp } from "@/components/app/use-app"
 import { BookPage } from "@/components/book/book-tabs"
 import {
+  ChipGroup,
   FilterBar,
   FilterGroup,
   FilterSheet,
 } from "@/components/book/filter-bar"
-import { SuccessPanel } from "@/components/booking/success-panel"
 import {
   Card,
   Facts,
@@ -19,7 +19,7 @@ import {
   Split,
 } from "@/components/kit/app"
 import { Modal } from "@/components/kit/overlays"
-import { CheckRow, Segmented, SelectBox, SwitchRow } from "@/components/kit/ui"
+import { CheckRow, SelectBox, SwitchRow } from "@/components/kit/ui"
 import { BookingList } from "@/components/reserve/booking-list"
 import {
   NoticeTile,
@@ -29,13 +29,15 @@ import {
 import { BlockPicker } from "@/components/reserve/kids-blocks"
 import { KIDS_DAY_LIMIT, WhosGoing } from "@/components/reserve/kids-children"
 import { KidsGate } from "@/components/reserve/kids-gate"
+import { NoFacility } from "@/components/reserve/no-facility"
 import { PanelError, QuietLine } from "@/components/reserve/parts"
 import { DayStrip } from "@/components/schedule/day-strip"
 import { Button } from "@/components/ui/button"
 import { useMedia } from "@/hooks/use-media"
 import { addRemind, bookKidsClub, joinKidsWaitlist } from "@/lib/actions"
 import { announce } from "@/lib/announce"
-import { CLUB_BY_SLUG, CLUBS } from "@/lib/data/catalog"
+import { bookedToast } from "@/lib/booked-toast"
+import { CLUB_BY_SLUG } from "@/lib/data/catalog"
 import { useEmptyPreview } from "@/lib/empty-preview"
 import {
   householdMembers,
@@ -51,13 +53,13 @@ import {
   dayStart,
   fmtDay,
   fmtDayLong,
+  fmtDowTime,
   fmtRange,
   fmtTime,
   HOUR,
   parts,
 } from "@/lib/time"
 import { toast } from "@/lib/toast"
-import type { Booking } from "@/lib/types"
 import { useOffline } from "@/lib/ui-state"
 
 type When = "any" | "morning" | "evening"
@@ -77,14 +79,9 @@ export default function KidsClubPage() {
   // The booking summary is a column beside the blocks from 1280px (Split bp="xl"); below, a sheet opened by Review.
   const wide = useMedia("(min-width: 1280px)")
   // The pass is scanned at the front desk from a phone, so it is offered on a touch device only.
-  const onTouch = useMedia("(pointer: coarse)")
-  const kidsClubs = CLUBS.filter((c) => c.kidsClub)
-  const [clubSlug, setClubSlug] = useState(
-    CLUB_BY_SLUG[viewing].kidsClub ? viewing : kidsClubs[0].slug
-  )
-  // The filters, as on Book › Classes. `clubsF` is the kids clubs shown (one by default); `clubSlug` stays the one club
-  // the booking is for, and moves to another club when the member picks a block there.
-  const [clubsF, setClubsF] = useState<string[]>([clubSlug])
+  const _onTouch = useMedia("(pointer: coarse)")
+  // The current club (`prefs.viewingClub`) is the one club the booking is for.
+  const clubSlug = viewing
   const [when, setWhen] = useState<When>("any")
   const [roomOnly, setRoomOnly] = useState(false)
   const [filtersOpen, setFiltersOpen] = useState(false)
@@ -103,9 +100,6 @@ export default function KidsClubPage() {
   const [notesOk, setNotesOk] = useState(false)
   const [wl, setWl] = useState<string | null>(null)
   const [wlOk, setWlOk] = useState(false)
-  const [done, setDone] = useState<{ bookings: Booking[]; ref: string } | null>(
-    null
-  )
   const [error, setError] = useState("")
   // On a phone the summary is a sheet. It opens when the member picks a block or selects Review.
   const [review, setReview] = useState(false)
@@ -116,6 +110,17 @@ export default function KidsClubPage() {
   const notOpen = now < opens
   const sooner = notOpen ? soonerPlan(hh.plan, day, now) : undefined
   const club = CLUB_BY_SLUG[clubSlug]
+  // A block picked at one club does not carry over to another.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: clubSlug is the only trigger
+  useEffect(() => {
+    setBlocks([])
+  }, [clubSlug])
+  if (!club.kidsClub)
+    return (
+      <BookPage>
+        <NoFacility what="kids club" has={(c) => c.kidsClub} />
+      </BookPage>
+    )
   if (!children.length || preview === "gate")
     return (
       <BookPage>
@@ -136,10 +141,14 @@ export default function KidsClubPage() {
     const r = bookKidsClub({ clubSlug, childIds: kids, day, blocks })
     setBusy(false)
     if (r.ok) {
-      setDone({ bookings: r.bookings, ref: r.ref })
-      announce(
-        `${chosen.map((c) => c.firstName).join(" and ")} ${chosen.length > 1 ? "are" : "is"} booked.`
-      )
+      bookedToast({
+        ids: r.bookings.map((b) => b.id),
+        what: `Kids club, ${chosen.map((c) => c.firstName).join(" and ")}`,
+        time: `${fmtDowTime(r.bookings[0].start)}`,
+        view: (url) => router.push(url),
+      })
+      setBlocks([])
+      setReview(false)
     } else {
       setError(r.message)
       announce(r.message)
@@ -152,48 +161,6 @@ export default function KidsClubPage() {
         return fmtRange(atTime(day, k.from), atTime(day, k.to))
       })
       .join(sep)
-  if (done) {
-    const first = done.bookings[0]
-    return (
-      <BookPage>
-        <div className="max-w-xl">
-          <SuccessPanel
-            pill="Kids club booked"
-            headline={chosen.map((c) => c.firstName).join(" and ")}
-            summary={[
-              {
-                label: "When",
-                value: `${fmtDay(first.start)} · ${blockTimes(", ")}`,
-              },
-              { label: "Where", value: club.name },
-              { label: "Reference", value: done.ref },
-            ]}
-            event={{
-              title: `Kids club: ${chosen.map((c) => c.firstName).join(", ")}`,
-              start: first.start,
-              end: first.end,
-              location: club.address,
-            }}
-            extra={
-              <QuietLine>
-                Check in at {club.name} before drop-off and stay in the club.
-                Unclaimed blocks release 15 minutes after they start.
-              </QuietLine>
-            }
-            rows={[
-              ...(onTouch ? [{ label: "Show pass", href: "/pass" }] : []),
-              {
-                label: "Call the club",
-                href: `tel:${club.phone.replace(/\D/g, "")}`,
-              },
-            ]}
-            onDone={() => router.push("/bookings")}
-            doneLabel="See my bookings"
-          />
-        </div>
-      </BookPage>
-    )
-  }
   // The four rules, in order: a club, a child or more, a day with a block or two, then the pick-up and notes checks.
   const ready = kids.length > 0 && blocks.length > 0
   const valid = ready && notesOk && pickup.length > 0 && !offline
@@ -218,45 +185,16 @@ export default function KidsClubPage() {
         (when === "any" || (when === "morning") === k.from < "12:00") &&
         (!roomOnly || kidsLeft(s, slug, day, k) >= need)
     )
-  const roomIn = (slug: string) =>
-    KIDS_BLOCKS.filter(
-      (k) => atTime(day, k.from) > now && kidsLeft(s, slug, day, k) >= need
-    ).length
-  const shownClubs = kidsClubs.filter((c) => clubsF.includes(c.slug))
+  const shownClubs = [club]
   const shownBlocks = shownClubs.reduce((n, c) => n + visible(c.slug).length, 0)
   const countText = `${shownBlocks} ${shownBlocks === 1 ? "block" : "blocks"}`
   // On a narrow row the club stays on the page, so the badge counts the rest. Wide, the time of day is on the page too.
   const phoneCount = (when !== "any" ? 1 : 0) + (roomOnly ? 1 : 0)
   const moreCount = roomOnly ? 1 : 0
-  const filtered = when !== "any" || roomOnly || clubsF.length > 1
+  const filtered = when !== "any" || roomOnly
   const clearFilters = () => {
     setWhen("any")
     setRoomOnly(false)
-    setClubsF([clubSlug])
-  }
-  const goClub = (slug: string) => {
-    if (slug === clubSlug) return
-    setClubSlug(slug)
-    setBlocks([])
-  }
-  const toggleClub = (slug: string) => {
-    const next = clubsF.includes(slug)
-      ? clubsF.filter((x) => x !== slug)
-      : [...clubsF, slug]
-    if (!next.length) return
-    setClubsF(next)
-    if (!next.includes(clubSlug)) goClub(next[0])
-  }
-  // A block at another club moves the booking there, so the summary always names one club.
-  const pick = (slug: string, id: string) => {
-    if (slug !== clubSlug) {
-      setClubSlug(slug)
-      setError("")
-      setBlocks([id])
-      setReview(true)
-      return
-    }
-    toggleBlock(id)
   }
   // A child's kids club blocks on the chosen day, for the 2-a-day rule.
   const blocksOn = (id: string, on = day) =>
@@ -278,25 +216,6 @@ export default function KidsClubPage() {
       })
     )
   }
-  const clubSelect = (className: string) => (
-    <SelectBox
-      label="Kids club"
-      hideLabel
-      className={className}
-      value={clubsF.length === 1 ? clubsF[0] : "several"}
-      onChange={(v) => {
-        if (v === "several") return
-        setClubsF([v])
-        goClub(v)
-      }}
-      options={[
-        ...(clubsF.length > 1
-          ? [{ value: "several", label: `${clubsF.length} kids clubs` }]
-          : []),
-        ...kidsClubs.map((c) => ({ value: c.slug, label: c.name })),
-      ]}
-    />
-  )
   const panel = ready ? (
     <Panel
       title="Kids club"
@@ -384,7 +303,6 @@ export default function KidsClubPage() {
         <div className="gap-s flex flex-col">
           {/* The toolbar every Book tab shares (FilterBar): the kids club and the time of day, then the drawer. */}
           <FilterBar
-            club={clubSelect}
             quick={
               <SelectBox
                 label="Time of day"
@@ -509,10 +427,8 @@ export default function KidsClubPage() {
                 picked={{ club: clubSlug, ids: blocks }}
                 onPick={(slug, k) => {
                   // Not enough spots for every child: the waitlist, at this block's club.
-                  if (kidsLeft(s, slug, day, k) < kids.length) {
-                    goClub(slug)
-                    setWl(k.id)
-                  } else pick(slug, k.id)
+                  if (kidsLeft(s, slug, day, k) < kids.length) setWl(k.id)
+                  else toggleBlock(k.id)
                 }}
                 disabled={!kids.length}
               />
@@ -521,7 +437,7 @@ export default function KidsClubPage() {
             <ReserveNotice
               art={<NoticeTile id="playground" />}
               title="No blocks match these filters"
-              line={`${kidsClubs.length} clubs run kids club on ${fmtDayLong(day).split(",")[0]}.`}
+              line={`${club.name} runs kids club on ${fmtDayLong(day).split(",")[0]}.`}
               actions={
                 <Button size="sm" variant="outline" onClick={clearFilters}>
                   Clear filters
@@ -587,33 +503,11 @@ export default function KidsClubPage() {
         show={`Show ${countText}`}
       >
         <search className="flex flex-col" aria-label="Kids club filters">
-          <FilterGroup title="Kids clubs">
-            {kidsClubs.map((c) => (
-              <CheckRow
-                key={c.slug}
-                checked={clubsF.includes(c.slug)}
-                onChange={() => toggleClub(c.slug)}
-              >
-                <span className="flex min-w-0 flex-col">
-                  <span>
-                    {c.name}
-                    {c.slug === me.homeClub ? (
-                      <span className="text-primary"> · Your club</span>
-                    ) : null}
-                  </span>
-                  <span className="tabular text-muted-foreground">
-                    {roomIn(c.slug)} of {KIDS_BLOCKS.length} blocks have room
-                  </span>
-                </span>
-              </CheckRow>
-            ))}
-          </FilterGroup>
           <FilterGroup title="Time of day">
-            <Segmented
+            <ChipGroup
               label="Time of day"
               value={when}
               onChange={setWhen}
-              size="sm"
               options={WHEN_OPTIONS}
             />
           </FilterGroup>

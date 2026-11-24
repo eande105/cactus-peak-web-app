@@ -2,6 +2,7 @@
 import Link from "next/link"
 import QRCode from "qrcode"
 import { useEffect, useState } from "react"
+import { openPass } from "@/components/app/pass-dialog"
 import { useApp } from "@/components/app/use-app"
 import {
   type ClubId,
@@ -19,6 +20,13 @@ import { toast } from "@/lib/toast"
 import type { Member } from "@/lib/types"
 import { useOffline } from "@/lib/ui-state"
 import { cn } from "@/lib/utils"
+
+/**
+ * The pass surface. Dark mode's Night (#3e6b55) is a mid green, where the copper plan tag and the quiet labels fall
+ * under 4.5:1. The pass keeps the deep Night of light mode in both themes, so every line on it stays readable.
+ */
+export const PASS_SURFACE =
+  "bg-night text-night-foreground dark:bg-[color-mix(in_oklab,var(--night)_55%,black)]"
 
 export type PassState = {
   kind: "valid" | "frozen" | "past-due" | "ended"
@@ -122,7 +130,7 @@ export function CheckInPass({
   s: AppState
   member: Member
   now: number
-  variant?: "full" | "compact"
+  variant?: "full" | "compact" | "sheet"
   className?: string
 }) {
   const offline = useOffline()
@@ -150,18 +158,56 @@ export function CheckInPass({
             {member.memberNumber}
           </p>
         </div>
-        <Button variant="secondary" size="sm" render={<Link href="/pass" />}>
-          Show pass
+        <Button
+          variant="secondary"
+          size="sm"
+          onClick={() => openPass(member.id)}
+        >
+          Pass
         </Button>
       </div>
     )
+  // The pass in the pass sheet: only what the front desk needs. Whose pass, the code, and the number to read out if
+  // the code won't scan. The full pass (plan, club objects, hours) stays on the /pass page.
+  if (variant === "sheet")
+    return (
+      <section
+        aria-label={`Pass for ${member.firstName} ${member.lastName}`}
+        className={cn(
+          "gap-m p-l flex flex-col items-center corner-m text-center",
+          PASS_SURFACE,
+          className
+        )}
+      >
+        <p className="font-display-wide text-body-xl font-heavy">
+          {member.firstName} {member.lastName}
+        </p>
+        {scannable ? (
+          <Qr value={token} name={`${member.firstName} ${member.lastName}`} />
+        ) : (
+          <p className="gap-xs inline-flex items-center text-body-m font-heavy">
+            {st.kind === "frozen" ? (
+              <Pause className="size-4" aria-hidden="true" />
+            ) : null}
+            {st.line}
+          </p>
+        )}
+        <p className="tabular text-body-l font-heavy">{member.memberNumber}</p>
+        {offline && scannable ? (
+          <p className="gap-xs inline-flex items-center text-body-s">
+            <WifiOff
+              className="size-4 shrink-0 text-warning"
+              aria-hidden="true"
+            />
+            Offline. If the code won't scan, read out the number.
+          </p>
+        ) : null}
+      </section>
+    )
   return (
     <section
-      aria-label={`Check-in pass for ${member.firstName} ${member.lastName}`}
-      className={cn(
-        "overflow-hidden corner-m bg-night text-night-foreground",
-        className
-      )}
+      aria-label={`Pass for ${member.firstName} ${member.lastName}`}
+      className={cn("overflow-hidden corner-m", PASS_SURFACE, className)}
     >
       <div className="gap-s px-l pt-l flex items-center justify-between">
         {/* biome-ignore lint/performance/noImgElement: static SVG brand mark, next/image adds nothing */}

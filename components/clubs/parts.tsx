@@ -24,7 +24,7 @@ export function BusyWord({
 }) {
   return (
     <span className={cn("font-medium", BUSY_TONE[level], className)}>
-      <span className="sr-only">Busyness: </span>
+      <span className="sr-only">Crowd level: </span>
       {BUSY_WORDS[level]}
     </span>
   )

@@ -17,6 +17,7 @@ export const catalog: CatalogData = {
   ptPacks: raw.ptPacks,
   prices: { adultAddon: 39, childAddon: 19, ptSingle: 75 },
   clubs: raw.clubs,
+  areas: raw.areas ?? [],
   instructors: raw.instructors,
   coaches: raw.coaches,
   classTypes: raw.classTypes,

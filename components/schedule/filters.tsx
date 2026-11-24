@@ -159,7 +159,7 @@ export function ScheduleFilters({
           Good for first-timers
         </CheckRow>
         <CheckRow checked={f.mine} onChange={(c) => set({ mine: c })}>
-          Only my bookings
+          Only booked classes
         </CheckRow>
       </Group>
       <Group title="More" defaultOpen={false}>

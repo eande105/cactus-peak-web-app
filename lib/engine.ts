@@ -1,4 +1,10 @@
-import { CLUB_BY_SLUG, CLUBS, COACH_BY_SLUG, PLANS } from "@/lib/data/catalog"
+import {
+  BUSY_WORDS,
+  CLUB_BY_SLUG,
+  CLUBS,
+  COACH_BY_SLUG,
+  PLANS,
+} from "@/lib/data/catalog"
 import { hash } from "@/lib/data/sessions"
 import type { AppState } from "@/lib/data/state"
 import {
@@ -16,7 +22,14 @@ import {
   MIN,
   parts,
 } from "@/lib/time"
-import type { Booking, Household, Member, PlanId, Session } from "@/lib/types"
+import type {
+  Booking,
+  ClubArea,
+  Household,
+  Member,
+  PlanId,
+  Session,
+} from "@/lib/types"
 
 export const nowOf = (s: AppState) =>
   DEMO_START + (Date.now() - s.clock.realStart) + s.clock.skew
@@ -368,6 +381,37 @@ export function liveBusyness(slug: string, now: number) {
     label: ["", "Quiet", "Light", "Steady", "Busy", "Packed"][level],
   }
 }
+/**
+ * The typical crowd level of a club area at the hour of `at`. Typical, not live: the UI always says "Usually …".
+ * Requires: `area` arrays hold 18 values, index 0 = 4 am; an hour outside 4 am to 9 pm uses the nearest end.
+ * Ensures: weekdays read `typicalWeekday`, Saturday and Sunday read `typicalWeekend`; `word` is from `BUSY_WORDS`.
+ */
+export function areaCrowd(
+  area: ClubArea,
+  at: number
+): { level: 1 | 2 | 3 | 4 | 5; word: string } {
+  const p = parts(at)
+  const arr =
+    p.dow === 0 || p.dow === 6 ? area.typicalWeekend : area.typicalWeekday
+  const level = arr[Math.min(17, Math.max(0, p.h - 4))] as 1 | 2 | 3 | 4 | 5
+  return { level, word: BUSY_WORDS[level] }
+}
+/**
+ * The only way crowd levels are worded. Levels are typical, never live, so the copy always starts "Usually":
+ * "Usually busy", "Usually busy at 6 pm". Pass the `word` from `areaCrowd` or `clubCrowdAt`.
+ */
+export function usually(word: string, at?: number) {
+  const w = `Usually ${word.toLowerCase()}`
+  return at === undefined ? w : `${w} at ${fmtTime(at)}`
+}
+
+/** The typical crowd level of a club at the hour of `at` (the same hour index as `areaCrowd`). Typical, not live. */
+export function clubCrowdAt(slug: string, at: number) {
+  const p = parts(at)
+  const arr = typicalFor(slug, p.dow)
+  const level = arr[Math.min(17, Math.max(0, p.h - 4))] as 1 | 2 | 3 | 4 | 5
+  return { level, word: BUSY_WORDS[level] }
+}
 export function typicalFor(slug: string, dow: number) {
   const club = CLUB_BY_SLUG[slug]
   return dow === 0 || dow === 6 ? club.weekend : club.typical
@@ -634,6 +678,69 @@ export function kidsLeft(
       b.start === start
   ).length
   return Math.max(0, cap - booked - store)
+}
+
+/** The start of the hour that holds `at`. Crowd levels are per hour, so "Usually busy at 6 pm" names this time. */
+export const hourStart = (at: number) => at - (((at % HOUR) + HOUR) % HOUR)
+
+/** The first court of a club's first sport that is free for an hour, looking 4 days ahead. Null: no courts, or none free. */
+export function nextCourtOpen(
+  s: AppState,
+  slug: string,
+  now: number
+): { court: number; start: number } | null {
+  const sport = CLUB_BY_SLUG[slug].courts[0]?.sport
+  if (!sport) return null
+  const today = dayStart(now)
+  for (const d of [0, 1, 2, 3]) {
+    const day = today + d * DAY
+    for (const sl of gridSlots(day, "court")) {
+      if (sl < now) continue
+      for (let n = 1; n <= courtCount(slug, sport); n++)
+        if (
+          !courtBlocks(s, slug, sport, n, day).blocks.some(
+            (x) => x.from < sl + 60 * MIN && x.to > sl
+          )
+        )
+          return { court: n, start: sl }
+    }
+  }
+  return null
+}
+
+/** The next lap lane start today and how many lanes have room then (a lane takes 2 swimmers). Null: no pool, or none today. */
+export function nextLaneOpen(
+  s: AppState,
+  slug: string,
+  now: number
+): { open: number; total: number; start: number } | null {
+  const pool = CLUB_BY_SLUG[slug].pool
+  if (!pool) return null
+  for (const sl of gridSlots(dayStart(now), "lane").filter((x) => x > now)) {
+    const open = Array.from({ length: pool.lanes }, (_, i) => i + 1).filter(
+      (l) => laneSwimmers(s, slug, l, sl).swimmers < 2
+    ).length
+    if (open) return { open, total: pool.lanes, start: sl }
+  }
+  return null
+}
+
+/** The next kids club block today with a spot, and the spots left. Null: no kids club, Sunday, or nothing left today. */
+export function nextKidsOpen(
+  s: AppState,
+  slug: string,
+  now: number
+): { left: number; start: number } | null {
+  if (!CLUB_BY_SLUG[slug].kidsClub) return null
+  const today = dayStart(now)
+  if (parts(today).dow === 0) return null
+  for (const k of KIDS_BLOCKS) {
+    const start = atTime(today, k.from)
+    if (start < now) continue
+    const left = kidsLeft(s, slug, today, k)
+    if (left > 0) return { left, start }
+  }
+  return null
 }
 
 // ---- training

@@ -45,6 +45,7 @@ const reducedMotion = () =>
 export function BrandMap<P extends MapPin>({
   pins,
   selected,
+  spotlight,
   renderPin,
   renderControls,
   focus,
@@ -57,6 +58,11 @@ export function BrandMap<P extends MapPin>({
 }: {
   pins: P[]
   selected?: string | null
+  /**
+   * The pin the page points at, such as the pin of a hovered list row. It sits over its neighbours, and when its pin
+   * or label is out of view the map frames every pin again, so it shows among the others.
+   */
+  spotlight?: string | null
   renderPin: (pin: P, active: boolean) => ReactNode
   renderControls?: (api: MapApi) => ReactNode
   /** Centre on this pin at `zoom` instead of fitting every pin. */
@@ -99,7 +105,7 @@ export function BrandMap<P extends MapPin>({
         ],
         // Extra room at the top for the pin and its label, which stand above the point.
         {
-          padding: { top: 96, bottom: 40, left: 48, right: 72 },
+          padding: { top: 96, bottom: 40, left: 72, right: 88 },
           maxZoom: 14,
           duration,
         }
@@ -217,19 +223,45 @@ export function BrandMap<P extends MapPin>({
     markers.current.set(id, mk)
   }
 
+  // True when the pin and its label sit inside the map, clear of the zoom buttons' strip on the right.
+  const inView = useCallback((id: string) => {
+    const m = map.current
+    const el = markers.current.get(id)?.getElement()
+    if (!m || !el) return true
+    const pin = el.getBoundingClientRect()
+    const box = m.getContainer().getBoundingClientRect()
+    return (
+      pin.left >= box.left + 8 &&
+      pin.right <= box.right - 56 &&
+      pin.top >= box.top + 8 &&
+      pin.bottom <= box.bottom - 24
+    )
+  }, [])
+
   // Lift the selected pin over its neighbours and bring it into view.
   useEffect(() => {
     for (const [id, mk] of markers.current)
-      mk.getElement().style.zIndex = id === selected ? "2" : ""
+      mk.getElement().style.zIndex =
+        id === selected ? "3" : id === spotlight ? "2" : ""
+  }, [selected, spotlight])
+  useEffect(() => {
     const m = map.current
     const p = selected ? pinsRef.current.find((x) => x.id === selected) : null
-    if (!m || !p || !interactive || focus) return
-    const pt = m.project([p.lng, p.lat])
-    const { clientWidth: w, clientHeight: h } = m.getContainer()
-    const inView = pt.x > 48 && pt.x < w - 48 && pt.y > 96 && pt.y < h - 32
-    if (!inView)
-      m.easeTo({ center: [p.lng, p.lat], duration: reducedMotion() ? 0 : 500 })
-  }, [selected, interactive, focus])
+    if (!m || !p || !interactive || focus || inView(p.id)) return
+    m.easeTo({ center: [p.lng, p.lat], duration: reducedMotion() ? 0 : 500 })
+  }, [selected, interactive, focus, inView])
+
+  // Bring the spotlit pin into view with the others. The short wait keeps a pointer that crosses several rows from
+  // moving the map for each one. A pin already in view leaves the map where the member put it.
+  useEffect(() => {
+    if (!spotlight || !interactive || focus) return
+    const t = window.setTimeout(() => {
+      const m = map.current
+      if (!m?.loaded() || m.isMoving() || inView(spotlight)) return
+      frame(true)
+    }, 150)
+    return () => window.clearTimeout(t)
+  }, [spotlight, interactive, focus, inView, frame])
 
   const api: MapApi = {
     zoomIn: () => map.current?.zoomIn({ duration: reducedMotion() ? 0 : 250 }),
@@ -249,7 +281,7 @@ export function BrandMap<P extends MapPin>({
         className="brand-map absolute inset-0"
       />
       {status === "error" ? (
-        <div className="absolute inset-0 grid place-items-center p-m">
+        <div className="p-m absolute inset-0 grid place-items-center">
           {fallback ?? <p>Map unavailable. Use the address instead.</p>}
         </div>
       ) : null}
@@ -290,7 +322,7 @@ export function BrandPin({
   return (
     <span
       className={cn(
-        "flex flex-col items-center gap-xxs",
+        "gap-xxs flex flex-col items-center",
         "ease-out origin-bottom transition-transform duration-150",
         "motion-reduce:transition-none",
         active && "scale-108"

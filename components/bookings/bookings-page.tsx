@@ -1,60 +1,60 @@
 "use client"
 import Link from "next/link"
 import { useRouter, useSearchParams } from "next/navigation"
-import { Suspense, useRef, useState } from "react"
+import { Suspense, useEffect, useState } from "react"
 import { useApp } from "@/components/app/use-app"
-import { CancelDialog } from "@/components/booking/cancel-dialog"
 import { ListCount } from "@/components/booking/parts"
-import { BookingPreview, type Item } from "@/components/bookings/booking-panel"
-import { MonthCards, PastSummary } from "@/components/bookings/past"
 import {
-  DayCards,
-  RequestsCard,
-  UpcomingSummary,
-} from "@/components/bookings/upcoming"
+  type Open,
+  PastList,
+  UpcomingList,
+} from "@/components/bookings/booking-list"
+import type { Item } from "@/components/bookings/booking-panel"
+import { PastSummary } from "@/components/bookings/past"
+import { RequestsCard, UpcomingSummary } from "@/components/bookings/upcoming"
 import { AppPage, TabButtons } from "@/components/kit/app"
 import { Banner, SelectBox } from "@/components/kit/ui"
 import { NoticeTile, ReserveNotice } from "@/components/reserve/empty"
+import { BookingDrawer, useBookingParam } from "@/components/today/today-drawer"
 import { Button } from "@/components/ui/button"
-import { Popover, PopoverContent } from "@/components/ui/popover"
+import { useMedia } from "@/hooks/use-media"
 import { activeStrikes, pausedUntil } from "@/lib/engine"
-import { dayStart, fmtDay } from "@/lib/time"
+import { fmtDay } from "@/lib/time"
 import type { Booking } from "@/lib/types"
 
 type PastFilter = "all" | "attended" | "cancelled"
 
 /**
- * Bookings, in the patterns of Home and Book. Two tabs, Upcoming and Past. Each tab opens with a row of stat cards,
- * then its list as cards: one for each day coming up, one for each month gone by. The filters for the whole page sit
- * in Book's filter well under the tabs. A booking opens in a popover anchored to its row, so the days keep the full
- * width and the member keeps their place in the list.
- * Waitlists and held spots are in the same days as bookings, in time order, because a member reads them as "my week".
+ * Bookings, in the patterns of the iOS app. Two tabs, Upcoming and Past, each with its stat cards, then the list as
+ * cards: a Waitlist card and one card for each day coming up, one card for each month gone by. The filters for the
+ * whole page sit in Book's filter well under the tabs.
+ * The rows and the details work as on Today: from 768 px a row opens the booking in the drawer and `?booking=<id>`
+ * keeps it in the URL; below 768 px a row opens `/bookings/<id>`. An older `?open=<id>` link goes to the same place.
+ * Waitlists and held spots are in their own card, because a member reads them as "waiting on a spot".
  */
 function Inner() {
   const { s, me, hh, now } = useApp()
   const sp = useSearchParams()
   const router = useRouter()
-  // The booking in the popover. It stays set after the popover closes, so the popover keeps its content while it
-  // fades out, and a click on another row (which closes it and opens it again at once) never meets an empty one.
-  // `open` is what the member sees. The popover anchors to the row that opened it (or the Details button),
-  // and focus goes back to the control that opened it when it closes.
-  const [sel, setSel] = useState<string | null>(null)
-  const [open, setOpen] = useState(false)
-  const [anchor, setAnchor] = useState<Element | null>(null)
-  const opener = useRef<HTMLElement | null>(null)
-  // After Esc or the close button, focus goes back to the row (or button) that opened the popover. A click outside
-  // leaves focus where the member clicked.
-  const refocus = () => requestAnimationFrame(() => opener.current?.focus())
-  const show = (id: string, from: HTMLElement) => {
-    opener.current = from
-    setAnchor(from.closest("li") ?? from)
-    setSel(id)
-    setOpen(true)
-  }
-  const [cancelFor, setCancelFor] = useState<Booking | null>(null)
-  const [cancelOpen, setCancelOpen] = useState(false)
+  const wide = useMedia("(min-width: 768px)")
   const [pastFilter, setPastFilter] = useState<PastFilter>("all")
   const [pastN, setPastN] = useState(10)
+  const [sel, select] = useBookingParam()
+  // A booking in the URL on a phone (`?booking=` or the older `?open=`) becomes the booking's own page, as there is no
+  // drawer there. The width is read here, not from `wide`, which is still the server's answer on the first render.
+  const legacy = sp.get("open")
+  useEffect(() => {
+    const id = legacy ?? sel
+    if (!id) return
+    if (!window.matchMedia("(min-width: 768px)").matches)
+      router.replace(`/bookings/${encodeURIComponent(id)}`)
+    else if (legacy) {
+      const p = new URLSearchParams(sp.toString())
+      p.delete("open")
+      p.set("booking", legacy)
+      router.replace(`/bookings?${p}`, { scroll: false })
+    }
+  }, [legacy, sel, sp, router])
   const who = sp.get("who") ?? "all"
   const tab = sp.get("tab") === "past" ? "past" : "upcoming"
   const go = (next: { who?: string; tab?: string }) => {
@@ -63,7 +63,13 @@ function Inner() {
     const t = next.tab ?? tab
     if (w !== "all") p.set("who", w)
     if (t === "past") p.set("tab", "past")
+    if (sel) p.set("booking", sel)
     router.replace(`/bookings${p.size ? `?${p}` : ""}`, { scroll: false })
+  }
+  const open: Open = {
+    drawer: wide,
+    selectedId: sel,
+    onSelect: (id) => select(id),
   }
   const household = Object.values(s.members).filter(
     (m) => m.householdId === hh.id
@@ -122,22 +128,12 @@ function Inner() {
         ? b.status === "attended"
         : b.status !== "attended")
   )
-  const days = Object.entries(
-    upcoming.reduce<Record<number, Item[]>>((acc, r) => {
-      const day = dayStart(r.b.start)
-      acc[day] ??= []
-      acc[day].push(r)
-      return acc
-    }, {})
-  ).map(([d, rows]) => [Number(d), rows] as [number, Item[]])
   const strikes = activeStrikes(s, me.id, now)
   const pu = pausedUntil(s, me.id, now)
   const requests =
     me.role === "teen"
       ? s.requests.filter((r) => r.teenId === me.id && r.status === "pending")
       : []
-  // A cancelled or confirmed booking leaves the list, so the sheet closes with it.
-  const current = sel ? upcoming.find((r) => r.b.id === sel) : undefined
   const showWho = me.role !== "teen" && household.length > 1
   const pastShown = Math.min(pastN, past.length)
 
@@ -215,26 +211,34 @@ function Inner() {
         aria-label={tab === "past" ? "Past" : "Upcoming"}
         className="gap-m flex flex-col"
       >
-        {tab === "upcoming" ? (
-          <>
-            {upcoming.length ? (
-              <UpcomingSummary
+        {tab === "upcoming" && upcoming.length ? (
+          <UpcomingSummary
+            list={upcoming}
+            strikes={strikes}
+            yours={showWho}
+            onOpen={(id) =>
+              wide ? select(id) : router.push(`/bookings/${id}`)
+            }
+          />
+        ) : null}
+        {tab === "upcoming" && requests.length ? (
+          <RequestsCard requests={requests} />
+        ) : null}
+        {tab === "past" && pastAll.length ? (
+          <PastSummary all={pastAll} strikes={strikes} yours={showWho} />
+        ) : null}
+        {/* The list fills the width; a booking opens in the drawer from 768 px, as on Today. */}
+        <div className="min-w-0">
+          {tab === "upcoming" ? (
+            upcoming.length ? (
+              <UpcomingList
                 list={upcoming}
-                strikes={strikes}
-                yours={showWho}
-                onOpen={show}
+                strikes={strikes.length}
+                oneMember={ids.length === 1}
+                household={ids.length > 1}
+                open={open}
+                who={(id) => s.members[id].firstName}
               />
-            ) : null}
-            {requests.length ? <RequestsCard requests={requests} /> : null}
-            {upcoming.length ? (
-              <div className="gap-m flex flex-col">
-                <DayCards
-                  days={days}
-                  showWho={showWho}
-                  selected={open ? current?.b.id : undefined}
-                  onSelect={show}
-                />
-              </div>
             ) : (
               <ReserveNotice
                 art={<NoticeTile id="schedule" />}
@@ -254,14 +258,15 @@ function Inner() {
                   </Button>
                 }
               />
-            )}
-          </>
-        ) : pastAll.length ? (
-          <>
-            <PastSummary all={pastAll} strikes={strikes} yours={showWho} />
-            {past.length ? (
-              <>
-                <MonthCards list={past.slice(0, pastN)} />
+            )
+          ) : pastAll.length ? (
+            past.length ? (
+              <div className="gap-m flex flex-col">
+                <PastList
+                  list={past.slice(0, pastN)}
+                  household={ids.length > 1}
+                  open={open}
+                />
                 <div className="gap-s flex flex-col items-center">
                   <ListCount>
                     Viewing 1–{pastShown} of {past.length}
@@ -276,7 +281,7 @@ function Inner() {
                     </Button>
                   ) : null}
                 </div>
-              </>
+              </div>
             ) : (
               <ReserveNotice
                 art={<NoticeTile id="mat" />}
@@ -291,59 +296,16 @@ function Inner() {
                   </Button>
                 }
               />
-            )}
-          </>
-        ) : (
-          <ReserveNotice
-            art={<NoticeTile id="heart-watch" />}
-            title="No past bookings yet"
-          />
-        )}
-      </div>
-      <Popover
-        open={open && !!current}
-        onOpenChange={(o, details) => {
-          setOpen(o)
-          if (!o && details.reason === "escape-key") refocus()
-        }}
-      >
-        {/* Under the row, at its right end, where the chevron is. The popover flips above it near the foot of the
-            screen. 360 px holds the facts and three actions on two lines; the theme caps it to the screen. */}
-        <PopoverContent
-          anchor={anchor}
-          side="bottom"
-          align="end"
-          // The popover has no trigger of its own, so it would leave focus on the page. `refocus` returns it.
-          finalFocus={false}
-          aria-label="Booking details"
-          className="!w-90"
-        >
-          {current ? (
-            <BookingPreview
-              key={current.b.id}
-              item={current}
-              now={now}
-              showWho={showWho}
-              onClose={() => {
-                setOpen(false)
-                refocus()
-              }}
-              onCancel={(b) => {
-                setOpen(false)
-                setCancelFor(b)
-                setCancelOpen(true)
-              }}
+            )
+          ) : (
+            <ReserveNotice
+              art={<NoticeTile id="heart-watch" />}
+              title="No past bookings yet"
             />
-          ) : null}
-        </PopoverContent>
-      </Popover>
-      {cancelFor ? (
-        <CancelDialog
-          booking={cancelFor}
-          open={cancelOpen}
-          onOpenChange={setCancelOpen}
-        />
-      ) : null}
+          )}
+        </div>
+      </div>
+      {wide ? <BookingDrawer id={sel} onChange={select} /> : null}
     </AppPage>
   )
 }

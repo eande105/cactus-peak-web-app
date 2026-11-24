@@ -6,6 +6,7 @@ import type {
   Plan,
   ScheduleRow,
 } from "@/lib/data/catalog"
+import { clubAreaFromRow } from "@/lib/data/rows"
 import { getPublicClient } from "@/lib/supabase/public"
 import type {
   CategoryId,
@@ -28,27 +29,38 @@ function must<T>(res: { data: T | null; error: { message: string } | null }) {
 // for an hour (lib/supabase/public.ts). React's cache() shares one result inside a render.
 export const getCatalog = cache(async (): Promise<CatalogData> => {
   const db = getPublicClient()
-  const [cats, plans, packs, prices, clubs, coaches, types, sched, faqs] =
-    await Promise.all([
-      db.from("categories").select("id, name, blurb").order("sort"),
-      db
-        .from("plans")
-        .select(
-          "id, name, price, booking_window_days, guest_passes, blurb, perks"
-        )
-        .order("sort"),
-      db.from("pt_packs").select("sessions, price").order("sessions"),
-      db.from("price_constants").select("key, amount"),
-      db.from("clubs").select("*").order("sort"),
-      db.from("coaches").select("*").order("name"),
-      db.from("class_types").select("*").eq("bookable", true).order("sort"),
-      db.from("class_schedules").select("*").order("id"),
-      db
-        .from("faqs")
-        .select("group_name, question, answer")
-        .eq("audience", "member")
-        .order("sort"),
-    ])
+  const [
+    cats,
+    plans,
+    packs,
+    prices,
+    clubs,
+    areas,
+    coaches,
+    types,
+    sched,
+    faqs,
+  ] = await Promise.all([
+    db.from("categories").select("id, name, blurb").order("sort"),
+    db
+      .from("plans")
+      .select(
+        "id, name, price, booking_window_days, guest_passes, blurb, perks"
+      )
+      .order("sort"),
+    db.from("pt_packs").select("sessions, price").order("sessions"),
+    db.from("price_constants").select("key, amount"),
+    db.from("clubs").select("*").order("sort"),
+    db.from("club_areas").select("*").order("sort"),
+    db.from("coaches").select("*").order("name"),
+    db.from("class_types").select("*").eq("bookable", true).order("sort"),
+    db.from("class_schedules").select("*").order("id"),
+    db
+      .from("faqs")
+      .select("group_name, question, answer")
+      .eq("audience", "member")
+      .order("sort"),
+  ])
 
   const priceOf = (key: string) => {
     const row = must(prices).find((p) => p.key === key)
@@ -190,6 +202,7 @@ export const getCatalog = cache(async (): Promise<CatalogData> => {
       ptSingle: priceOf("pt_single"),
     },
     clubs: clubList,
+    areas: must(areas).map(clubAreaFromRow),
     instructors,
     coaches: trainers,
     classTypes,

@@ -23,7 +23,8 @@ import { CoachArt } from "@/components/kit/brand-art"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
-import { CATEGORIES, INSTRUCTOR_BY_ID } from "@/lib/data/catalog"
+import { INSTRUCTOR_BY_ID } from "@/lib/data/catalog"
+import type { CategoryId } from "@/lib/types"
 import { cn } from "@/lib/utils"
 
 export function EmptyState({
@@ -90,7 +91,7 @@ export function ErrorState({
   return (
     <div
       role="alert"
-      className="flex max-w-[560px] flex-col items-start gap-s py-m"
+      className="gap-s py-m flex max-w-[560px] flex-col items-start"
     >
       <TriangleAlert className="size-6 text-warning" aria-hidden="true" />
       <h2 className="font-display-wide font-display-wide text-body-xl font-heavy">
@@ -99,7 +100,7 @@ export function ErrorState({
       <p className="text-muted-foreground">
         Your bookings are safe. Try again.
       </p>
-      <div className="flex flex-wrap gap-xs">
+      <div className="gap-xs flex flex-wrap">
         {onRetry ? <Button onClick={onRetry}>Try again</Button> : null}
         <Button variant="outline" render={<Link href="/inbox" />}>
           Message the front desk
@@ -187,7 +188,7 @@ export function Banner({
     <div
       role={role ?? (tone === "danger" ? "alert" : "status")}
       className={cn(
-        "flex flex-wrap items-center gap-x-m gap-y-xxs",
+        "gap-x-m gap-y-xxs flex flex-wrap items-center",
         "corner-s px-s py-xs",
         "md:px-m md:py-s",
         bg,
@@ -200,7 +201,7 @@ export function Banner({
         {children ? <p>{children}</p> : null}
       </div>
       {actions ? (
-        <div className="flex flex-wrap items-center gap-xs">{actions}</div>
+        <div className="gap-xs flex flex-wrap items-center">{actions}</div>
       ) : null}
     </div>
   )
@@ -387,16 +388,51 @@ export function FormField({
   )
 }
 
-const CAT_IDS = CATEGORIES.map((c) => c.id)
+/**
+ * The avatar palette: the eight category colours, in hue order around the wheel. It is fixed here, not read from
+ * `CATEGORIES`, because the catalog fills at run time and a module-level copy of it can be empty. Each id has a
+ * `.cat-*` rule in globals.css that sets `--c`, which `bg-cat` reads.
+ */
+const AVATAR_CATS = [
+  "strength",
+  "conditioning",
+  "court",
+  "mind-body",
+  "cycle",
+  "aqua",
+  "recovery",
+  "youth",
+] as const satisfies readonly CategoryId[]
+
+/** The member's colour: `hue` is degrees (0–360), so it picks the palette slot nearest on the wheel. */
+export function avatarCategory(hue: number): CategoryId {
+  const h = Number.isFinite(hue) ? ((hue % 360) + 360) % 360 : 0
+  const n = AVATAR_CATS.length
+  return AVATAR_CATS[Math.round(h / (360 / n)) % n]
+}
+
+/** Each size is a Tailwind size with an initials size from the type scale, about 0.4 of the circle. */
+const AVATAR_SIZE = {
+  24: "size-6 text-body-xxs",
+  28: "size-7 text-body-xxs",
+  32: "size-8 text-body-xs",
+  36: "size-9 text-body-xs",
+  40: "size-10 text-body-s",
+  48: "size-12 text-body-m",
+  88: "size-22 text-body-xxl",
+} as const
+
 export function PersonAvatar({
   name,
   hue = 0,
-  size,
+  size = 32,
   className,
 }: {
+  /** The full name, so the initials have two letters. */
   name: string
+  /** `members.hue`, in degrees. */
   hue?: number
-  size?: number
+  size?: keyof typeof AVATAR_SIZE
   className?: string
 }) {
   const initials = name
@@ -410,19 +446,16 @@ export function PersonAvatar({
       aria-hidden="true"
       // The solid category colour tells family members apart and stands off every surface (4.4:1 or more against the
       // Sand sidebar); the initials take the category's own text colour (`on-cat`, 4.9:1 or more in both modes).
-      // Shape and type come from Avatar.
+      // The utilities replace the theme's avatar surface, and the size replaces its control size.
       className={cn(
-        `cat-${CAT_IDS[Math.abs(hue) % CAT_IDS.length]}`,
-        "bg-cat",
+        `cat-${avatarCategory(hue)}`,
+        "bg-cat text-on-cat",
+        AVATAR_SIZE[size],
         className
       )}
-      // A set size also scales the initials. Without one, the theme sets both.
-      style={size ? { width: size, height: size } : undefined}
     >
-      <Avatar.Fallback
-        className="font-heavy text-on-cat"
-        style={size ? { fontSize: Math.max(11, size * 0.38) } : undefined}
-      >
+      {/* The initials layer fills the circle. It stays clear, so a theme fill on it cannot hide the colour. */}
+      <Avatar.Fallback className="bg-transparent [font-size:inherit] leading-none font-heavy text-on-cat">
         {initials}
       </Avatar.Fallback>
     </Avatar.Root>
@@ -443,7 +476,7 @@ export function InstructorChip({
   return (
     <span
       className={cn(
-        "inline-flex min-w-0 items-center gap-xs",
+        "gap-xs inline-flex min-w-0 items-center",
         stacked && "flex-col items-start"
       )}
     >
@@ -472,7 +505,7 @@ export function LateCancelMeter({
       aria-valuemax={max}
       aria-valuenow={count}
       aria-valuetext={`${count} of ${max}`}
-      className="inline-flex gap-xxs"
+      className="gap-xxs inline-flex"
     >
       {Array.from({ length: max }).map((_, i) => (
         <span
@@ -500,7 +533,7 @@ export function LoadingBlock({
   rows?: number
 }) {
   return (
-    <div className="flex flex-col gap-s" aria-busy="true">
+    <div className="gap-s flex flex-col" aria-busy="true">
       <p role="status" className="text-body-s text-muted-foreground">
         {text}
       </p>
@@ -516,7 +549,7 @@ export function Kbd({ children }: { children: ReactNode }) {
   return (
     <kbd
       className={cn(
-        "corner-xs px-xs py-xxs",
+        "px-xs py-xxs corner-xs",
         "font-body text-body-xs font-heavy",
         "bg-muted text-muted-foreground"
       )}

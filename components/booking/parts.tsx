@@ -176,7 +176,10 @@ export function ListRow({
   inset = "s",
   compact,
   className,
+  rowId,
 }: {
+  /** The booking id, so a link can open this row (`?open=`). */
+  rowId?: string
   lead?: ReactNode
   mark?: ReactNode
   title: ReactNode
@@ -207,6 +210,7 @@ export function ListRow({
   return (
     <li
       data-selected={selected || undefined}
+      data-row-id={rowId}
       className={cn(
         "gap-s relative flex min-h-16 items-center",
         "py-s",

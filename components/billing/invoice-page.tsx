@@ -32,23 +32,24 @@ export default function InvoicePage({ id }: { id: string }) {
     >
       <div className="gap-l grid items-start lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
         <Section id="inv-charges" title={inv.desc}>
-          <Facts
-            className="rule-t"
-            items={[
-              ...inv.lines.map((l) => ({
-                label: l.label,
-                value: <span className="tabular">{fmtMoney(l.amount)}</span>,
-              })),
-              {
-                label: "Total",
-                value: (
-                  <span className="tabular font-heavy text-foreground">
-                    {fmtMoney(inv.amount)}
-                  </span>
-                ),
-              },
-            ]}
-          />
+          <div className="px-m corner-m raised">
+            <Facts
+              items={[
+                ...inv.lines.map((l) => ({
+                  label: l.label,
+                  value: <span className="tabular">{fmtMoney(l.amount)}</span>,
+                })),
+                {
+                  label: "Total",
+                  value: (
+                    <span className="tabular font-heavy text-foreground">
+                      {fmtMoney(inv.amount)}
+                    </span>
+                  ),
+                },
+              ]}
+            />
+          </div>
         </Section>
         <Card id="inv-payment" title="Payment">
           <Facts

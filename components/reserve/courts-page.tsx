@@ -4,6 +4,7 @@ import { Suspense, useEffect, useMemo, useState } from "react"
 import { useApp } from "@/components/app/use-app"
 import { BookPage } from "@/components/book/book-tabs"
 import {
+  ChipGroup,
   FilterBar,
   FilterGroup,
   FilterSheet,
@@ -32,6 +33,7 @@ import {
   NoticeTile,
   ReserveNotice,
 } from "@/components/reserve/empty"
+import { NoFacility } from "@/components/reserve/no-facility"
 import {
   CancelLine,
   PanelError,
@@ -49,7 +51,8 @@ import { Input } from "@/components/ui/input"
 import { useMedia } from "@/hooks/use-media"
 import { addRemind, moveReservation, reserveCourt } from "@/lib/actions"
 import { announce } from "@/lib/announce"
-import { CLUB_BY_SLUG, CLUBS } from "@/lib/data/catalog"
+import { bookedToast } from "@/lib/booked-toast"
+import { CLUB_BY_SLUG } from "@/lib/data/catalog"
 import { useEmptyPreview } from "@/lib/empty-preview"
 import {
   cancelNote,
@@ -164,10 +167,8 @@ function Inner() {
   const wide = useMedia("(min-width: 1024px)")
   const offline = useOffline()
   const [loading, setLoading] = useState(false)
-  const withCourts = CLUBS.filter((c) => c.courts.length)
-  const clubSlug =
-    sp.get("club") ??
-    (CLUB_BY_SLUG[viewing].courts.length ? viewing : withCourts[0].slug)
+  // The current club (`prefs.viewingClub`). The wrapper below only renders this for a club that has courts.
+  const clubSlug = viewing
   const club = CLUB_BY_SLUG[clubSlug]
   const sports = club.courts.map((c) => c.sport) as Sport[]
   const sport =
@@ -363,8 +364,14 @@ function Inner() {
     })
     setBusy(false)
     if (r.ok) {
-      announce(`Court ${sel.row} is yours.`)
-      router.push(`/reserve/confirmed/${r.booking.id}`)
+      bookedToast({
+        ids: [r.booking.id],
+        what: `Court ${sel.row}`,
+        time: fmtDowTime(sel.slot),
+        view: (url) => router.push(url),
+      })
+      setSel(null)
+      setHoldUntil(0)
     } else {
       setError(r.message)
       announce(r.message)
@@ -539,21 +546,19 @@ function Inner() {
         <search className="flex flex-col" aria-label="Court filters">
           {sports.length > 1 ? (
             <FilterGroup title="Sport">
-              <Segmented
+              <ChipGroup
                 label="Sport"
                 value={sport}
                 onChange={(v) => setParam({ sport: v })}
-                size="sm"
                 options={sports.map((v) => ({ value: v, label: SPORTS[v] }))}
               />
             </FilterGroup>
           ) : null}
           <FilterGroup title="Length">
-            <Segmented
+            <ChipGroup
               label="Length"
               value={dur}
               onChange={(v) => setParam({ dur: String(v) })}
-              size="sm"
               options={DURATIONS}
             />
           </FilterGroup>
@@ -578,19 +583,6 @@ function Inner() {
           {/* The toolbar every Book tab shares (FilterBar). Wide, the sport and the length sit beside the club; narrow,
               they are in the drawer and the badge counts the ones changed from the default. */}
           <FilterBar
-            club={(className) => (
-              <SelectBox
-                label="Club"
-                value={clubSlug}
-                onChange={(v) => setParam({ club: v, sport: "" })}
-                options={withCourts.map((c) => ({
-                  value: c.slug,
-                  label: c.name,
-                }))}
-                hideLabel
-                className={className}
-              />
-            )}
             quick={
               <>
                 {sports.length > 1 ? (
@@ -606,7 +598,7 @@ function Inner() {
                     }))}
                   />
                 ) : null}
-                <Segmented
+                <ChipGroup
                   label="Length"
                   value={dur}
                   onChange={(v) => setParam({ dur: String(v) })}
@@ -705,15 +697,6 @@ function Inner() {
                   >
                     Try the next day
                   </Button>
-                  {club.slug !== "dobson-southern" ? (
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => setParam({ club: "dobson-southern" })}
-                    >
-                      Dobson & Southern
-                    </Button>
-                  ) : null}
                 </>
               }
             />
@@ -734,10 +717,12 @@ function Inner() {
             <SlotList
               kind="court"
               rows={rows}
-              slots={slots.filter((sl) => rows.some((r) => free(r.id, sl)))}
+              slots={slots}
               info={info}
               selected={sel}
               onSelect={select}
+              lengthMs={dur * MIN}
+              now={now}
               label="Choose a court and start time"
               disabled={offline || !!pu}
             />
@@ -782,10 +767,20 @@ function Inner() {
     </BookPage>
   )
 }
+function ForClub() {
+  const { club } = useApp()
+  if (!CLUB_BY_SLUG[club].courts.length)
+    return (
+      <BookPage>
+        <NoFacility what="courts" has={(c) => c.courts.length > 0} />
+      </BookPage>
+    )
+  return <Inner />
+}
 export default function CourtsPage() {
   return (
     <Suspense fallback={null}>
-      <Inner />
+      <ForClub />
     </Suspense>
   )
 }

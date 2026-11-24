@@ -305,7 +305,7 @@ export function Detail({
         {n.type === "late_cancel" ? (
           <>
             <Link href="/bookings" className="text-link underline">
-              See my bookings
+              See bookings
             </Link>
             <Link href="/help" className="text-link underline">
               How late cancels work

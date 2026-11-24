@@ -3,6 +3,11 @@ import type { CSSProperties } from "react"
 import { Toggle } from "@/components/graphical"
 import { Check, Moon, Sun, Sunrise, Sunset } from "@/components/icons"
 import { RibMeter } from "@/components/kit/ribs"
+import {
+  type SlotRowData,
+  SlotRowList,
+  SpotsMeter,
+} from "@/components/reserve/slot-rows"
 import { atTime, fmtRange } from "@/lib/time"
 import type { Club } from "@/lib/types"
 import { cn } from "@/lib/utils"
@@ -146,7 +151,7 @@ export function BlockPicker({
         ))}
       </div>
 
-      {/* Narrow: a group for each club, its tiles two to a row. */}
+      {/* Narrow: a group for each club, one row for each block (SlotRowList). */}
       <div className="gap-m flex flex-col @2xl:hidden">
         {clubs.map((c) => (
           <section
@@ -155,9 +160,39 @@ export function BlockPicker({
             className="gap-xs flex flex-col"
           >
             {clubHead(c)}
-            <div className="gap-xs grid grid-cols-2">
-              {blocks.map((b) => tile(c, b, true))}
-            </div>
+            <SlotRowList
+              label={`${c.name} blocks`}
+              rows={blocks.flatMap((b): SlotRowData[] => {
+                const st = cell(c.slug, b)
+                if (!st.shown) return []
+                const start = atTime(day, b.from)
+                const past = start < now
+                const waitlist = st.left < Math.max(1, need)
+                return [
+                  {
+                    key: b.id,
+                    start,
+                    end: atTime(day, b.to),
+                    past,
+                    selected:
+                      picked.club === c.slug && picked.ids.includes(b.id),
+                    glance: <SpotsMeter left={st.left} cap={KIDS_CAP} />,
+                    status:
+                      st.left === 0
+                        ? "Full"
+                        : `${st.left} of ${KIDS_CAP} spots left`,
+                    pill: past
+                      ? undefined
+                      : waitlist
+                        ? "Join waitlist"
+                        : "Book",
+                    label: `${time(b)}, ${st.left === 0 ? "full, join the waitlist" : `${st.left} spots left${waitlist ? `, need ${need}, join the waitlist` : ""}`}${past ? ", the block has begun" : ""}`,
+                    onPress: () => onPick(c.slug, b),
+                  },
+                ]
+              })}
+              disabled={disabled}
+            />
           </section>
         ))}
       </div>
@@ -208,7 +243,8 @@ function BlockTile({
       aria-label={`${club}, ${time}: ${past ? "no spots, the block has begun" : left === 0 ? "full, join the waitlist" : `${left} spots left${short ? `, need ${need}, join the waitlist` : ""}`}`}
       className={cn(
         "gap-xxs p-s corner-s !flex !min-h-20 !w-full !flex-col !items-stretch !justify-between text-left whitespace-normal hairline ring-border",
-        "data-[pressed]:ring-transparent",
+        // The pick keeps the tile's surface and takes the accent ring, like the court and lane cells.
+        "data-[pressed]:bg-transparent data-[pressed]:text-foreground data-[pressed]:hairline-l data-[pressed]:ring-primary",
         // A block that has begun can no longer be booked: its content dims, and the edge stays so the grid keeps shape.
         past && "*:opacity-50"
       )}

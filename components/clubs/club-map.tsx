@@ -13,6 +13,7 @@ export function ClubMap({
   now,
   selected,
   hover,
+  spotlight,
   onSelect,
   onHover,
   only,
@@ -23,6 +24,8 @@ export function ClubMap({
   now: number
   selected?: string
   hover?: string
+  /** The club of the hovered or focused list row: the map brings its pin into view among the others. */
+  spotlight?: string | null
   onSelect?: (slug: string) => void
   onHover?: (slug: string | null) => void
   only?: string
@@ -40,6 +43,7 @@ export function ClubMap({
       focus={only}
       zoom={14.5}
       selected={selected}
+      spotlight={spotlight}
       interactive={interactive}
       label={
         only
@@ -65,14 +69,14 @@ export function ClubMap({
             onMouseLeave={() => onHover?.(null)}
             onFocus={() => onHover?.(c.slug)}
             onBlur={() => onHover?.(null)}
-            aria-label={`${c.name}, busyness ${b.label}`}
+            aria-label={`${c.name}, crowd level ${b.label}`}
             aria-pressed={onSelect ? selected === c.slug : undefined}
             className="corner-s focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring disabled:cursor-default"
           >
             <BrandPin
               active={on}
               chipClassName={cn(
-                "flex flex-col items-center gap-0.5 corner-s bg-card px-2 py-1 shadow-(--shadow-s) hairline ring-border",
+                "corner-s flex flex-col items-center gap-0.5 bg-card px-2 py-1 shadow-(--shadow-s) hairline ring-border",
                 on && "!bg-night text-night-foreground"
               )}
             >
@@ -85,7 +89,7 @@ export function ClubMap({
         )
       }}
       renderControls={({ zoomIn, zoomOut, reset }) => (
-        <div className="flex flex-col gap-xxs">
+        <div className="gap-xxs flex flex-col">
           <Button
             variant="outline"
             size="icon"

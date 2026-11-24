@@ -1,18 +1,19 @@
 "use client"
 import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
+import { Section } from "@/components/account/parts"
+import { AccountScreen, SummaryCard } from "@/components/account/screen"
 import { useApp } from "@/components/app/use-app"
 import { Menu } from "@/components/graphical"
-import { MoreHorizontal } from "@/components/icons"
 import {
-  AppPage,
-  Card,
-  Facts,
-  Row,
-  Rows,
-  Stat,
-  Stats,
-} from "@/components/kit/app"
+  CheckCircle2,
+  Clock,
+  Gift,
+  MoreHorizontal,
+  Share2,
+  XCircle,
+} from "@/components/icons"
+import { Facts, Row, Rows } from "@/components/kit/app"
 import { Confirm, Modal } from "@/components/kit/overlays"
 import {
   Banner,
@@ -35,7 +36,7 @@ import {
 } from "@/lib/actions"
 import { announce } from "@/lib/announce"
 import { CLUB_BY_SLUG, CLUBS, PLANS } from "@/lib/data/catalog"
-import { guestPassesLeft } from "@/lib/engine"
+import { guestPassesLeft, nextBillingDate } from "@/lib/engine"
 import {
   addDays,
   DAY,
@@ -307,15 +308,20 @@ function SendDialog({
   )
 }
 
+/** A pass status as a glyph and a word in the status colour, never a pill. */
 const STATUS: Record<
   GuestPass["status"],
-  { label: string; tone: "success" | "info" | "warning" }
+  { label: string; tone: string; icon: typeof Clock }
 > = {
-  sent: { label: "Sent", tone: "info" },
-  opened: { label: "Opened", tone: "info" },
-  used: { label: "Used", tone: "success" },
-  cancelled: { label: "Cancelled", tone: "warning" },
-  expired: { label: "Expired", tone: "warning" },
+  sent: { label: "Shared", tone: "text-primary", icon: Share2 },
+  opened: { label: "Shared", tone: "text-primary", icon: Share2 },
+  used: { label: "Used", tone: "text-success", icon: CheckCircle2 },
+  cancelled: {
+    label: "Cancelled",
+    tone: "text-muted-foreground",
+    icon: XCircle,
+  },
+  expired: { label: "Expired", tone: "text-muted-foreground", icon: Clock },
 }
 
 const RULES = [
@@ -340,7 +346,7 @@ function PassMenu({
     <Menu.Root>
       <Menu.Trigger
         aria-label={`Actions for ${g.guestName}'s pass`}
-        className="!grid !size-11 !place-items-center !bg-transparent !p-zero hover:!bg-muted md:!size-9"
+        className="!p-zero !grid !size-11 !place-items-center !bg-transparent hover:!bg-muted md:!size-9"
       >
         <MoreHorizontal className="size-4" aria-hidden="true" />
       </Menu.Trigger>
@@ -379,8 +385,8 @@ function PassMenu({
 }
 
 /**
- * Guest passes: how many are left as one block of numbers, one primary action in the page bar to send a pass, and
- * each sent pass as a row on the sheet with its status. The rules sit in a quiet well at the end.
+ * Guest passes: a count hero, the primary action to send a pass under it, and
+ * each sent pass as a row with its status as a glyph and a word. The rules sit in a quiet well at the end.
  * A pass the guest has not used yet has a menu: resend, edit contact, copy link, cancel.
  */
 export default function GuestPasses({ openSend }: { openSend?: boolean }) {
@@ -412,124 +418,130 @@ export default function GuestPasses({ openSend }: { openSend?: boolean }) {
   const frozen = hh.status === "frozen"
   const trail = hh.plan === "trailhead"
   return (
-    <AppPage
-      title="Guest passes"
-      actions={
-        <Button disabled={frozen} onClick={() => setSend(true)}>
-          {trail && left <= 0 ? "Buy a guest pass: $20" : "Send a guest pass"}
-        </Button>
-      }
-    >
+    <AccountScreen width="wide">
       {frozen ? (
         <Banner tone="info" title="Guest passes pause while frozen." />
       ) : null}
-      <Stats>
-        <Stat
-          label="Passes left this month"
-          value={
-            <>
-              {left}
-              <span className="text-muted-foreground"> of {included}</span>
-            </>
-          }
-          hint={
+      {/* From lg: Sent at the left; the count and its Send button, then the rules, in the right column. */}
+      <div className="gap-x-xl gap-y-l grid lg:grid-cols-[minmax(0,1fr)_20rem] lg:items-start">
+        <SummaryCard
+          className="lg:col-start-2 lg:row-start-1"
+          icon={Gift}
+          label="Guest passes left"
+          value={left}
+          meta={
             included
-              ? "Resets on your billing date"
+              ? `${included} a month · resets ${fmtDayShort(nextBillingDate(hh, now))}`
               : `0 included with ${PLANS[hh.plan].name}`
           }
+          action={
+            <Button disabled={frozen} onClick={() => setSend(true)}>
+              {trail && left <= 0
+                ? "Buy a guest pass: $20"
+                : "Send a guest pass"}
+            </Button>
+          }
         />
-        <Stat label="Day pass" value="$20" hint="For each guest" />
-      </Stats>
-
-      <Card
-        id="sent"
-        tone="bare"
-        title="Sent"
-        description={valid ? `${valid} valid now` : undefined}
-      >
-        {passes.length ? (
-          <Rows label="Sent guest passes">
-            {passes.map((g) => {
-              const live = g.status === "sent" || g.status === "opened"
-              // Usual states are quiet: the line already says "Valid until" or "Used". Only the others get a pill.
-              const quiet =
-                g.status === "opened"
-                  ? "Opened"
-                  : g.status === "used" && !g.usedOn
-                    ? "Used"
-                    : null
-              const pill = g.status === "cancelled" || g.status === "expired"
-              return (
+        <Section
+          className="lg:col-start-1 lg:row-span-2 lg:row-start-1"
+          id="sent"
+          title="Sent"
+          line={valid ? `${valid} valid now` : undefined}
+        >
+          {passes.length ? (
+            <div className="corner-m raised">
+              <Rows label="Sent guest passes">
+                {passes.map((g) => {
+                  const live = g.status === "sent" || g.status === "opened"
+                  const st = STATUS[g.status]
+                  return (
+                    <Row
+                      key={g.id}
+                      title={g.guestName}
+                      line={
+                        <span className="tabular">
+                          {CLUB_BY_SLUG[g.clubSlug].name} ·{" "}
+                          {g.status === "used" && g.usedOn
+                            ? `Used ${fmtDayShort(g.usedOn)}`
+                            : fmtDay(g.visitDate)}
+                          {live
+                            ? ` · Valid until ${fmtDayShort(g.validUntil)}`
+                            : ""}
+                        </span>
+                      }
+                      end={
+                        <>
+                          <span
+                            className={`gap-xxs inline-flex items-center text-body-m font-medium sm:text-body-s ${st.tone}`}
+                          >
+                            <st.icon
+                              className="size-4 shrink-0"
+                              aria-hidden="true"
+                            />
+                            {st.label}
+                          </span>
+                          {live ? (
+                            <PassMenu
+                              pass={g}
+                              onEdit={() => {
+                                setEdit(g)
+                                setContact(g.contact)
+                              }}
+                              onCancel={() => setCancel(g)}
+                            />
+                          ) : (
+                            <span
+                              className="size-11 md:size-9"
+                              aria-hidden="true"
+                            />
+                          )}
+                        </>
+                      }
+                    />
+                  )
+                })}
+              </Rows>
+            </div>
+          ) : (
+            <div className="corner-m raised">
+              <EmptyState
+                object="gym-bag"
+                title="No guest passes sent yet."
+                action={
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    disabled={frozen}
+                    onClick={() => setSend(true)}
+                  >
+                    Send a guest pass
+                  </Button>
+                }
+              />
+            </div>
+          )}
+        </Section>
+        <Section id="rl" title="Rules" className="lg:col-start-2">
+          <div className="corner-m raised">
+            <Rows label="Guest pass rules">
+              {RULES.map((x) => (
                 <Row
-                  key={g.id}
-                  title={g.guestName}
-                  line={
-                    <span className="tabular">
-                      {CLUB_BY_SLUG[g.clubSlug].name} ·{" "}
-                      {g.status === "used" && g.usedOn
-                        ? `Used ${fmtDayShort(g.usedOn)}`
-                        : fmtDay(g.visitDate)}
-                      {live
-                        ? ` · Valid until ${fmtDayShort(g.validUntil)}`
-                        : ""}
+                  key={x}
+                  title={
+                    <span className="gap-s flex items-center">
+                      <CheckCircle2
+                        className="size-4 shrink-0 text-muted-foreground"
+                        aria-hidden="true"
+                      />
+                      <span className="text-wrap">{x}</span>
                     </span>
                   }
-                  end={
-                    <>
-                      {quiet ? (
-                        <span className="text-muted-foreground">{quiet}</span>
-                      ) : null}
-                      {pill ? (
-                        <StatusPill tone={STATUS[g.status].tone}>
-                          {STATUS[g.status].label}
-                        </StatusPill>
-                      ) : null}
-                      {live ? (
-                        <PassMenu
-                          pass={g}
-                          onEdit={() => {
-                            setEdit(g)
-                            setContact(g.contact)
-                          }}
-                          onCancel={() => setCancel(g)}
-                        />
-                      ) : (
-                        <span
-                          className="size-11 md:size-9"
-                          aria-hidden="true"
-                        />
-                      )}
-                    </>
-                  }
                 />
-              )
-            })}
-          </Rows>
-        ) : (
-          <EmptyState
-            object="gym-bag"
-            title="No guest passes sent yet."
-            action={
-              <Button
-                size="sm"
-                variant="outline"
-                disabled={frozen}
-                onClick={() => setSend(true)}
-              >
-                Send a guest pass
-              </Button>
-            }
-          />
-        )}
-      </Card>
-
-      <Card id="rl" tone="plain" title="Rules">
-        <ul className="gap-xxs flex list-disc flex-col pl-m text-body-m sm:text-body-s">
-          {RULES.map((x) => (
-            <li key={x}>{x}</li>
-          ))}
-        </ul>
-      </Card>
+              ))}
+            </Rows>
+          </div>
+        </Section>
+      </div>
 
       <SendDialog
         open={send}
@@ -597,6 +609,6 @@ export default function GuestPasses({ openSend }: { openSend?: boolean }) {
           </Button>
         </div>
       </Modal>
-    </AppPage>
+    </AccountScreen>
   )
 }

@@ -1,21 +1,15 @@
 "use client"
 import { usePathname, useRouter } from "next/navigation"
 import { useEffect } from "react"
-import { AppPage } from "@/components/kit/app"
+import { AccountScreen } from "@/components/account/screen"
+import { ACCOUNT_NAV } from "@/components/app/nav"
 
-export const SETTINGS = [
-  { href: "/settings/profile", label: "Profile" },
-  { href: "/settings/preferences", label: "Home club and interests" },
-  { href: "/settings/notifications", label: "Notifications" },
-  { href: "/settings/calendar", label: "Calendar" },
-  { href: "/settings/security", label: "Sign-in and security" },
-  { href: "/settings/display", label: "Display and accessibility" },
-  { href: "/settings/privacy", label: "Privacy and data" },
-]
+// The settings pages are the Settings group of the Account menu (one source for the labels).
+export const SETTINGS = ACCOUNT_NAV.filter((n) => n.group === "Settings")
 
 /**
- * A settings screen sits in the Account area, where the shell draws the side menu. This part gives each screen its
- * page bar with the title, then the sections that the settings page returns, in one column near 640 px.
+ * A settings screen sits in the Account area, where the shell draws the side menu. This part gives each screen the
+ * Account frame (`AccountScreen`, `form` width): the title from `ACCOUNT_NAV`, then the sections the page returns.
  * /settings itself has no content: it sends the member to Account.
  */
 export function SettingsShell({ children }: { children: React.ReactNode }) {
@@ -26,14 +20,7 @@ export function SettingsShell({ children }: { children: React.ReactNode }) {
     if (root) router.replace("/account")
   }, [root, router])
   if (root) return null
-  return (
-    <AppPage
-      title={SETTINGS.find((s) => s.href === path)?.label ?? "Settings"}
-      className="mx-zero max-w-[640px]"
-    >
-      <div className="gap-xl flex flex-col">{children}</div>
-    </AppPage>
-  )
+  return <AccountScreen width="form">{children}</AccountScreen>
 }
 
 export function Saved({ show }: { show: boolean }) {

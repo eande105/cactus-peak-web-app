@@ -389,19 +389,16 @@ export function CardFooterLink({
 }
 
 /**
- * A row of numbers that belong together. The columns follow the width of the row, not the viewport.
- * - `joined` (default): one bordered block with hairlines between the tiles, not a card for each number.
- * - `cards`: a separate raised card for each number, as Home's top row and its Streak card, on the plain card fill.
- *   Use it where each number is a thing of its own with its own actions (a pack, its expiry, the next session).
+ * A row of numbers that belong together, each in a raised card of its own, as Home's top row and its Streak card.
+ * The columns follow the width of the row, not the viewport. There is no joined block with hairlines between the
+ * numbers: every summary number in the app is a separate card.
  */
 export function Stats({
   children,
-  variant = "joined",
   dense,
   className,
 }: {
   children: ReactNode
-  variant?: "joined" | "cards"
   /**
    * Two columns from the narrowest width, as Home's prompts, so a summary row over a list stays short on a phone.
    * With an odd count the first tile spans the row, because it leads.
@@ -418,10 +415,8 @@ export function Stats({
             ? "grid-cols-2 @max-3xl:[&>*:first-child:nth-last-child(odd)]:col-span-2"
             : // In two columns, an odd count would leave an empty cell (the divider fill, or a gap): the last tile spans.
               "grid-cols-1 @md:grid-cols-2 @md:@max-3xl:[&>*:last-child:nth-child(odd)]:col-span-2",
-          variant === "joined"
-            ? "gap-px overflow-hidden corner-m bg-border shadow-s hairline ring-foreground/10"
-            : // Each tile is a raised card of its own, without the joined block's tint.
-              "gap-s @3xl:gap-m [&>*]:corner-m [&>*]:raised [&>*]:bg-none"
+          // Each tile is a raised card of its own, without a tint.
+          "gap-s @3xl:gap-m [&>*]:corner-m [&>*]:raised [&>*]:bg-none"
         )}
       >
         {children}

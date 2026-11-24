@@ -23,7 +23,7 @@ import { ScheduleFilters } from "@/components/schedule/filters"
 import { TimeSections } from "@/components/schedule/time-sections"
 import { Button } from "@/components/ui/button"
 import { addRemind } from "@/lib/actions"
-import { CATEGORIES, CLUB_BY_SLUG, CLUBS } from "@/lib/data/catalog"
+import { CATEGORIES, CLUB_BY_SLUG } from "@/lib/data/catalog"
 import { sessionsForDay } from "@/lib/data/sessions"
 import { useEmptyPreview } from "@/lib/empty-preview"
 import { opensAt, windowDays } from "@/lib/engine"
@@ -130,34 +130,15 @@ function Inner() {
   const opens = opensAt(date + 9 * 3600_000, win)
   const notOpen = now < opens
   const sooner = notOpen ? soonerPlan(hh.plan, date, now) : undefined
-  // The two page filters are counted on the page itself. `more` is what only the sheet shows.
-  const more =
-    activeCount(f, club) -
-    (f.cats.length ? 1 : 0) -
-    (clubs.length !== 1 || clubs[0] !== club ? 1 : 0)
+  // The class type is counted on the page itself. `more` is what only the sheet shows. The club is chosen once in the
+  // Book header; a compare of several clubs is a filter in the sheet.
+  const more = activeCount(f, club) - (f.cats.length ? 1 : 0)
   const clearAll = () => setFilters({ ...EMPTY, clubs: [club] })
-  const clubValue = clubs.length === 1 ? clubs[0] : "several"
   const catValue: CategoryId | "all" | "several" =
     f.cats.length === 0 ? "all" : f.cats.length === 1 ? f.cats[0] : "several"
 
-  // On a phone, the club stays on the page and every other filter is in the sheet, so the count leaves out the club.
-  const phoneMore =
-    activeCount(f, club) - (clubs.length !== 1 || clubs[0] !== club ? 1 : 0)
-  const clubSelect = (className: string) => (
-    <SelectBox
-      label="Club"
-      hideLabel
-      className={className}
-      value={clubValue}
-      onChange={(v) => v !== "several" && setFilters({ ...f, clubs: [v] })}
-      options={[
-        ...(clubValue === "several"
-          ? [{ value: "several", label: `${clubs.length} clubs` }]
-          : []),
-        ...CLUBS.map((c) => ({ value: c.slug, label: c.name })),
-      ]}
-    />
-  )
+  // On a phone every filter is in the sheet.
+  const phoneMore = activeCount(f, club)
 
   const countText = `${shown.length} ${shown.length === 1 ? "class" : "classes"}`
   // One count for the day, in the heading. When filters hide some, it reads "3 of 12 classes".
@@ -178,7 +159,6 @@ function Inner() {
       <div className="gap-s flex flex-col">
         {/* The toolbar every Book tab shares (FilterBar): the club and class type, then the drawer and the reset. */}
         <FilterBar
-          club={clubSelect}
           quick={
             <SelectBox
               label="Class type"

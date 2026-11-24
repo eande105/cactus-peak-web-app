@@ -1,8 +1,8 @@
 "use client"
 import { useRouter } from "next/navigation"
 import { Fragment, useEffect, useMemo, useState } from "react"
-import { CheckInPass } from "@/components/app/check-in-pass"
 import { canSee, NAV } from "@/components/app/nav"
+import { openPass, PassDialog } from "@/components/app/pass-dialog"
 import { useApp } from "@/components/app/use-app"
 import {
   CalendarDays,
@@ -27,7 +27,7 @@ import {
   CommandSeparator,
 } from "@/components/kit/command"
 import { Modal } from "@/components/kit/overlays"
-import { CheckRow, FormField, Kbd, Segmented } from "@/components/kit/ui"
+import { CheckRow, FormField, Kbd } from "@/components/kit/ui"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
@@ -46,36 +46,6 @@ import { householdOf } from "@/lib/engine"
 import { addDays, DOW, dayStart, fmtDowTime, MONTHS, parts } from "@/lib/time"
 import { toast } from "@/lib/toast"
 import { closeDialog, openDialog, useDialog } from "@/lib/ui-state"
-
-function PassDialog() {
-  const open = useDialog("pass")
-  const { s, me, now } = useApp()
-  const hh = householdOf(s, me.id)
-  const [who, setWho] = useState(me.id)
-  const people = Object.values(s.members).filter(
-    (m) =>
-      m.householdId === hh.id && (me.role === "teen" ? m.id === me.id : true)
-  )
-  const m = s.members[people.some((p) => p.id === who) ? who : me.id]
-  return (
-    <Modal
-      open={!!open}
-      onOpenChange={(o) => !o && closeDialog("pass")}
-      title="Check-in pass"
-    >
-      {people.length > 1 ? (
-        <Segmented
-          label="Show pass for"
-          value={m.id}
-          onChange={setWho}
-          options={people.map((p) => ({ value: p.id, label: p.firstName }))}
-          size="sm"
-        />
-      ) : null}
-      <CheckInPass s={s} member={m} now={now} />
-    </Modal>
-  )
-}
 
 const CARD_BRAND = (n: string) =>
   (n.startsWith("4")
@@ -158,7 +128,7 @@ function CardDialog() {
       description={`Now on file: ${hh.card.brand[0].toUpperCase()}${hh.card.brand.slice(1)} ending ${hh.card.last4}. Card details go straight to our payment provider.`}
     >
       <form
-        className="flex flex-col gap-s"
+        className="gap-s flex flex-col"
         onSubmit={(ev) => {
           ev.preventDefault()
           void submit()
@@ -168,7 +138,7 @@ function CardDialog() {
         {err.form ? (
           <p
             role="alert"
-            className="corner-s bg-danger-subtle px-s py-xs text-body-s font-heavy"
+            className="corner-s px-s py-xs bg-danger-subtle text-body-s font-heavy"
           >
             {err.form}
           </p>
@@ -189,7 +159,7 @@ function CardDialog() {
             />
           )}
         </FormField>
-        <div className="grid grid-cols-3 gap-s">
+        <div className="gap-s grid grid-cols-3">
           <FormField label="Expiry" error={err.exp}>
             {(p) => (
               <Input
@@ -229,7 +199,7 @@ function CardDialog() {
         <CheckRow checked={use} onChange={setUse}>
           Use for membership, training and guest passes
         </CheckRow>
-        <div className="flex flex-wrap justify-end gap-xs pt-xs">
+        <div className="gap-xs pt-xs flex flex-wrap justify-end">
           <Button
             type="button"
             variant="outline"
@@ -274,7 +244,7 @@ function FeedbackDialog() {
           />
         )}
       </FormField>
-      <div className="flex flex-wrap gap-xs">
+      <div className="gap-xs flex flex-wrap">
         <Button onClick={() => pick("great")}>Great</Button>
         <Button variant="outline" onClick={() => pick("fine")}>
           Fine
@@ -313,7 +283,7 @@ function AskParentDialog() {
           />
         )}
       </FormField>
-      <div className="flex justify-end gap-xs">
+      <div className="gap-xs flex justify-end">
         <Button variant="outline" onClick={() => closeDialog("askParent")}>
           Cancel
         </Button>
@@ -354,7 +324,7 @@ function ApproveDialog() {
           : undefined
       }
     >
-      <div className="flex flex-col gap-xs">
+      <div className="gap-xs flex flex-col">
         <Button
           className="w-full"
           onClick={() => {
@@ -406,7 +376,7 @@ function ShortcutsDialog() {
     >
       <dl className="rule-rows">
         {rows.map(([a, k]) => (
-          <div key={a} className="flex items-center justify-between gap-m py-s">
+          <div key={a} className="gap-m py-s flex items-center justify-between">
             <dt>{a}</dt>
             <dd>
               <Kbd>{k}</Kbd>
@@ -459,7 +429,7 @@ function CommandBody() {
           group: "Suggestions",
           label: "Show my pass",
           icon: QrCode,
-          run: () => openDialog("pass"),
+          run: () => openPass(),
         },
         {
           id: "s2",
@@ -581,7 +551,7 @@ function CommandBody() {
         group: "Actions",
         label: "Show my pass",
         icon: QrCode,
-        run: () => openDialog("pass"),
+        run: () => openPass(),
       },
     ].filter((a) => me.role !== "teen" && a.label.toLowerCase().includes(query))
     out.push(...actions)

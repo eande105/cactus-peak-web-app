@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest"
 import {
+  clubAreaFromRow,
   type DbRows,
   diffRows,
   HOUSEHOLD_TABLES,
@@ -88,5 +89,33 @@ describe("spots left with other households", () => {
     s.others = { [se.id]: { booked: 1, waitlisted: 2 } }
     expect(sessionLeft(s, se)).toBe(Math.max(0, left - 1))
     expect(waitCount(s, se)).toBe(waiting + 2)
+  })
+})
+
+describe("club_areas rows", () => {
+  const row = {
+    club_slug: "val-vista-warner",
+    area: "pool",
+    label: "25-yard lap pool",
+    sort: 1,
+    typical_weekday: [1, 2, 4, 5, 3, 2, 2, 1, 2, 2, 2, 3, 4, 5, 5, 3, 2, 1],
+    typical_weekend: [1, 1, 1, 2, 3, 3, 4, 5, 5, 3, 2, 2, 2, 2, 2, 1, 1, 1],
+  }
+  it("maps every column to a ClubArea field", () => {
+    expect(clubAreaFromRow(row)).toEqual({
+      clubSlug: "val-vista-warner",
+      area: "pool",
+      label: "25-yard lap pool",
+      sort: 1,
+      typicalWeekday: row.typical_weekday,
+      typicalWeekend: row.typical_weekend,
+    })
+  })
+  it("keeps the weekday and weekend arrays apart and in order", () => {
+    const a = clubAreaFromRow(row)
+    expect(a.typicalWeekday).toHaveLength(18)
+    expect(a.typicalWeekend).toHaveLength(18)
+    expect(a.typicalWeekday[3]).toBe(5)
+    expect(a.typicalWeekend[7]).toBe(5)
   })
 })

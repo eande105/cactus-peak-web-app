@@ -1,12 +1,24 @@
 "use client"
 import Link from "next/link"
 import { useEffect, useState } from "react"
+import { Section } from "@/components/account/parts"
+import { IconTile, SummaryCard } from "@/components/account/screen"
+import { openPass } from "@/components/app/pass-dialog"
 import { Th } from "@/components/app/screen-parts"
 import { useApp } from "@/components/app/use-app"
 import { RemoveMemberConfirm, RolePill } from "@/components/family/parts"
 import { Menu } from "@/components/graphical"
-import { Check, MoreHorizontal, Plus } from "@/components/icons"
-import { AppPage, Card, Row, Rows, Stat, Stats } from "@/components/kit/app"
+import {
+  Check,
+  CreditCard,
+  MoreHorizontal,
+  Plus,
+  ShieldCheck,
+  TrendingUp,
+  Users,
+  Wallet,
+} from "@/components/icons"
+import { AppPage } from "@/components/kit/app"
 import {
   EmptyState,
   LoadingBlock,
@@ -21,7 +33,6 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion"
 import { Button } from "@/components/ui/button"
-import { useMedia } from "@/hooks/use-media"
 import { resendInvite, resolveRequest, undoRemoveMember } from "@/lib/actions"
 import { announce } from "@/lib/announce"
 import { PLANS } from "@/lib/data/catalog"
@@ -34,23 +45,30 @@ import { DAY, fmtDayShort, fmtDowTime, fmtMoney } from "@/lib/time"
 import { toast } from "@/lib/toast"
 import type { Member } from "@/lib/types"
 import { openDialog } from "@/lib/ui-state"
+import { cn } from "@/lib/utils"
 
 const plural = (n: number, one: string, many: string) =>
   `${n} ${n === 1 ? one : many}`
 
 type Show = "all" | "adults" | "kids"
 
+// The cell padding of the members table: the first and last cells line up with the card's own padding.
+const CELL = "px-s first:pl-m last:pr-m"
+
 const RULES = [
   {
     q: "How family pricing works",
+    icon: Wallet,
     a: "Everyone follows the main plan. Add-ons are $39 per adult and $19 per child or teen, every month. Kids club is included for children 12 and under.",
   },
   {
     q: "What teens can do",
+    icon: ShieldCheck,
     a: "Teens 13 to 17 book Teen OK classes. You can turn on court reservations and lap lanes (14 and up). Teen personal training needs your approval. You can see their bookings and check-ins.",
   },
   {
     q: "Moving to a new plan",
+    icon: TrendingUp,
     a: "Upgrades start now and are prorated by day. Downgrades start on your next billing date. Everyone moves together.",
   },
 ]
@@ -67,7 +85,6 @@ function MemberRow({
 }) {
   const { s, now } = useApp()
   // The pass is scanned at the front desk from a phone, so the menu offers it only on a touch device.
-  const onTouch = useMedia("(pointer: coarse)")
   const next = s.bookings
     .filter(
       (b) => b.memberId === m.id && b.status === "booked" && b.start > now
@@ -104,7 +121,7 @@ function MemberRow({
         ? "Kids club ready"
         : "Needs allergy notes"
       : m.role === "teen" && m.permissions
-        ? `Classes ${m.permissions.classes ? "on" : "off"} · Courts ${m.permissions.courts ? "on" : "off"} · Lanes ${m.permissions.lanes ? "on" : "off"}`
+        ? `Classes ${m.permissions.classes ? "on" : "off"} · Courts ${m.permissions.courts ? "on" : "off"} · Lap lanes ${m.permissions.lanes ? "on" : "off"}`
         : m.role === "primary"
           ? "Billing owner"
           : m.status === "invited"
@@ -115,9 +132,9 @@ function MemberRow({
     toast({ title: `Reminder sent to ${m.firstName}` })
   }
   return (
-    <tr className="rule-b">
+    <tr>
       {/* `max-w-0` with `w-full` lets the name cell shrink, so the long line truncates and the table stays in 375 px. */}
-      <td className="pr-s w-full max-w-0 py-xs">
+      <td className={cn(CELL, "py-xs w-full max-w-0")}>
         <div className="gap-s flex min-w-0 items-center">
           <PersonAvatar
             name={`${m.firstName} ${m.lastName}`}
@@ -143,20 +160,25 @@ function MemberRow({
           </div>
         </div>
       </td>
-      <td className="pr-m max-md:hidden">
+      <td className={cn(CELL, "max-md:hidden")}>
         <RolePill role={m.role} />
       </td>
-      <td className="pr-s max-md:hidden">{pill}</td>
-      <td className="pr-m whitespace-nowrap text-muted-foreground max-lg:hidden">
+      <td className={cn(CELL, "whitespace-nowrap max-md:hidden")}>{pill}</td>
+      <td
+        className={cn(
+          CELL,
+          "whitespace-nowrap text-muted-foreground max-lg:hidden"
+        )}
+      >
         {can}
       </td>
-      <td className="tabular text-right max-lg:hidden">{visits}</td>
-      <td className="pl-s w-11 text-right">
+      <td className={cn(CELL, "tabular text-right max-lg:hidden")}>{visits}</td>
+      <td className={cn(CELL, "w-11 text-right")}>
         {canEdit ? (
           <Menu.Root>
             <Menu.Trigger
               aria-label={`Actions for ${m.firstName}`}
-              className="!grid !size-9 !place-items-center !bg-transparent !p-zero hover:!bg-muted max-md:!size-11"
+              className="!p-zero !grid !size-9 !place-items-center !bg-transparent hover:!bg-muted max-md:!size-11"
             >
               <MoreHorizontal className="size-4" aria-hidden="true" />
             </Menu.Trigger>
@@ -173,11 +195,7 @@ function MemberRow({
                       Permissions
                     </Menu.Item>
                   ) : null}
-                  {onTouch ? (
-                    <Menu.Item render={<Link href="/pass" />}>
-                      Show pass
-                    </Menu.Item>
-                  ) : null}
+                  <Menu.Item onClick={() => openPass(m.id)}>Pass</Menu.Item>
                   {m.status === "invited" ? (
                     <Menu.Item onClick={remind}>Resend invite</Menu.Item>
                   ) : null}
@@ -213,8 +231,8 @@ function MemberRow({
 }
 
 /**
- * Household: the cost in three numbers, the requests that wait for an answer, the members as one bare table,
- * and the rules. The primary member adds, edits and removes; other adults read.
+ * Household: the cost in three summary cards, the requests that wait for an answer, the members as one table in a
+ * card, and how family plans work. The primary member adds, edits and removes; other adults read.
  */
 export default function FamilyPage() {
   const { s, me, hh, now } = useApp()
@@ -265,19 +283,20 @@ export default function FamilyPage() {
         ) : undefined
       }
     >
-      <div id="fam-cost">
-        <Stats>
-          <Stat
+      {/* The cost in three cards, the same card as Overview and Billing. Monthly total opens Billing for the primary
+          member, who owns it. */}
+      <ul
+        id="fam-cost"
+        className="gap-s grid grid-cols-2 sm:grid-cols-3 max-sm:[&>*:last-child]:col-span-2"
+      >
+        <li>
+          <SummaryCard
+            className="h-full"
+            icon={Users}
             label="Members"
             value={members.length}
-            hint={[
-              plural(
-                members.filter(
-                  (x) => x.role === "primary" || x.role === "adult"
-                ).length,
-                "adult",
-                "adults"
-              ),
+            meta={[
+              plural(adults.length, "adult", "adults"),
               m.kids
                 ? plural(m.kids, "child or teen", "children and teens")
                 : "",
@@ -285,27 +304,24 @@ export default function FamilyPage() {
               .filter(Boolean)
               .join(" · ")}
           />
-          <Stat
+        </li>
+        <li>
+          <SummaryCard
+            className="h-full"
+            icon={CreditCard}
             label="Monthly total"
             value={fmtMoney(m.total, false)}
-            hint={
-              <>
-                Next charge {fmtDayShort(next)}
-                {canEdit ? (
-                  <>
-                    {" · "}
-                    <Link href="/billing" className="text-link hover:underline">
-                      Billing
-                    </Link>
-                  </>
-                ) : null}
-              </>
-            }
+            meta={`Next charge ${fmtDayShort(next)}`}
+            href={canEdit ? "/billing" : undefined}
           />
-          <Stat
+        </li>
+        <li>
+          <SummaryCard
+            className="h-full"
+            icon={Wallet}
             label="Add-ons"
             value={fmtMoney(m.adultTotal + m.kidTotal, false)}
-            hint={
+            meta={
               m.adults || m.kids
                 ? [
                     m.adults
@@ -320,101 +336,106 @@ export default function FamilyPage() {
                 : `Plan ${fmtMoney(m.base, false)} only`
             }
           />
-        </Stats>
-      </div>
+        </li>
+      </ul>
 
       {pending.length ? (
-        <Card
-          title="Pending approvals"
-          description={`${pending.length} to answer`}
-          flush
+        <Section
           id="approvals"
+          title="Pending approvals"
+          line={plural(
+            pending.length,
+            "request to answer",
+            "requests to answer"
+          )}
         >
-          <Rows className="rule-t">
+          <ul className="corner-m raised [&>li+li]:rule-t">
             {pending.map((r) => {
               const teen = s.members[r.teenId]
               return (
-                <Row
+                <li
                   key={r.id}
-                  title={`${teen.firstName}: ${r.title}`}
-                  line={
-                    <span className="tabular">
+                  className="gap-x-s gap-y-xs px-m py-s flex flex-wrap items-center"
+                >
+                  <PersonAvatar
+                    name={`${teen.firstName} ${teen.lastName}`}
+                    hue={teen.hue}
+                    size={32}
+                    className="shrink-0"
+                  />
+                  <div className="min-w-0 flex-1 basis-48 text-body-m sm:text-body-s">
+                    <p className="font-medium text-pretty">
+                      {teen.firstName}: {r.title}
+                    </p>
+                    <p className="tabular text-pretty text-muted-foreground">
                       {r.note ? `"${r.note}" · ` : ""}Expires{" "}
                       {fmtDowTime(r.expiresAt)}
-                    </span>
-                  }
-                  end={
-                    <>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => openDialog("approve", r.id)}
-                      >
-                        Approve
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => {
-                          const res = resolveRequest(r.id, false)
-                          if (res.ok) announce("Declined.")
-                          else toast({ type: "error", title: res.message })
-                        }}
-                      >
-                        Decline
-                      </Button>
-                    </>
-                  }
-                />
+                    </p>
+                  </div>
+                  <div className="gap-xs flex items-center max-sm:ml-[calc(32px+var(--space-s))]">
+                    <Button
+                      size="sm"
+                      onClick={() => openDialog("approve", r.id)}
+                    >
+                      Approve
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => {
+                        const res = resolveRequest(r.id, false)
+                        if (res.ok) announce("Declined.")
+                        else toast({ type: "error", title: res.message })
+                      }}
+                    >
+                      Decline
+                    </Button>
+                  </div>
+                </li>
               )
             })}
-          </Rows>
-        </Card>
+          </ul>
+        </Section>
       ) : null}
 
-      <section
+      <Section
         id="members"
-        aria-label="Members"
-        className="flex min-w-0 flex-col"
+        title="Members"
+        line={plural(shown.length, "member", "members")}
+        action={
+          canFilter ? (
+            <Segmented<Show>
+              size="sm"
+              label="Show members"
+              value={show}
+              onChange={setShow}
+              options={[
+                { value: "all", label: "All" },
+                { value: "adults", label: "Adults" },
+                { value: "kids", label: "Teens and children" },
+              ]}
+            />
+          ) : undefined
+        }
       >
-        <Card
-          as="div"
-          tone="bare"
-          title="Members"
-          description={plural(shown.length, "member", "members")}
-          action={
-            canFilter ? (
-              <Segmented<Show>
-                size="sm"
-                label="Show members"
-                value={show}
-                onChange={setShow}
-                options={[
-                  { value: "all", label: "All" },
-                  { value: "adults", label: "Adults" },
-                  { value: "kids", label: "Teens and children" },
-                ]}
-              />
-            ) : undefined
-          }
-        >
+        <div className="overflow-hidden corner-m raised">
           <table className="w-full text-body-m sm:text-body-s">
             <caption className="sr-only">Members of your household</caption>
-            <thead>
-              <tr className="rule-b">
-                <Th>Member</Th>
-                <Th className="max-md:hidden">Role</Th>
-                <Th className="max-md:hidden">Status</Th>
-                <Th className="max-lg:hidden">Permissions</Th>
-                <Th end className="max-lg:hidden">
+            <thead className="bg-muted/50">
+              <tr>
+                <Th className={CELL}>Member</Th>
+                <Th className={cn(CELL, "max-md:hidden")}>Role</Th>
+                <Th className={cn(CELL, "max-md:hidden")}>Status</Th>
+                <Th className={cn(CELL, "max-lg:hidden")}>Permissions</Th>
+                <Th end className={cn(CELL, "max-lg:hidden")}>
                   Visits, 30 days
                 </Th>
-                <Th className="w-11">
+                <Th className={cn(CELL, "w-11")}>
                   <span className="sr-only">Actions</span>
                 </Th>
               </tr>
             </thead>
-            <tbody>
+            <tbody className="[&>tr]:rule-t">
               {shown.map((x) => (
                 <MemberRow
                   key={x.id}
@@ -427,28 +448,32 @@ export default function FamilyPage() {
           </table>
           {/* The header already has "Add a member" for the primary member, so the empty state does not repeat it. */}
           {members.length === 1 ? (
-            <EmptyState object="playground" title="It's just you for now" />
+            <div className="rule-t">
+              <EmptyState object="playground" title="It's just you for now" />
+            </div>
           ) : null}
-        </Card>
-      </section>
+        </div>
+      </Section>
 
-      <Card
-        tone="plain"
-        title="Rules"
-        description="Pricing, teens and plan changes"
-        id="fh"
-      >
-        <Accordion>
-          {RULES.map((r) => (
-            <AccordionItem key={r.q} value={r.q}>
-              <AccordionTrigger>{r.q}</AccordionTrigger>
-              <AccordionContent className="max-w-[60ch] text-body-m text-pretty text-muted-foreground sm:text-body-s">
-                {r.a}
-              </AccordionContent>
-            </AccordionItem>
-          ))}
-        </Accordion>
-      </Card>
+      <Section id="fh" title="How it works">
+        <div className="px-m corner-m raised">
+          <Accordion>
+            {RULES.map((r) => (
+              <AccordionItem key={r.q} value={r.q}>
+                <AccordionTrigger>
+                  <span className="gap-s flex items-center">
+                    <IconTile icon={r.icon} />
+                    {r.q}
+                  </span>
+                </AccordionTrigger>
+                <AccordionContent className="max-w-[60ch] pl-[calc(2rem+var(--space-s))] text-body-m text-pretty text-muted-foreground sm:text-body-s">
+                  {r.a}
+                </AccordionContent>
+              </AccordionItem>
+            ))}
+          </Accordion>
+        </div>
+      </Section>
 
       <RemoveMemberConfirm
         member={rm}

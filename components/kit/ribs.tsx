@@ -178,7 +178,7 @@ export function BusynessMeter({
           value={0}
           unavailable
           size="sm"
-          label="Busyness"
+          label="Crowd level"
           valueText="Unavailable"
         />{" "}
         Live count unavailable. Showing typical hours.
@@ -191,7 +191,7 @@ export function BusynessMeter({
         value={level}
         tone={busyTone(level)}
         size="sm"
-        label="Busyness"
+        label="Crowd level"
         valueText={valueText}
         className={className}
       />
@@ -208,12 +208,12 @@ export function BusynessMeter({
           value={level}
           tone={busyTone(level)}
           size="sm"
-          label="Busyness"
+          label="Crowd level"
           valueText={valueText}
           decorative
         />
         <span className="text-foreground">
-          <span className="sr-only">Busyness </span>
+          <span className="sr-only">Crowd level </span>
           {word} · <span className="tabular">{level}</span> of 5
         </span>
       </span>
@@ -226,7 +226,7 @@ export function BusynessMeter({
             value={level}
             tone={busyTone(level)}
             size="md"
-            label="Busyness"
+            label="Crowd level"
             valueText={valueText}
             decorative
           />
@@ -252,12 +252,12 @@ export function BusynessMeter({
           value={level}
           tone={busyTone(level)}
           size="xl"
-          label="Busyness"
+          label="Crowd level"
           valueText={valueText}
           decorative
         />
         <p className="font-display-wide font-display-wide text-display-s leading-none font-heavy">
-          <span className="sr-only">Busyness </span>
+          <span className="sr-only">Crowd level </span>
           {word}
           <span className="tabular font-display-wide ml-xs text-body-xl font-heavy text-muted-foreground">
             {level} of 5

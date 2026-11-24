@@ -326,6 +326,41 @@ export type Database = {
           },
         ]
       }
+      club_areas: {
+        Row: {
+          area: string
+          club_slug: string
+          label: string
+          sort: number
+          typical_weekday: number[]
+          typical_weekend: number[]
+        }
+        Insert: {
+          area: string
+          club_slug: string
+          label: string
+          sort: number
+          typical_weekday: number[]
+          typical_weekend: number[]
+        }
+        Update: {
+          area?: string
+          club_slug?: string
+          label?: string
+          sort?: number
+          typical_weekday?: number[]
+          typical_weekend?: number[]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "club_areas_club_slug_fkey"
+            columns: ["club_slug"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["slug"]
+          },
+        ]
+      }
       clubs: {
         Row: {
           access_notes: string

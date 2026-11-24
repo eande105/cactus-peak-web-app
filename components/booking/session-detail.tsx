@@ -4,39 +4,42 @@ import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
 import { useApp } from "@/components/app/use-app"
 import { calEventFor, SessionAction } from "@/components/booking/session-action"
+import {
+  AlsoThisWeek,
+  SessionButtons,
+  SessionDetails,
+  SessionHeroArt,
+  SessionStats,
+  SessionTag,
+  SessionTags,
+} from "@/components/booking/session-parts"
 import { type ClubId, ClubSet } from "@/components/brand/graphics"
-import { ClubMap } from "@/components/clubs/club-map"
-import { Menu } from "@/components/graphical"
-import { ChevronDown } from "@/components/icons"
-import { Card, Facts, Group, Panel } from "@/components/kit/app"
+import { Card, Facts } from "@/components/kit/app"
 import { CoachArt } from "@/components/kit/brand-art"
 import { CategoryBadge } from "@/components/kit/category"
-import { Modal } from "@/components/kit/overlays"
-import { BusynessMeter, IntensityRibs } from "@/components/kit/ribs"
 import {
-  EmptyState,
-  LateCancelMeter,
-  PersonAvatar,
-  SelectBox,
-} from "@/components/kit/ui"
+  CancelPolicy,
+  HeroHeader,
+  SectionHeader,
+} from "@/components/kit/detail"
+import { Modal } from "@/components/kit/overlays"
+import { EmptyState, PersonAvatar, SelectBox } from "@/components/kit/ui"
 import { ReserveNotice } from "@/components/reserve/empty"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useMedia } from "@/hooks/use-media"
-import { CLUB_BY_SLUG, INSTRUCTOR_BY_ID } from "@/lib/data/catalog"
+import { CLUB_BY_SLUG, COACHES, INSTRUCTOR_BY_ID } from "@/lib/data/catalog"
 import { sessionById, sessionsRange } from "@/lib/data/sessions"
 import {
   activeStrikes,
   bookingState,
-  capacityText,
+  clubCrowdAt,
   guestPassesLeft,
   householdMembers,
-  liveBusyness,
   sessionLeft,
   waitCount,
 } from "@/lib/engine"
-import { downloadIcs, googleUrl } from "@/lib/ics"
 import {
   dayStart,
   fmtDayLong,
@@ -47,7 +50,6 @@ import {
 } from "@/lib/time"
 import { toast } from "@/lib/toast"
 import type { Booking, Session } from "@/lib/types"
-import { cn } from "@/lib/utils"
 
 function useDelay(ms: number) {
   void ms
@@ -100,17 +102,6 @@ function InviteDialog({
       </p>
     </Modal>
   )
-}
-
-/** A wrapping row of chips: what to bring, the other times. */
-function Chips({
-  children,
-  className,
-}: {
-  children: React.ReactNode
-  className?: string
-}) {
-  return <ul className={cn("gap-xs flex flex-wrap", className)}>{children}</ul>
 }
 
 /**
@@ -198,6 +189,14 @@ export function SessionDetail({
   const same = sessionsRange(se.clubSlug, dayStart(now), 8)
     .filter((x) => x.typeKey === se.typeKey && x.id !== se.id && x.start > now)
     .slice(0, 4)
+    .map((x) => ({
+      id: x.id,
+      start: x.start,
+      end: x.end,
+      coach: INSTRUCTOR_BY_ID[x.instructorId]?.name ?? "Coach",
+      left: sessionLeft(s, x),
+    }))
+  const coachSlug = COACHES.find((c) => c.id === se.instructorId)?.slug
   const ages =
     se.minAge >= 18
       ? "18 and over"
@@ -207,7 +206,7 @@ export function SessionDetail({
   const booked = st.state === "booked" || st.state === "late-cancel"
   const justBooked = confirmed && st.booking?.id === confirmed.id
   const ev = calEventFor(se)
-  const b = liveBusyness(club.slug, now)
+  const crowd = clubCrowdAt(club.slug, se.start)
 
   const options = people.map((p) => {
     const ps = bookingState(s, p.id, se, now)
@@ -245,122 +244,88 @@ export function SessionDetail({
             ? `The waitlist moves up until ${waitBy}.`
             : `Free to cancel until ${cancelBy}.`
 
-  const facts = (
-    <Facts
-      items={[
-        {
-          label: "Type",
-          value: <CategoryBadge id={se.category} />,
-        },
-        ...(ages ? [{ label: "Ages", value: ages }] : []),
-        {
-          label: "Where",
-          value: (
-            <Link href={`/clubs/${club.slug}`} className="hover:underline">
-              {club.name}
-            </Link>
-          ),
-          hint: se.studio,
-        },
-        {
-          label: "Coach",
-          value: (
-            <span className="gap-xs inline-flex items-center">
-              <CoachArt
-                name={inst?.name ?? ""}
-                roles={[inst?.role ?? se.category]}
-                size={24}
-              />
-              {inst?.name}
-            </span>
-          ),
-          hint: (
-            <>
-              {inst?.role} · <span className="tabular">{inst?.years}</span>{" "}
-              years at Cactus Peak
-            </>
-          ),
-        },
-        {
-          label: "Level",
-          value: <IntensityRibs level={se.intensity} category={se.category} />,
-          hint: se.firstTimerOk ? "Good for first-timers" : undefined,
-        },
-        {
-          label: "Spots",
-          value: (
-            <span
-              className={cn("tabular", left > 0 && left < 5 && "text-warning")}
-            >
-              {left === 0
-                ? `Full, ${waitCount(s, se)} waiting`
-                : `${left} ${se.unit} left`}
-            </span>
-          ),
-        },
-        {
-          label: "Time zone",
-          value: "Arizona, no daylight saving",
-        },
-        ...(strikes.length
-          ? [
-              {
-                label: "Late cancels",
-                value: (
-                  <span className="gap-xs inline-flex items-center">
-                    <LateCancelMeter count={strikes.length} />
-                    <span className="tabular">{strikes.length} of 3</span>
-                  </span>
-                ),
-                hint: "In the last 30 days",
-              },
-            ]
-          : []),
-      ]}
+  const coachName = inst?.name ?? "Coach"
+  const tags = (
+    <SessionTags>
+      <li>
+        <CategoryBadge id={se.category} />
+      </li>
+      {ages ? <SessionTag>{ages}</SessionTag> : null}
+      {se.firstTimerOk ? <SessionTag>First-timers welcome</SessionTag> : null}
+    </SessionTags>
+  )
+  const coachLine = (
+    <p className="text-body-m sm:text-body-s">
+      {coachSlug ? (
+        <Link
+          href={`/training/coaches/${coachSlug}`}
+          className="gap-xs py-xxs inline-flex min-h-11 items-center hover:underline"
+        >
+          <CoachArt
+            name={coachName}
+            roles={[inst?.role ?? se.category]}
+            size={24}
+          />
+          <span>
+            with <span className="font-medium">{coachName}</span>
+          </span>
+        </Link>
+      ) : (
+        <span className="gap-xs inline-flex items-center">
+          <CoachArt
+            name={coachName}
+            roles={[inst?.role ?? se.category]}
+            size={24}
+          />
+          with <span className="font-medium">{coachName}</span>
+        </span>
+      )}
+    </p>
+  )
+  const titleBlock = (
+    <>
+      <h1
+        id={mode === "page" ? "page-title" : undefined}
+        tabIndex={mode === "page" ? -1 : undefined}
+        className="font-display-wide text-body-xl font-heavy text-balance outline-none"
+      >
+        {se.name}
+      </h1>
+      <p className="tabular text-body-m text-muted-foreground sm:text-body-s">
+        {when}
+      </p>
+      {coachLine}
+      {tags}
+    </>
+  )
+
+  const buttons = (
+    <SessionButtons
+      event={ev}
+      booked={booked}
+      canInvite={me.role !== "teen"}
+      onInvite={() => setInvite(true)}
+      onShare={() => {
+        void navigator.clipboard?.writeText(
+          `https://my.cactuspeakathletic.example/schedule/${se.id}`
+        )
+        toast({ title: "Link copied" })
+      }}
     />
   )
 
-  const more = (
-    <Menu.Root>
-      <Menu.Trigger
-        aria-label="More actions"
-        className="!gap-xxs !px-s !inline-flex !min-h-11 !items-center self-start text-body-m font-medium sm:text-body-s md:!min-h-9"
-      >
-        More
-        <ChevronDown className="size-4 shrink-0" aria-hidden="true" />
-      </Menu.Trigger>
-      <Menu.Portal>
-        <Menu.Positioner align="start" sideOffset={6}>
-          <Menu.Popup className="!min-w-56">
-            <Menu.Item
-              render={
-                <a href={googleUrl(ev)} target="_blank" rel="noreferrer" />
-              }
-            >
-              Add to Google Calendar
-            </Menu.Item>
-            <Menu.Item onClick={() => downloadIcs(ev)}>
-              Add to Apple or Outlook (.ics)
-            </Menu.Item>
-            <Menu.Item
-              onClick={() => {
-                void navigator.clipboard?.writeText(
-                  `https://my.cactuspeakathletic.example/schedule/${se.id}`
-                )
-                toast({ title: "Link copied" })
-              }}
-            >
-              Copy link
-            </Menu.Item>
-            {me.role !== "teen" ? (
-              <Menu.Item onClick={() => setInvite(true)}>
-                Invite a friend
-              </Menu.Item>
-            ) : null}
-          </Menu.Popup>
-        </Menu.Positioner>
-      </Menu.Portal>
-    </Menu.Root>
+  const stats = (grid?: boolean) => (
+    <SessionStats
+      grid={grid}
+      category={se.category}
+      intensity={se.intensity}
+      minutes={se.duration}
+      left={left}
+      capacity={se.capacity}
+      waiting={waitCount(s, se)}
+      crowdLevel={crowd.level}
+      crowdWord={crowd.word}
+    />
   )
 
   // The booking block: who the booking is for, the one full-width action with the rule under it, and what a member
@@ -442,7 +407,7 @@ export function SessionDetail({
       {others.length ? (
         <p className="gap-xs flex items-center text-muted-foreground">
           <PersonAvatar
-            name={s.members[others[0].memberId].firstName}
+            name={`${s.members[others[0].memberId].firstName} ${s.members[others[0].memberId].lastName}`}
             hue={s.members[others[0].memberId].hue}
             size={24}
             className="shrink-0"
@@ -451,112 +416,85 @@ export function SessionDetail({
           {others.length > 1 ? "are" : "is"} also booked
         </p>
       ) : null}
-      {more}
     </div>
   )
 
-  const about = <p className="text-pretty text-muted-foreground">{se.about}</p>
-
-  const bring = (
-    <Group label="What to bring">
-      <Chips>
-        {se.bring.map((x) => (
-          <li
-            key={x}
-            className="px-s py-xxs corner-full bg-muted font-medium whitespace-nowrap"
-          >
-            {x}
-          </li>
-        ))}
-      </Chips>
-    </Group>
+  const sections = (
+    <>
+      <SessionDetails
+        room={se.studio}
+        bring={se.bring}
+        club={{ slug: club.slug, name: club.name, address: club.address }}
+      />
+      <section className="gap-xs flex min-w-0 flex-col">
+        <SectionHeader title="About" />
+        <p className="text-body-m text-pretty text-muted-foreground sm:text-body-s">
+          {se.about}
+        </p>
+      </section>
+      <AlsoThisWeek rows={same} />
+      <CancelPolicy
+        cutoff={new Date(se.start - 2 * HOUR)}
+        now={new Date(now)}
+        waitlistUntil={new Date(se.start - HOUR)}
+        countsAsStrike
+        lateCancels={strikes.length}
+        strikesHref="/bookings/strikes"
+      />
+    </>
   )
 
-  const times = same.length ? (
-    <Group label="Other times">
-      <Chips>
-        {same.map((x) => (
-          <li key={x.id}>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => router.replace(`/schedule/${x.id}`)}
-            >
-              {fmtDowTime(x.start)}
-              <span className="tabular font-regular text-muted-foreground">
-                · {capacityText(s, x, now)}
-              </span>
-            </Button>
-          </li>
-        ))}
-      </Chips>
-    </Group>
-  ) : null
-
-  const place = (
-    <Group label="Location" hint={club.address}>
-      <ClubMap now={now} only={club.slug} interactive={false} ratio="16/7" />
-      <div className="gap-m flex flex-wrap items-center">
-        <BusynessMeter level={b.level} variant="inline" />
-        <a
-          className="font-medium text-link underline"
-          href={`https://maps.google.com/?q=${encodeURIComponent(club.address)}`}
-          target="_blank"
-          rel="noreferrer"
-        >
-          Open in Maps
-        </a>
-        <a
-          className="tabular font-medium text-link underline"
-          href={`tel:${club.phone.replace(/\D/g, "")}`}
-        >
-          Call the club
-        </a>
-      </div>
-    </Group>
+  const hero = (
+    <HeroHeader
+      height={wide && mode === "page" ? 240 : 216}
+      art={
+        <SessionHeroArt
+          category={se.category}
+          back={
+            mode === "page"
+              ? { href: "/schedule", label: "Back to schedule" }
+              : undefined
+          }
+          onClose={mode === "sheet" ? onClose : undefined}
+        />
+      }
+    >
+      {titleBlock}
+    </HeroHeader>
   )
 
   if (mode === "page")
     return (
       <div className="gap-l grid items-start lg:grid-cols-[minmax(0,1fr)_22.5rem]">
-        {/* The content column sits on the sheet. Space and a rule separate its parts. */}
-        <div className="gap-l flex min-w-0 flex-col text-body-m sm:text-body-s">
-          <p className="tabular text-muted-foreground">{when}</p>
-          {wide ? null : <Card as="div">{booking}</Card>}
-          {about}
-          {bring}
-          <Group label="Details">{facts}</Group>
-          {times}
-          {place}
+        <div className="gap-l flex min-w-0 flex-col">
+          {hero}
+          {wide ? null : booking}
+          {buttons}
+          {wide ? null : stats()}
+          {sections}
         </div>
         {wide ? (
           <Card
             as="aside"
             className="sticky top-[calc(var(--bar-h)+var(--space-m))]"
           >
-            {booking}
+            <div className="gap-m flex flex-col">
+              {booking}
+              <div className="rule-t">{stats(true)}</div>
+            </div>
           </Card>
         ) : null}
         <InviteDialog open={invite} onOpenChange={setInvite} se={se} />
       </div>
     )
   return (
-    <>
-      <Panel
-        title={se.name}
-        line={<span className="tabular">{when}</span>}
-        onClose={onClose}
-      >
-        {booking}
-        <div className="gap-m pt-m flex flex-col rule-t">
-          {about}
-          {bring}
-          <Group label="Details">{facts}</Group>
-          {times}
-          {place}
-        </div>
-      </Panel>
+    <div className="gap-l p-m flex min-h-full min-w-0 flex-col">
+      {hero}
+      {booking}
+      {buttons}
+      {stats()}
+      {sections}
       <InviteDialog open={invite} onOpenChange={setInvite} se={se} />
-    </>
+    </div>
   )
 }

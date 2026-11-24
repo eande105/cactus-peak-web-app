@@ -1,20 +1,14 @@
 "use client"
 import Link from "next/link"
-import { useRouter } from "next/navigation"
 import { useState } from "react"
+import { openPass } from "@/components/app/pass-dialog"
 import { useApp } from "@/components/app/use-app"
-import {
-  CategoryMark,
-  ListRow,
-  ListRows,
-  PILL_ICON,
-  TimeLead,
-} from "@/components/booking/parts"
+import { PILL_ICON } from "@/components/booking/parts"
+import { ClubSwitcher } from "@/components/clubs/club-switcher"
 import { Tabs } from "@/components/graphical"
 import {
   AlertCircle,
   CalendarCheck,
-  ChevronRight,
   Clock3,
   CreditCard,
   Flame,
@@ -36,22 +30,31 @@ import {
   HouseholdCard,
   type NeedItem,
   NeedsCard,
-  Pair,
   plural,
   QuickCard,
   StreakCard,
 } from "@/components/today/sections"
+import {
+  bookingHref,
+  COMING_NARROW,
+  COMING_WIDE,
+  ComingRows,
+} from "@/components/today/today-coming"
+import { BookingDrawer, useBookingParam } from "@/components/today/today-drawer"
+import { TodayGrid } from "@/components/today/today-layout"
 import { Button } from "@/components/ui/button"
 import { useMedia } from "@/hooks/use-media"
+import { PASS_ANCHOR } from "@/hooks/use-pass-in-view"
 import { confirmHold, releaseHold } from "@/lib/actions"
 import { announce } from "@/lib/announce"
-import { BUSY_WORDS, CLUB_BY_SLUG, INSTRUCTOR_BY_ID } from "@/lib/data/catalog"
-import { sessionById, sessionsForDay } from "@/lib/data/sessions"
+import { CLUB_BY_SLUG } from "@/lib/data/catalog"
+import { sessionsForDay } from "@/lib/data/sessions"
 import {
   cancelNote,
+  clubCrowdAt,
   clubOpen,
-  liveBusyness,
   sessionLeft,
+  usually,
   weekStart,
 } from "@/lib/engine"
 import {
@@ -149,7 +152,6 @@ function NextBlock({
  */
 export default function TodayPage() {
   const { s, me, hh, prefs, club, now } = useApp()
-  const router = useRouter()
   const offline = useOffline()
   const household = Object.values(s.members).filter(
     (m) => m.householdId === hh.id
@@ -187,17 +189,6 @@ export default function TodayPage() {
   const label = (b: Item) =>
     b.kind === "kids" ? `Kids club, ${b.names}` : b.title
 
-  const agenda = group(
-    s.bookings
-      .filter(
-        (b) =>
-          ids.includes(b.memberId) &&
-          ["booked", "held"].includes(b.status) &&
-          dayStart(b.start) === today &&
-          b.end > now - 2 * HOUR
-      )
-      .sort((a, b) => a.start - b.start)
-  )
   const next = group(
     s.bookings
       .filter(
@@ -205,6 +196,17 @@ export default function TodayPage() {
       )
       .sort((a, b) => a.start - b.start)
   )[0]
+  // Coming up lists every upcoming kind (class, court, lap lane, kids club, training), soonest first.
+  const comingAll = group(
+    s.bookings
+      .filter(
+        (b) =>
+          ids.includes(b.memberId) &&
+          ["booked", "held"].includes(b.status) &&
+          b.end > now
+      )
+      .sort((a, b) => a.start - b.start)
+  )
   const held = s.bookings.find(
     (b) =>
       b.memberId === me.id &&
@@ -217,7 +219,7 @@ export default function TodayPage() {
 
   const c = CLUB_BY_SLUG[club]
   const open = clubOpen(now)
-  const busy = liveBusyness(club, now)
+  const busy = clubCrowdAt(club, now)
   const wk = weekStart(now)
   const weekCount = s.visits.filter(
     (v) => v.memberId === me.id && v.at >= wk && v.at < wk + 7 * DAY
@@ -226,40 +228,43 @@ export default function TodayPage() {
     (x) => x.start > now && sessionLeft(s, x) > 0
   ).length
 
+  const wide = useMedia("(min-width: 768px)")
+  const [bookingParam, setBookingParam] = useBookingParam()
   const onTouch = useMedia("(pointer: coarse)")
   const frozen = hh.status === "frozen" && hh.freeze ? hh.freeze : null
-  // The Next up card already shows the next booking, so today's list starts after it.
-  const later =
-    next && !frozen ? agenda.filter((b) => b.id !== next.id) : agenda
+  // The Next up card already shows the next booking, so Coming up starts after it.
+  const later = (
+    next && !frozen ? comingAll.filter((b) => b.id !== next.id) : comingAll
+  ).slice(0, COMING_WIDE)
   const inProgress = !!next && next.start <= now
   const note = next
     ? cancelNote(s, next.memberId, next.start, now, next.kind)
     : null
-  const showPass = () =>
-    window.innerWidth >= 1024 ? openDialog("pass") : router.push("/pass")
+  const showPass = () => openPass(next?.memberId)
   // One primary button on the screen. A held spot takes it, because it runs out.
   const lead = held ? "outline" : "primary"
   // The pass is scanned at the front desk from a phone. On a touch device it is the main action of the next booking;
   // on a computer it is not offered at all.
   const passButton = (
-    <Button variant={lead} onClick={showPass}>
+    <Button variant={lead} onClick={showPass} {...PASS_ANCHOR}>
       <QrCode aria-hidden="true" data-icon="inline-start" />
-      Show pass
+      Pass
     </Button>
   )
-  const details = (b: Item, variant: "primary" | "outline") => (
-    <Button
-      variant={variant}
-      render={
-        <Link
-          href={b.sessionId ? `/schedule/${b.sessionId}` : "/bookings"}
-          scroll={false}
-        />
-      }
-    >
-      Details
-    </Button>
-  )
+  // From 768 px the booking opens in the drawer; below it, on its own page.
+  const details = (b: Item, variant: "primary" | "outline") =>
+    wide ? (
+      <Button variant={variant} onClick={() => setBookingParam(b.id)}>
+        Details
+      </Button>
+    ) : (
+      <Button
+        variant={variant}
+        render={<Link href={bookingHref(b)} scroll={false} />}
+      >
+        Details
+      </Button>
+    )
   const when = next
     ? inProgress
       ? `On now · ${Math.max(1, Math.round((next.end - now) / MIN))} min left`
@@ -412,19 +417,25 @@ export default function TodayPage() {
 
   const needsCard = needs.length ? <NeedsCard items={needs} /> : null
 
-  const todayCard = (
+  const comingCard = (
     <Card
       display
-      title="Today"
-      // An empty day says so in the head, under the title, so the body can hold one idea.
+      title="Coming up"
       description={
-        later.length
-          ? later.length < agenda.length
-            ? `${later.length} more today`
-            : `${plural(later.length, "booking")} today`
-          : later.length < agenda.length
-            ? "Nothing else on your calendar"
-            : "Nothing on your calendar"
+        later.length ? (
+          <>
+            <span className="@6xl/page:hidden">
+              {plural(Math.min(later.length, COMING_NARROW), "booking")}
+            </span>
+            <span className="hidden @6xl/page:inline">
+              {plural(later.length, "booking")}
+            </span>
+          </>
+        ) : next && !frozen ? (
+          "Nothing after your next booking"
+        ) : (
+          "Nothing on your calendar"
+        )
       }
       flush
       // The view filter of the list sits in the card's action slot, as a two-option toggle (shadcn CardAction).
@@ -442,64 +453,17 @@ export default function TodayPage() {
           </Tabs.Root>
         ) : null
       }
-      // The way to the full list is the card's footer (shadcn CardFooter).
-      // On an empty day there is no list to see in full, and the idea's Book is the card's one action.
-      footer={
-        later.length ? (
-          <CardFooterLink href="/bookings">All bookings</CardFooterLink>
-        ) : undefined
-      }
+      // Bookings is reached from here: "See all" always shows, because the full list also holds past bookings.
+      footer={<CardFooterLink href="/bookings">See all</CardFooterLink>}
     >
       {later.length ? (
-        <ListRows label="Today's bookings">
-          {later.map((b) => {
-            const se = b.sessionId ? sessionById(b.sessionId) : undefined
-            const coach = se ? INSTRUCTOR_BY_ID[se.instructorId]?.name : ""
-            const whoName =
-              who === "household" && b.kind !== "kids" && b.memberId !== me.id
-                ? s.members[b.memberId].firstName
-                : ""
-            return (
-              <ListRow
-                key={b.id}
-                inset="m"
-                href={b.sessionId ? `/schedule/${b.sessionId}` : "/bookings"}
-                lead={
-                  <TimeLead
-                    start={b.start}
-                    sub={
-                      b.end <= now
-                        ? "Done"
-                        : b.start <= now
-                          ? "On now"
-                          : `${Math.round((b.end - b.start) / MIN)} min`
-                    }
-                  />
-                }
-                quiet={b.end <= now}
-                mark={<CategoryMark category={b.category} />}
-                title={label(b)}
-                line={[b.place, coach, whoName].filter(Boolean).join(" · ")}
-                end={
-                  b.status === "held" ? (
-                    <StatusPill
-                      tone="warning"
-                      icon={Clock3}
-                      className={PILL_ICON}
-                    >
-                      Held
-                    </StatusPill>
-                  ) : (
-                    <ChevronRight
-                      className="size-4 shrink-0 text-muted-foreground"
-                      aria-hidden="true"
-                    />
-                  )
-                }
-              />
-            )
-          })}
-        </ListRows>
+        <ComingRows
+          items={later}
+          who={who}
+          drawer={wide}
+          selectedId={bookingParam}
+          onSelect={setBookingParam}
+        />
       ) : (
         <div className="px-m pb-m pt-xs text-body-m sm:text-body-s">
           <OpenDay />
@@ -512,127 +476,136 @@ export default function TodayPage() {
     <AppPage
       fill
       title={`Hi, ${me.firstName}`}
+      actions={<ClubSwitcher className="max-sm:w-full" />}
       meta={
         <p className="text-body-m whitespace-nowrap text-muted-foreground sm:text-body-s">
           {fmtDay(now)}
         </p>
       }
     >
-      {/* Prompts: each card states what is waiting and opens the place to act on it. */}
-      <div className="@container">
-        {/* Two by two until the row holds four. With three, the last one takes the full row. */}
-        <ul className="gap-xs @lg:gap-s grid grid-cols-2 @3xl:grid-cols-4 @max-3xl:[&>li:last-child:nth-child(odd)]:col-span-2">
-          <li className="flex min-w-0 flex-col">
-            <QuickCard
-              night
-              href={`/clubs/${club}`}
-              icon={MapPin}
-              title={
-                !open.open
-                  ? `${c.name} is closed`
-                  : offline
-                    ? `${c.name} is open`
-                    : `${BUSY_WORDS[busy.level]} at ${c.name}`
-              }
-              action="Plan your visit"
-            />
-          </li>
-          <li className="flex min-w-0 flex-col">
-            <QuickCard
-              href="/bookings"
-              icon={CalendarCheck}
-              title={
-                weekAhead.length
-                  ? `${plural(weekAhead.length, "booking")} this week`
-                  : "Nothing booked yet"
-              }
-              action={weekAhead.length ? "Manage bookings" : "Book something"}
-            />
-          </li>
-          {showGoal ? (
-            <li className="flex min-w-0 flex-col">
-              <QuickCard
-                href={weekCount >= target ? "/progress" : "/schedule"}
-                icon={Flame}
-                title={
-                  weekCount >= target
-                    ? "Weekly goal met"
-                    : `${plural(target - weekCount, "visit")} to your goal`
+      <TodayGrid
+        tiles={
+          <div className="@container">
+            {/* Two by two until the row holds four. With three, the last one takes the full row. */}
+            <ul className="gap-xs @lg:gap-s grid grid-cols-2 @3xl:grid-cols-4 @max-3xl:[&>li:last-child:nth-child(odd)]:col-span-2">
+              <li className="flex min-w-0 flex-col">
+                <QuickCard
+                  night
+                  href={`/clubs/${club}`}
+                  icon={MapPin}
+                  title={
+                    !open.open
+                      ? `${c.name} is closed`
+                      : offline
+                        ? `${c.name} is open`
+                        : `${usually(busy.word)} at ${c.name}`
+                  }
+                  action="Plan your visit"
+                />
+              </li>
+              <li className="flex min-w-0 flex-col">
+                <QuickCard
+                  href="/bookings"
+                  icon={CalendarCheck}
+                  title={
+                    weekAhead.length
+                      ? `${plural(weekAhead.length, "booking")} this week`
+                      : "Nothing booked yet"
+                  }
+                  action={
+                    weekAhead.length ? "Manage bookings" : "Book something"
+                  }
+                />
+              </li>
+              {showGoal ? (
+                <li className="flex min-w-0 flex-col">
+                  <QuickCard
+                    href={weekCount >= target ? "/progress" : "/schedule"}
+                    icon={Flame}
+                    title={
+                      weekCount >= target
+                        ? "Weekly goal met"
+                        : `${plural(target - weekCount, "visit")} to your goal`
+                    }
+                    action={
+                      weekCount >= target ? "See your progress" : "Book a class"
+                    }
+                  />
+                </li>
+              ) : null}
+              <li className="flex min-w-0 flex-col">
+                <QuickCard
+                  href="/inbox"
+                  icon={Inbox}
+                  title={
+                    replies
+                      ? `${plural(replies, "message")} ${replies === 1 ? "needs" : "need"} you`
+                      : notices.length
+                        ? `${notices.length} new in your inbox`
+                        : "You're all caught up"
+                  }
+                  action={replies ? "Reply now" : "Open inbox"}
+                />
+              </li>
+            </ul>
+          </div>
+        }
+        heldOpen={!!held}
+        held={
+          <Collapse show={!!held}>
+            {held ? (
+              <HeldSpot
+                booking={held}
+                day={
+                  dayStart(held.start) === today ? "Today" : fmtDay(held.start)
                 }
-                action={
-                  weekCount >= target ? "See your progress" : "Book a class"
+                left={
+                  <StatusPill
+                    tone="warning"
+                    icon={Clock3}
+                    className={PILL_ICON}
+                  >
+                    <span className="tabular">
+                      {fmtCountdown((held.holdExpiresAt ?? 0) - now)}
+                    </span>{" "}
+                    left
+                  </StatusPill>
+                }
+                actions={
+                  <>
+                    <Button
+                      size="sm"
+                      aria-label={`Confirm spot, ${Math.ceil(((held.holdExpiresAt ?? 0) - now) / MIN)} minutes left`}
+                      onClick={() => {
+                        const r = confirmHold(held.id)
+                        if (r.ok) announce("Spot confirmed. You're booked.")
+                      }}
+                    >
+                      Confirm spot
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => releaseHold(held.id)}
+                    >
+                      Release
+                    </Button>
+                  </>
                 }
               />
-            </li>
-          ) : null}
-          <li className="flex min-w-0 flex-col">
-            <QuickCard
-              href="/inbox"
-              icon={Inbox}
-              title={
-                replies
-                  ? `${plural(replies, "message")} ${replies === 1 ? "needs" : "need"} you`
-                  : notices.length
-                    ? `${notices.length} new in your inbox`
-                    : "You're all caught up"
-              }
-              action={replies ? "Reply now" : "Open inbox"}
-            />
-          </li>
-        </ul>
-      </div>
-
-      <Collapse show={!!held}>
-        {held ? (
-          <HeldSpot
-            booking={held}
-            day={dayStart(held.start) === today ? "Today" : fmtDay(held.start)}
-            left={
-              <StatusPill tone="warning" icon={Clock3} className={PILL_ICON}>
-                <span className="tabular">
-                  {fmtCountdown((held.holdExpiresAt ?? 0) - now)}
-                </span>{" "}
-                left
-              </StatusPill>
-            }
-            actions={
-              <>
-                <Button
-                  size="sm"
-                  aria-label={`Confirm spot, ${Math.ceil(((held.holdExpiresAt ?? 0) - now) / MIN)} minutes left`}
-                  onClick={() => {
-                    const r = confirmHold(held.id)
-                    if (r.ok) announce("Spot confirmed. You're booked.")
-                  }}
-                >
-                  Confirm spot
-                </Button>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => releaseHold(held.id)}
-                >
-                  Release
-                </Button>
-              </>
-            }
-          />
-        ) : null}
-      </Collapse>
-
-      <Pair
-        left={nextCard}
-        right={needsCard ?? (showGoal ? <StreakCard /> : undefined)}
+            ) : null}
+          </Collapse>
+        }
+        next={nextCard}
+        needs={needsCard}
+        coming={comingCard}
+        book={<BookCard exclude={later.length ? undefined : idea?.session} />}
+        streak={showGoal ? <StreakCard /> : undefined}
+        house={showHousehold ? <HouseholdCard /> : undefined}
       />
-
-      <BookCard exclude={later.length ? undefined : idea?.session} />
-
-      <Pair
-        left={todayCard}
-        right={needsCard && showGoal ? <StreakCard /> : undefined}
-      />
-
-      {showHousehold ? <HouseholdCard /> : null}
+      {wide ? (
+        <BookingDrawer id={bookingParam} onChange={setBookingParam} />
+      ) : null}
     </AppPage>
   )
 }

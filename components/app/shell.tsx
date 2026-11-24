@@ -3,10 +3,12 @@ import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import { useTheme } from "next-themes"
 import { type ReactNode, useEffect, useRef, useState } from "react"
+import { AccountBack } from "@/components/account/screen"
 import { PaymentBanners } from "@/components/app/banners"
 import { GlobalDialogs } from "@/components/app/global-dialogs"
 import { HouseholdGate, ShellSkeleton } from "@/components/app/household-gate"
 import {
+  ACCOUNT_GROUPS,
   ACCOUNT_NAV,
   ACCOUNT_PATHS,
   canOpen,
@@ -16,6 +18,8 @@ import {
   PRIMARY_NAV,
   type PrimaryNavItem,
 } from "@/components/app/nav"
+import { openPass } from "@/components/app/pass-dialog"
+import { StatusPage } from "@/components/app/status-page"
 import { needsStepUp, StepUpGate } from "@/components/app/step-up"
 import { useApp } from "@/components/app/use-app"
 import { Menu } from "@/components/graphical"
@@ -30,11 +34,11 @@ import {
   QrCode,
   Search,
   Sun,
-  X,
 } from "@/components/icons"
 import { Tip, TipProvider } from "@/components/kit/tip"
-import { EmptyState, PersonAvatar } from "@/components/kit/ui"
+import { PersonAvatar } from "@/components/kit/ui"
 import { Button } from "@/components/ui/button"
+import { usePassInView } from "@/hooks/use-pass-in-view"
 import {
   demoJumpClock,
   demoOpenWaitlistSpot,
@@ -122,7 +126,7 @@ function Sidebar() {
     <aside className="gap-m p-s sticky top-0 flex h-dvh w-60 shrink-0 flex-col overflow-y-auto max-lg:hidden">
       <Link
         href="/today"
-        aria-label="Cactus Peak Athletic, Home"
+        aria-label="Cactus Peak Athletic, Today"
         className="px-s flex h-10 items-center"
       >
         <Logo className="h-8 w-auto" />
@@ -137,12 +141,12 @@ function Sidebar() {
           <CalendarPlus aria-hidden="true" data-icon="inline-start" />
           Book a class
         </Button>
-        <Tip content="Show pass" side="bottom">
+        <Tip content="Pass" side="bottom">
           <Button
             variant="outline"
             size="icon"
-            aria-label="Show pass"
-            onClick={() => openDialog("pass")}
+            aria-label="Pass"
+            onClick={() => openPass()}
           >
             <QrCode aria-hidden="true" />
           </Button>
@@ -154,7 +158,7 @@ function Sidebar() {
             <SideLink
               key={n.href}
               item={n}
-              count={n.href === "/inbox" ? unread : undefined}
+              count={n.href === "/account" ? unread : undefined}
             />
           ))}
         </ul>
@@ -178,33 +182,75 @@ function Sidebar() {
 }
 
 /** The side menu of the Account area. Below 1024 px it is a row that scrolls sideways. */
+/**
+ * The Account menu. From lg: a side menu in two groups (`ACCOUNT_GROUPS`), each page with its icon; a group the
+ * member can open no page of is left out. Below lg: no menu strip. Overview lists the pages itself
+ * (`AccountMenuList`), and every other Account page starts with a back link to Overview (`AccountBack`).
+ */
 function AccountNav() {
   const { me } = useApp()
   const path = usePathname()
+  const items = ACCOUNT_NAV.filter((n) => canSee(me, n.href))
   return (
-    <nav aria-label="Account" className="lg:w-52 lg:shrink-0">
-      <ul className="gap-xxs flex scrollbar-none max-lg:overflow-x-auto lg:sticky lg:top-[calc(var(--bar-h)+var(--space-m))] lg:flex-col">
-        {ACCOUNT_NAV.filter((n) => canSee(me, n.href)).map((n) => {
-          const active = path === n.href || path.startsWith(`${n.href}/`)
+    <>
+      {path === "/account" ? null : <AccountBack />}
+      <nav
+        aria-label="Account"
+        className="gap-m hidden w-56 shrink-0 flex-col lg:sticky lg:top-[calc(var(--bar-h)+var(--space-m))] lg:flex lg:self-start"
+      >
+        {ACCOUNT_GROUPS.map((g) => {
+          const list = items.filter((n) => n.group === g)
+          if (!list.length) return null
+          // A teen sees only Overview in Membership. A heading over that one link names pages the teen can't open.
+          const bare = list.every((n) => n.href === "/account")
           return (
-            <li key={n.href} className="shrink-0">
-              <Link
-                href={n.href}
-                aria-current={active ? "page" : undefined}
-                className={cn(
-                  "px-s corner-s flex h-9 items-center text-body-m font-medium whitespace-nowrap sm:h-8 sm:text-body-s",
-                  active
-                    ? "bg-accent text-foreground"
-                    : "text-muted-foreground hover:bg-muted hover:text-foreground"
-                )}
+            <div key={g} className="gap-xxs flex flex-col">
+              {bare ? null : (
+                <p
+                  id={`account-nav-${g}`}
+                  className="px-s text-body-xs font-medium text-muted-foreground"
+                >
+                  {g}
+                </p>
+              )}
+              <ul
+                aria-labelledby={bare ? undefined : `account-nav-${g}`}
+                className="gap-xxs flex flex-col"
               >
-                {n.label}
-              </Link>
-            </li>
+                {list.map((n) => {
+                  const active =
+                    path === n.href || path.startsWith(`${n.href}/`)
+                  const Icon = n.icon
+                  return (
+                    <li key={n.href}>
+                      <Link
+                        href={n.href}
+                        aria-current={active ? "page" : undefined}
+                        className={cn(
+                          "gap-xs px-s corner-s flex h-8 items-center text-body-s font-medium",
+                          active
+                            ? "bg-accent text-foreground"
+                            : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                        )}
+                      >
+                        <Icon
+                          className={cn(
+                            "size-4 shrink-0",
+                            active && "text-primary"
+                          )}
+                          aria-hidden="true"
+                        />
+                        <span className="truncate">{n.label}</span>
+                      </Link>
+                    </li>
+                  )
+                })}
+              </ul>
+            </div>
           )
         })}
-      </ul>
-    </nav>
+      </nav>
+    </>
   )
 }
 
@@ -331,23 +377,17 @@ function AccountMenu({ wide }: { wide?: boolean }) {
               </div>
             </div>
             <Menu.Separator />
-            {/* What a member manages. On a phone the menu also carries the places the tab bar has no room for. On
-                the sidebar, Help and Search sit right above the menu, so it does not repeat them. */}
+            {/* What a member manages. Clubs, Progress, Inbox and Help are places in the tab bar, the sidebar or the
+                You page, so the menu does not repeat them. */}
             {(
               [
-                ["/account", "Account", true],
-                ["/family", "Household", true],
-                ["/billing", "Billing", true],
-                ["/settings/notifications", "Notifications", true],
-                ["/clubs", "Clubs", false],
-                ["/progress", "Progress", false],
-                ["/help", "Help", false],
+                ["/account", "Account"],
+                ["/family", "Household"],
+                ["/billing", "Billing"],
+                ["/settings/notifications", "Notifications"],
               ] as const
             )
-              .filter(
-                ([href, , everywhere]) =>
-                  canSee(me, href) && (everywhere || !wide)
-              )
+              .filter(([href]) => canSee(me, href))
               .map(([href, label]) => (
                 <Menu.Item key={href} render={<Link href={href} />}>
                   {label}
@@ -502,20 +542,16 @@ function AccountMenu({ wide }: { wide?: boolean }) {
   )
 }
 
-/** Phone only. Three places and the pass: the pass is the one thing a member needs at the door. */
+/** Phone only. The four places in PRIMARY_NAV and nothing else. The pass is a button in the header. */
 function TabBar() {
   const path = usePathname()
-  const tabs = [
-    ...PRIMARY_NAV.slice(0, 3),
-    { href: "/pass", label: "Pass", icon: QrCode, match: ["/pass"] },
-  ]
   return (
     <nav
       aria-label="Primary"
       className="fixed inset-x-0 bottom-0 z-40 bg-sheet pb-[env(safe-area-inset-bottom)] rule-t lg:hidden"
     >
       <ul className="grid grid-cols-4">
-        {tabs.map((t) => {
+        {PRIMARY_NAV.map((t) => {
           const active = isCurrent(path, t.match)
           const Icon = t.icon
           return (
@@ -575,9 +611,11 @@ function Shell({ children }: { children: ReactNode }) {
     return () => window.clearTimeout(t)
   }, [path])
   const access = canOpen(me, path)
+  // 56 px: the phone header height (--bar-h, 3.5rem).
+  const passInView = usePassInView(path, 56)
   const page =
     ACCOUNT_PATHS.includes(path) || path.startsWith("/settings/") ? (
-      <div className="gap-l lg:gap-xl flex w-full flex-col lg:flex-row">
+      <div className="gap-m lg:gap-xl flex w-full flex-col lg:flex-row">
         <AccountNav />
         <div className="min-w-0 flex-1">{children}</div>
       </div>
@@ -608,20 +646,38 @@ function Shell({ children }: { children: ReactNode }) {
             <div className={cn(FRAME, "gap-s flex h-(--bar-h) items-center")}>
               <Link
                 href="/today"
-                aria-label="Cactus Peak Athletic, Home"
+                aria-label="Cactus Peak Athletic, Today"
                 className="shrink-0"
               >
                 <Logo symbol className="size-7" />
               </Link>
               <div className="gap-xs flex flex-1 items-center justify-end">
+                {/* Hidden while the page's own pass control (Today's Next up, the pass card on You, a family
+                    member's intro) is on screen, and back once the member scrolls past it. */}
                 <Button
                   size="sm"
                   variant="outline"
-                  onClick={() => openDialog("pass")}
+                  onClick={() => openPass()}
+                  aria-hidden={passInView || undefined}
+                  inert={passInView || undefined}
+                  className={cn(
+                    "ease-out transition-[opacity,scale] duration-200 motion-reduce:transition-none",
+                    passInView && "pointer-events-none scale-95 opacity-0"
+                  )}
                 >
                   <QrCode aria-hidden="true" data-icon="inline-start" />
                   Pass
                 </Button>
+                <Tip content="Search" side="bottom">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    aria-label="Search"
+                    onClick={() => openDialog("command")}
+                  >
+                    <Search aria-hidden="true" />
+                  </Button>
+                </Tip>
                 <InboxLink />
                 <AccountMenu />
               </div>
@@ -647,19 +703,21 @@ function Shell({ children }: { children: ReactNode }) {
                 page
               )
             ) : (
-              <EmptyState
-                icon={X}
-                title="You don't have access to this page."
+              <StatusPage
+                object="pass"
+                title="This page isn't open to you"
                 body={access.reason}
-                action={
-                  <Button render={<Link href="/today" />}>Back to Home</Button>
-                }
-                secondary={
-                  me.parentId ? (
-                    <Button variant="outline" render={<Link href="/inbox" />}>
-                      Message {app.s.members[me.parentId].firstName}
+                actions={
+                  <>
+                    <Button render={<Link href="/today" />}>
+                      Back to Today
                     </Button>
-                  ) : undefined
+                    {me.parentId ? (
+                      <Button variant="outline" render={<Link href="/inbox" />}>
+                        Message {app.s.members[me.parentId].firstName}
+                      </Button>
+                    ) : null}
+                  </>
                 }
               />
             )}

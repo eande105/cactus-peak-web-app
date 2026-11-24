@@ -181,7 +181,7 @@ export default function TrainingPage() {
       }
     >
       <section id="yt" aria-label="Your training">
-        <Stats variant="cards">
+        <Stats>
           <Stat
             icon={Ticket}
             label="Sessions left"

@@ -1,4 +1,5 @@
 import {
+  Bell,
   CalendarDays,
   CircleHelp,
   CreditCard,
@@ -7,11 +8,16 @@ import {
   type IconComponent,
   IdCard,
   Inbox,
+  KeyRound,
+  LayoutGrid,
+  Lock,
   MapPin,
   Settings,
   Sun,
+  SunMedium,
   Ticket,
   TrendingUp,
+  User,
   Users,
 } from "@/components/icons"
 import { RibBarbell } from "@/components/kit/icons"
@@ -24,53 +30,14 @@ export interface NavItem {
 }
 
 /**
- * The sidebar. The first group is what a member does: see what is next, book, change a booking, check a club,
- * follow progress, read messages. The bottom group is help (beside the search button). What a member manages
- * (Household, Account and its pages) is in the user menu under it. `match` lists the path prefixes that keep the
- * link current.
+ * The four places. Today (what is next, with Bookings under it), Book (classes, courts, lap lanes, kids club,
+ * training), Clubs (crowd levels and what is open) and You (account, progress, inbox, household, help). The phone
+ * tab bar and the desktop sidebar both render this list and nothing else. `match` lists the path prefixes that keep
+ * the link current.
  */
 export interface PrimaryNavItem extends NavItem {
   match: readonly string[]
 }
-export const PRIMARY_NAV: readonly PrimaryNavItem[] = [
-  { href: "/today", label: "Home", icon: Sun, match: ["/today"] },
-  {
-    href: "/schedule",
-    label: "Book",
-    icon: CalendarDays,
-    match: ["/schedule", "/reserve", "/training"],
-  },
-  { href: "/bookings", label: "Bookings", icon: Ticket, match: ["/bookings"] },
-  { href: "/clubs", label: "Clubs", icon: MapPin, match: ["/clubs"] },
-  {
-    href: "/progress",
-    label: "Progress",
-    icon: TrendingUp,
-    match: ["/progress"],
-  },
-  { href: "/inbox", label: "Inbox", icon: Inbox, match: ["/inbox"] },
-]
-export const HELP_NAV: PrimaryNavItem = {
-  href: "/help",
-  label: "Help",
-  icon: CircleHelp,
-  match: ["/help"],
-}
-
-/** The Account area: one side menu for the plan, the money and the member's own settings. */
-export const ACCOUNT_NAV: readonly { href: string; label: string }[] = [
-  { href: "/account", label: "Overview" },
-  { href: "/membership", label: "Membership" },
-  { href: "/billing", label: "Billing" },
-  { href: "/guest-passes", label: "Guest passes" },
-  { href: "/settings/profile", label: "Profile" },
-  { href: "/settings/preferences", label: "Home club and interests" },
-  { href: "/settings/notifications", label: "Notifications" },
-  { href: "/settings/calendar", label: "Calendar" },
-  { href: "/settings/security", label: "Sign-in and security" },
-  { href: "/settings/display", label: "Display and accessibility" },
-  { href: "/settings/privacy", label: "Privacy and data" },
-]
 
 /** The path prefixes that show the Account side menu. Task pages under them (freeze, cancel, change plan) do not. */
 export const ACCOUNT_PATHS: readonly string[] = [
@@ -81,13 +48,114 @@ export const ACCOUNT_PATHS: readonly string[] = [
   "/settings",
 ]
 
+export const PRIMARY_NAV: readonly PrimaryNavItem[] = [
+  { href: "/today", label: "Today", icon: Sun, match: ["/today", "/bookings"] },
+  {
+    href: "/schedule",
+    label: "Book",
+    icon: CalendarDays,
+    match: ["/schedule", "/reserve", "/training"],
+  },
+  { href: "/clubs", label: "Clubs", icon: MapPin, match: ["/clubs"] },
+  {
+    href: "/account",
+    label: "You",
+    icon: IdCard,
+    match: [...ACCOUNT_PATHS, "/progress", "/inbox", "/family", "/help"],
+  },
+]
+export const HELP_NAV: PrimaryNavItem = {
+  href: "/help",
+  label: "Help",
+  icon: CircleHelp,
+  match: ["/help"],
+}
+
+/** The two groups of the Account menu: what the member pays for and uses, then the member's own settings. */
+export const ACCOUNT_GROUPS = ["Membership", "Settings"] as const
+export type AccountGroup = (typeof ACCOUNT_GROUPS)[number]
+
+/**
+ * One page in the Account area. The side menu, the phone list on Overview and each page's title read this list, so
+ * a label is written once. `line` sits under the page title: a fact or a consequence, never a filler description.
+ */
+export interface AccountNavItem extends NavItem {
+  group: AccountGroup
+  line?: string
+}
+
+/** The Account area: one side menu for the plan, the money and the member's own settings. */
+export const ACCOUNT_NAV: readonly AccountNavItem[] = [
+  {
+    href: "/account",
+    label: "Overview",
+    icon: LayoutGrid,
+    group: "Membership",
+  },
+  {
+    href: "/membership",
+    label: "Membership",
+    icon: IdCard,
+    group: "Membership",
+  },
+  { href: "/billing", label: "Billing", icon: CreditCard, group: "Membership" },
+  {
+    href: "/guest-passes",
+    label: "Guest passes",
+    icon: Gift,
+    group: "Membership",
+  },
+  {
+    href: "/settings/profile",
+    label: "Profile",
+    icon: User,
+    group: "Settings",
+  },
+  {
+    href: "/settings/preferences",
+    label: "Home club and interests",
+    icon: MapPin,
+    group: "Settings",
+  },
+  {
+    href: "/settings/notifications",
+    label: "Notifications",
+    icon: Bell,
+    group: "Settings",
+  },
+  {
+    href: "/settings/calendar",
+    label: "Calendar",
+    icon: CalendarDays,
+    group: "Settings",
+  },
+  {
+    href: "/settings/security",
+    label: "Sign-in and security",
+    icon: KeyRound,
+    group: "Settings",
+  },
+  {
+    href: "/settings/display",
+    label: "Display and accessibility",
+    icon: SunMedium,
+    group: "Settings",
+  },
+  {
+    href: "/settings/privacy",
+    label: "Privacy and data",
+    icon: Lock,
+    group: "Settings",
+  },
+]
+
 export function isCurrent(path: string, prefixes: readonly string[]): boolean {
   return prefixes.some((p) => path === p || path.startsWith(`${p}/`))
 }
 
 /** Every page a member can search for in the command menu. */
 export const NAV: NavItem[] = [
-  { href: "/today", label: "Home", icon: Sun },
+  { href: "/today", label: "Today", icon: Sun },
   { href: "/schedule", label: "Book a class", icon: CalendarDays },
   { href: "/bookings", label: "Bookings", icon: Ticket },
   { href: "/reserve/courts", label: "Reserve a court", icon: Grid2x2 },

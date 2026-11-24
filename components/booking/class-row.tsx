@@ -14,7 +14,14 @@ import { CategoryBadge } from "@/components/kit/category"
 import { CapacityIndicator, IntensityRibs } from "@/components/kit/ribs"
 import { StatusPill } from "@/components/kit/ui"
 import { CLUB_BY_SLUG, INSTRUCTOR_BY_ID, LEVEL_WORDS } from "@/lib/data/catalog"
-import { bookingOf, bookingState, sessionLeft, waitCount } from "@/lib/engine"
+import {
+  bookingOf,
+  bookingState,
+  clubCrowdAt,
+  sessionLeft,
+  usually,
+  waitCount,
+} from "@/lib/engine"
 import { fmtDowTime, fmtTime } from "@/lib/time"
 import type { Session } from "@/lib/types"
 import { cn } from "@/lib/utils"
@@ -129,6 +136,10 @@ export function ScheduleRow({
           {/* On a phone the line keeps to the coach and the room, so it fits on one line; the class panel and screen
               readers still have the level. */}
           <span className="max-sm:sr-only"> · {LEVEL_WORDS[se.intensity]}</span>
+          {/* The club's typical crowd level at the class hour. Typical, so it always says "Usually". */}
+          <span className="block">
+            {usually(clubCrowdAt(se.clubSlug, se.start).word, se.start)}
+          </span>
         </>
       }
       end={

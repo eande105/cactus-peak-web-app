@@ -1,6 +1,12 @@
 "use client"
 import { useRef } from "react"
-import { SlotCell, SlotChip, type SlotRange } from "@/components/reserve/parts"
+import { SlotCell, type SlotRange } from "@/components/reserve/parts"
+import {
+  CourtTiles,
+  LaneStrips,
+  type SlotRowData,
+  SlotRowList,
+} from "@/components/reserve/slot-rows"
 import { fmtTime, parts } from "@/lib/time"
 import { cn } from "@/lib/utils"
 
@@ -22,6 +28,19 @@ export interface GridRow {
   id: number
   label: string
   sub?: string
+}
+
+/** The open count for one start time, as a phrase: "Court 2 open", "3 courts open", "3 of 8 lanes open". */
+export function openText(
+  kind: "court" | "lane",
+  rows: GridRow[],
+  open: GridRow[]
+) {
+  if (!open.length) return kind === "court" ? "No court open" : "No lane open"
+  if (kind === "lane") return `${open.length} of ${rows.length} lanes open`
+  return open.length === 1
+    ? `${open[0].label} open`
+    : `${open.length} courts open`
 }
 
 // Matrix of resources (rows) by start times (columns). One radiogroup, roving focus, arrow-key movement.
@@ -159,6 +178,29 @@ export function SlotGrid({
               </div>
             )
           })}
+          <div className="pr-s sticky left-0 z-10 flex items-center bg-sheet text-body-xs text-muted-foreground rule-b">
+            Open
+          </div>
+          {slots.map((s, c) => {
+            const n = rows.filter((r) => info(r.id, s).status === "open").length
+            return (
+              <div
+                key={s}
+                title={openText(
+                  kind,
+                  rows,
+                  rows.filter((r) => info(r.id, s).status === "open")
+                )}
+                className={cn(
+                  "tabular grid min-h-7 place-items-center text-body-xs rule-b",
+                  c === am.length && c > 0 && "rule-l",
+                  n ? "font-medium text-foreground" : "text-muted-foreground/60"
+                )}
+              >
+                {s < (now ?? 0) ? "" : n}
+              </div>
+            )
+          })}
           {rows.map((row, r) => (
             <div key={row.id} className="contents">
               <div className="pr-s py-xxs sticky left-0 z-10 flex min-h-11 flex-col justify-center bg-sheet text-body-s font-medium rule-b">
@@ -204,7 +246,8 @@ export function SlotGrid({
   )
 }
 
-// Below 1024px: one row for each start time, with the courts or lanes as chips. No horizontal scroll.
+// Below 1024px: one row for each start time (SlotRowList), with the courts or lanes as a glance. No horizontal scroll.
+// A tap picks the best open court or lane for that start time; a second tap on the picked row moves to the next one.
 export function SlotList({
   kind,
   rows,
@@ -212,6 +255,8 @@ export function SlotList({
   info,
   selected,
   onSelect,
+  lengthMs,
+  now,
   label,
   disabled,
   className,
@@ -222,40 +267,89 @@ export function SlotList({
   info: (row: number, slot: number) => CellInfo
   selected: { row: number; slot: number } | null
   onSelect: (row: number, slot: number) => void
+  /** How long one reservation runs, for the end time under the start. */
+  lengthMs: number
+  now: number
   label: string
   disabled?: boolean
   className?: string
 }) {
+  const data: SlotRowData[] = slots.map((s) => {
+    const cells = rows.map((r) => ({ r, i: info(r.id, s) }))
+    const open = cells.filter((c) => c.i.status === "open")
+    const picked = selected?.slot === s ? selected.row : null
+    const past = s < now
+    let status: string
+    if (past) status = "Past"
+    else if (kind === "court")
+      status = open.length ? `${open.length} open` : "Full"
+    else {
+      const shared = open.filter((c) => c.i.swimmers === 1).length
+      const empty = open.length - shared
+      status = !open.length
+        ? "Full · no waitlist"
+        : shared
+          ? `${empty} open · ${shared} to share`
+          : empty === rows.length
+            ? `All ${rows.length} lanes open`
+            : `${empty} of ${rows.length} lanes open`
+    }
+    // The best pick: the lane with a swimmer first (it keeps empty lanes free), then the lowest number.
+    const order = [...open].sort((a, b) =>
+      kind === "lane"
+        ? (b.i.swimmers ?? 0) - (a.i.swimmers ?? 0) || a.r.id - b.r.id
+        : a.r.id - b.r.id
+    )
+    const at = order.findIndex((c) => c.r.id === picked)
+    const next = order.length ? order[(at + 1) % order.length] : undefined
+    return {
+      key: s,
+      start: s,
+      end: s + lengthMs,
+      past,
+      status,
+      pill: open.length && !past ? "Book" : undefined,
+      selected: picked !== null,
+      label: `${fmtTime(s)}, ${status}${past ? ", past" : ""}`,
+      onPress: next ? () => onSelect(next.r.id, s) : undefined,
+      glance:
+        kind === "court" ? (
+          <CourtTiles
+            courts={cells.map((c) => ({
+              id: c.r.id,
+              state:
+                c.i.status === "open"
+                  ? "open"
+                  : c.i.status === "mine"
+                    ? "mine"
+                    : "taken",
+              picked: picked === c.r.id,
+            }))}
+          />
+        ) : (
+          <LaneStrips
+            lanes={cells.map((c) => ({
+              id: c.r.id,
+              state:
+                c.i.status === "mine"
+                  ? "mine"
+                  : c.i.status === "open"
+                    ? c.i.swimmers === 1
+                      ? "shared"
+                      : "free"
+                    : "full",
+              picked: picked === c.r.id,
+            }))}
+          />
+        ),
+    }
+  })
   return (
-    <div
-      role="radiogroup"
-      aria-label={label}
-      className={cn("flex flex-col [&>div+div]:rule-t", className)}
-    >
-      {slots.map((s) => (
-        <div
-          key={s}
-          className="gap-x-s py-s grid grid-cols-[4.5rem_minmax(0,1fr)] items-start"
-        >
-          <p className="tabular flex min-h-11 items-center text-body-m font-medium whitespace-nowrap text-muted-foreground">
-            {fmtTime(s)}
-          </p>
-          <div className="gap-xs flex flex-wrap">
-            {rows.map((r) => (
-              <SlotChip
-                key={r.id}
-                kind={kind}
-                row={r}
-                slot={s}
-                info={info(r.id, s)}
-                selected={selected?.row === r.id && selected.slot === s}
-                disabled={disabled}
-                onSelect={onSelect}
-              />
-            ))}
-          </div>
-        </div>
-      ))}
-    </div>
+    <SlotRowList
+      rows={data}
+      label={label}
+      disabled={disabled}
+      className={className}
+    />
   )
 }

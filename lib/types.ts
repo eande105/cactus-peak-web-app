@@ -55,6 +55,17 @@ export interface Club {
   studios: string[]
 }
 
+/** A club area that shows a crowd level only (never reservable). Levels 1-5, index 0 = 4 am through 17 = 9 pm. */
+export type AreaKind = "pool" | "therapy_pool" | "sauna" | "recovery"
+export interface ClubArea {
+  clubSlug: string
+  area: AreaKind
+  label: string
+  sort: number
+  typicalWeekday: number[]
+  typicalWeekend: number[]
+}
+
 export interface Instructor {
   id: string
   name: string

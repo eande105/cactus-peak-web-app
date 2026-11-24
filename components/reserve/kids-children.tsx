@@ -78,7 +78,7 @@ export function WhosGoing({
             const body = (
               <>
                 <PersonAvatar
-                  name={c.firstName}
+                  name={`${c.firstName} ${c.lastName}`}
                   hue={c.hue}
                   size={40}
                   className="shrink-0"

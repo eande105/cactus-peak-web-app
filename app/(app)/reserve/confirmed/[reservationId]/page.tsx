@@ -1,13 +1,7 @@
-import type { Metadata } from "next"
-import ConfirmedPage from "@/components/reserve/confirmed-page"
+import { redirect } from "next/navigation"
 
-export const metadata: Metadata = { title: "Reservation confirmed" }
-
-export default async function Page({
-  params,
-}: {
-  params: Promise<{ reservationId: string }>
-}) {
-  const { reservationId } = await params
-  return <ConfirmedPage id={reservationId} />
+// Every booking ends in the same toast (lib/booked-toast.ts), so there is no confirmation page. An old link opens
+// Bookings, where the booking is listed.
+export default function Page() {
+  redirect("/bookings")
 }

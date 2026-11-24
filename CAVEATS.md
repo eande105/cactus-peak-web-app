@@ -22,7 +22,6 @@
 - **Known gaps.** Lap lanes have no hold (the data layer has none). A court move still asks for player names that
   `moveReservation` does not use. `EmptyState` has no small size. `NoticeRow` and the dialogs in `global-dialogs.tsx` keep their older markup.
 
-- **No entry point.** The command menu still opens with Ctrl K but has no button in the shell.
 - **Stubs.** Card payments, push, Wallet, photo upload, the calendar feed, passkeys, "Download my data" and PDF
   invoices are simulated (see BUILD-NOTES.md).
 - **BUILD-NOTES.md is out of date** for navigation: it describes the sidebar and 14 destinations.
@@ -31,3 +30,27 @@
   by path (`needsStepUp`). The time of the last check is in `localStorage`, so the gate does not stop a member who
   edits browser storage. Row level security in Supabase is the server-side limit.
   Proposal: record the time of the last check on the server and have the plan and billing writes require it.
+- **Crowd levels are typical.** `clubs` and `club_areas` hold typical hourly levels (4 am to 9 pm), not live counts. The
+  club level and its words (`liveBusyness`) keep their old name but read the same typical arrays. Only area levels are
+  worded "Usually …"; the club switcher and club rows show the level word alone.
+- **Classes still compare clubs.** The class filter drawer can show several clubs (`?club=a,b`). A single `?club=` slug
+  sets the current club and leaves the URL. Courts, lap lanes and kids club follow the current club only.
+- **A club without the facility.** The Courts, Lap lanes and Kids club tabs show `NoFacility` with the clubs that have
+  it, instead of jumping to another club.
+- **You and Help in the sidebar.** `/help` is in the You match list and also has its own sidebar link, so both show as
+  current there. The unread count is on You, because Inbox is not a place any more.
+- **Training is untouched.** Training still ends in its own success panel and is not tied to the current club.
+  `SuccessPanel` is still used by Training, Household, Membership flows.
+- **Not checked in a browser.** The change passed `pnpm typecheck`, `pnpm lint` and `pnpm test` only. The phone header
+  width (Pass, Search, bell, avatar), the switcher in the Book header and the two-button toast need a look.
+- **Fixture has no areas.** `lib/__tests__/fixture.ts` reads `areas` from the seed JSON, which has none, so tests use
+  inline `ClubArea` values.
+- **Past-hour counts.** The slot grid "Open" row shows no count for a start time that has gone by.
+
+## iOS parity redesign (Nov 22, 2026)
+
+- `components/bookings/booking-detail.tsx` copies the check-in token format from `components/app/check-in-pass.tsx`, which does not export it. Change both together, or export the token builder from one place.
+- `HeroHeader` cancels the shell gutter with `-mx-m -mt-m` below `lg`. If the shell's phone padding changes, change the hero too.
+- Class detail no longer shows the club map, "Open in Maps" or "Call the club"; the Club row links to the club page.
+- Club detail on phones has no tabs; desktop keeps Overview, Classes and Amenities. The Amenities tab no longer lists kids club blocks (Reserve covers them).
+- Checked in a browser at 375 px and 1440 px, light and dark: every redesigned page, and training and past bookings. Not checked: held and waitlisted bookings (the demo data has none), and iPad widths between 768 and 1023 px.

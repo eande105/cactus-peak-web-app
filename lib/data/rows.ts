@@ -4,8 +4,10 @@ import type { AppState } from "@/lib/data/state"
 import type { Json, Tables, TablesInsert } from "@/lib/supabase/database.types"
 import { DEMO_START } from "@/lib/time"
 import type {
+  AreaKind,
   Booking,
   CategoryId,
+  ClubArea,
   GuestPass,
   Household,
   Invoice,
@@ -520,3 +522,15 @@ export const isEmptyDiff = (d: RowDiff) =>
   HOUSEHOLD_TABLES.every(
     (t) => d[t].upserts.length === 0 && d[t].deletes.length === 0
   )
+
+/** A `club_areas` row to the app's `ClubArea`. Both arrays keep the database order: index 0 = 4 am. */
+export function clubAreaFromRow(row: Tables<"club_areas">): ClubArea {
+  return {
+    clubSlug: row.club_slug,
+    area: row.area as AreaKind,
+    label: row.label,
+    sort: row.sort,
+    typicalWeekday: row.typical_weekday,
+    typicalWeekend: row.typical_weekend,
+  }
+}

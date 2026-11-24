@@ -1,9 +1,10 @@
 "use client"
-import Link from "next/link"
 import { notFound, useRouter } from "next/navigation"
 import { type ReactNode, useState } from "react"
+import { openPass } from "@/components/app/pass-dialog"
 import { useApp } from "@/components/app/use-app"
-import { RemoveMemberConfirm, RolePill } from "@/components/family/parts"
+import { IosMemberIntro } from "@/components/family/ios-member-intro"
+import { RemoveMemberConfirm } from "@/components/family/parts"
 import { AppPage, Card, Facts, Row, Rows } from "@/components/kit/app"
 import {
   Banner,
@@ -16,7 +17,6 @@ import {
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
-import { useMedia } from "@/hooks/use-media"
 import {
   setTeenPermission,
   undoRemoveMember,
@@ -60,7 +60,6 @@ function ControlRows({
 export default function MemberProfile({ id }: { id: string }) {
   const { s, me, hh, now } = useApp()
   const router = useRouter()
-  const onTouch = useMedia("(pointer: coarse)")
   const m = s.members[id]
   const [saved, setSaved] = useState("")
   const [first, setFirst] = useState(m?.firstName ?? "")
@@ -103,14 +102,12 @@ export default function MemberProfile({ id }: { id: string }) {
   return (
     <AppPage
       back={back}
-      title={name}
+      // The intro below shows the name and role, so the heading is for screen readers only.
+      title={<span className="sr-only">{name}</span>}
       meta={
-        <>
-          <RolePill role={m.role} />
-          {m.endsOn ? (
-            <StatusPill tone="warning">Ends {fmtDayShort(m.endsOn)}</StatusPill>
-          ) : null}
-        </>
+        m.endsOn ? (
+          <StatusPill tone="warning">Ends {fmtDayShort(m.endsOn)}</StatusPill>
+        ) : null
       }
       actions={
         <p
@@ -121,6 +118,7 @@ export default function MemberProfile({ id }: { id: string }) {
         </p>
       }
     >
+      <IosMemberIntro member={m} paused={hh.status === "frozen"} />
       <div className="gap-m grid items-start lg:grid-cols-[minmax(0,640px)_minmax(0,1fr)]">
         <div className="gap-m flex min-w-0 flex-col">
           <Card
@@ -322,15 +320,9 @@ export default function MemberProfile({ id }: { id: string }) {
           id="ac"
           as="aside"
           action={
-            onTouch ? (
-              <Button
-                variant="outline"
-                size="sm"
-                render={<Link href="/pass" />}
-              >
-                Show pass
-              </Button>
-            ) : undefined
+            <Button variant="outline" size="sm" onClick={() => openPass(m.id)}>
+              Pass
+            </Button>
           }
         >
           <Facts

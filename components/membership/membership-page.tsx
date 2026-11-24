@@ -1,10 +1,17 @@
 "use client"
 import Link from "next/link"
 import { useEffect, useState } from "react"
-import { capital, FactRow, IconPill, Section } from "@/components/account/parts"
+import { capital, IconPill, Section } from "@/components/account/parts"
+import { AccountScreen, SummaryCard } from "@/components/account/screen"
 import { useApp } from "@/components/app/use-app"
-import { Check, ChevronRight, Pause } from "@/components/icons"
-import { AppPage, Card, Facts } from "@/components/kit/app"
+import {
+  CalendarDays,
+  Check,
+  ChevronRight,
+  IdCard,
+  Pause,
+} from "@/components/icons"
+import { Card, Facts } from "@/components/kit/app"
 import { Confirm } from "@/components/kit/overlays"
 import { Banner, LoadingBlock, StatusPill } from "@/components/kit/ui"
 import { Button } from "@/components/ui/button"
@@ -21,11 +28,19 @@ import {
   nextBillingDate,
   paymentDaysLate,
 } from "@/lib/engine"
-import { DAY, fmtDateFull, fmtDay, fmtDayShort, fmtMoney } from "@/lib/time"
+import {
+  DAY,
+  fmtDateFull,
+  fmtDay,
+  fmtDayLong,
+  fmtDayShort,
+  fmtMoney,
+} from "@/lib/time"
 import { toast } from "@/lib/toast"
 
 /**
- * Membership: the two plan actions in the page bar, the plan as one row of facts, what the plan includes, the fees,
+ * Membership: the two plan actions in the page bar, the plan and the next bill as two summary cards, what the plan
+ * includes, the details, the fees,
  * one offer for the next plan, and the way out as a quiet row at the end. A scheduled freeze, a freeze, an end date
  * and a plan change each show as a banner with the action that reverses it.
  */
@@ -60,13 +75,7 @@ export default function MembershipPage() {
       <StatusPill tone="info">
         Changing on {fmtDayShort(hh.pendingPlan.on)}
       </StatusPill>
-    ) : (
-      // The usual state is quiet: a green check and the word, as in the household and invoice tables.
-      <span className="gap-xxs inline-flex items-center">
-        <Check className="size-3.5 shrink-0 text-success" aria-hidden="true" />
-        Active
-      </span>
-    )
+    ) : null
   const rc = resumeCost(s, hh, now)
   // A banner with a primary action (resume, keep) takes the screen's one primary button.
   const bannerLeads =
@@ -74,13 +83,18 @@ export default function MembershipPage() {
     ((hh.status === "frozen" && !!hh.freeze) ||
       (hh.status === "cancel_scheduled" && !!hh.cancelOn))
   return (
-    <AppPage
-      title="Membership"
+    <AccountScreen
+      width="wide"
       meta={
-        primary ? undefined : (
-          <p className="text-body-m text-muted-foreground sm:text-body-s">
-            Managed by {s.members[hh.primaryId].firstName}
-          </p>
+        primary && !pill ? undefined : (
+          <span className="gap-xs flex flex-wrap items-center">
+            {primary ? null : (
+              <span className="text-body-m text-muted-foreground sm:text-body-s">
+                Managed by {s.members[hh.primaryId].firstName}
+              </span>
+            )}
+            {pill}
+          </span>
         )
       }
       actions={
@@ -181,47 +195,29 @@ export default function MembershipPage() {
         />
       ) : null}
 
-      <Section id="yp" title="Your plan">
-        <FactRow
-          className="py-m rule-b rule-t"
-          items={[
-            {
-              label: "Plan",
-              value: (
-                <span className="gap-xs flex flex-wrap items-center">
-                  {plan.name}
-                  {pill}
-                </span>
-              ),
-            },
-            { label: "Price", value: `${fmtMoney(plan.price, false)} a month` },
-            ...(primary && money.adults + money.kids > 0
-              ? [
-                  {
-                    label: "Family add-ons",
-                    value: `${fmtMoney(money.adultTotal + money.kidTotal, false)} a month`,
-                  },
-                ]
-              : []),
-            primary
-              ? {
-                  label: "Next charge",
-                  value: `${fmtMoney(money.total)} on ${fmtDayShort(next)}`,
-                }
-              : { label: "Renews", value: fmtDayShort(next) },
-            { label: "Home club", value: CLUB_BY_SLUG[me.homeClub].name },
-            { label: "Member since", value: fmtDateFull(hh.memberSince) },
-          ]}
+      <div id="yp" className="gap-s grid sm:grid-cols-2">
+        <SummaryCard
+          icon={IdCard}
+          label="Plan"
+          value={plan.name}
+          meta={`${fmtMoney(plan.price, false)} a month`}
         />
-      </Section>
+        <SummaryCard
+          icon={CalendarDays}
+          label={primary ? "Next bill" : "Renews"}
+          value={primary ? fmtMoney(money.total) : fmtDayLong(next)}
+          meta={primary ? fmtDayLong(next) : undefined}
+        />
+      </div>
+      {/* Change plan is the page header's main button, so it is not repeated as a row. */}
 
       <Section id="inc" title="Included">
-        <div className="@container">
-          <ul className="gap-x-l gap-y-xs grid text-body-m sm:text-body-s @lg:grid-cols-2">
+        <div className="p-m corner-m raised">
+          <ul className="gap-x-l gap-y-xs grid text-body-m sm:grid-cols-2 sm:text-body-s">
             {plan.perks.map((p) => (
               <li key={p} className="gap-xs flex items-start">
                 <Check
-                  className="size-4 h-lh shrink-0 text-success"
+                  className="size-5 h-lh shrink-0 text-success"
                   aria-hidden="true"
                 />
                 {p}
@@ -231,17 +227,40 @@ export default function MembershipPage() {
         </div>
       </Section>
 
-      {primary ? (
-        <Section id="fees" title="Fees">
+      <Section id="det" title="Details">
+        <div className="px-m corner-m raised">
           <Facts
-            className="rule-t"
             items={[
-              { label: "Annual facility fee", value: "$49, charged in March" },
-              { label: "Enrollment", value: "$0 during Fall climb" },
-              { label: "Freeze", value: "$10 a month, 1–3 months" },
-              { label: "Cancel", value: "30 days' notice" },
+              ...(primary && money.adults + money.kids > 0
+                ? [
+                    {
+                      label: "Family add-ons",
+                      value: `${fmtMoney(money.adultTotal + money.kidTotal, false)} a month`,
+                    },
+                  ]
+                : []),
+              { label: "Home club", value: CLUB_BY_SLUG[me.homeClub].name },
+              { label: "Member since", value: fmtDateFull(hh.memberSince) },
             ]}
           />
+        </div>
+      </Section>
+
+      {primary ? (
+        <Section id="fees" title="Fees">
+          <div className="px-m corner-m raised">
+            <Facts
+              items={[
+                {
+                  label: "Annual facility fee",
+                  value: "$49, charged in March",
+                },
+                { label: "Enrollment", value: "$0 during Fall climb" },
+                { label: "Freeze", value: "$10 a month, 1–3 months" },
+                { label: "Cancel", value: "30 days' notice" },
+              ]}
+            />
+          </div>
         </Section>
       ) : null}
 
@@ -317,6 +336,6 @@ export default function MembershipPage() {
           </Button>
         </div>
       </Confirm>
-    </AppPage>
+    </AccountScreen>
   )
 }

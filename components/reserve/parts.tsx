@@ -21,15 +21,18 @@ export type SlotTone =
   | "idle"
 
 const TONE: Record<SlotTone, string> = {
-  free: "bg-success-subtle",
-  selected: "bg-night text-night-foreground",
-  mine: "bg-accent text-accent-foreground",
-  taken: "hatch opacity-60",
-  short: "bg-success-subtle opacity-40",
-  // A start time that has gone by: a plain muted chip, quieter than the green free slots, as Kids club dims a block
-  // that has begun. A blank cell would read as "not part of the grid". Dark mode's muted step is lighter than the free
-  // tint, so it drops to 40% there.
-  past: "bg-muted dark:bg-muted/40",
+  // After the Deputy and Calendly timelines: open time is light and inviting, taken time is hatched, and only the
+  // pick is solid. A grid full of solid open cells made free time the loudest thing on the page.
+  free: "bg-popover dark:bg-night-foreground/12",
+  selected:
+    "bg-night text-night-foreground dark:bg-night-foreground dark:text-night",
+  mine: "bg-primary text-primary-foreground",
+  taken:
+    "bg-[repeating-linear-gradient(135deg,color-mix(in_oklab,var(--foreground)_9%,transparent)_0_2px,transparent_2px_6px)] text-muted-foreground",
+  // Partly free: a light tint, so it reads as "some time left", not as a second kind of taken.
+  short: "bg-night/14 dark:bg-night-foreground/16",
+  // A start time that has gone by: a plain quiet chip. A blank cell would read as "not part of the grid".
+  past: "bg-muted/40",
   idle: "",
 }
 
@@ -88,10 +91,10 @@ export function Swimmers({
             "size-2 corner-full",
             k < count
               ? onNight
-                ? "bg-night-foreground"
+                ? "bg-night-foreground dark:bg-night"
                 : "bg-foreground"
               : onNight
-                ? "hairline ring-night-foreground"
+                ? "hairline ring-night-foreground dark:ring-night"
                 : "hairline ring-input"
           )}
         />
@@ -109,9 +112,18 @@ const RANGE: Record<SlotRange, string> = {
   end: "left-0 right-0.5 corner-r-s",
 }
 
+// The accent ring around the selected range: all four sides of one cell, or the ends and the long sides of several.
+const RING: Record<SlotRange, string> = {
+  only: "shadow-[inset_0_0_0_2px_var(--primary)]",
+  start:
+    "shadow-[inset_2px_0_0_0_var(--primary),inset_0_2px_0_0_var(--primary),inset_0_-2px_0_0_var(--primary)]",
+  mid: "shadow-[inset_0_2px_0_0_var(--primary),inset_0_-2px_0_0_var(--primary)]",
+  end: "shadow-[inset_-2px_0_0_0_var(--primary),inset_0_2px_0_0_var(--primary),inset_0_-2px_0_0_var(--primary)]",
+}
+
 /**
  * One cell of the slot grid: a radio that fills the cell, with the state drawn as a chip inside it.
- * A free cell is a soft tinted chip that takes a stronger edge on hover. The selected range has the Night fill.
+ * An open cell is a solid brand chip, a taken one is muted, a shared lane is half filled from the bottom. The selected range keeps the fills and takes the accent ring.
  */
 export function SlotCell({
   kind,
@@ -144,6 +156,7 @@ export function SlotCell({
   const live = free && !disabled
   const tone = slotTone(info, !!range)
   const start = range === "start" || range === "only"
+  const shared = kind === "lane" && free && info.swimmers === 1
   return (
     // biome-ignore lint/a11y/useSemanticElements: slot picker with roving tabindex, a native radio input cannot fill the grid cell
     <button
@@ -168,20 +181,23 @@ export function SlotCell({
         <span
           aria-hidden="true"
           className={cn(
-            "absolute",
-            tone === "taken"
-              ? "inset-0"
-              : range
-                ? cn("inset-y-0.5", RANGE[range])
-                : "corner-s inset-0.5",
-            TONE[tone],
-            tone === "free" &&
-              "hairline ring-transparent" +
+            "absolute overflow-hidden",
+            range ? cn("inset-y-0.5", RANGE[range]) : "corner-s inset-0.5",
+            // A shared lane: a light base with the bottom half solid.
+            shared ? TONE.free : TONE[tone],
+            range && RING[range],
+            free &&
+              !range &&
+              "shadow-[inset_0_0_0_1px_color-mix(in_oklab,var(--night)_40%,transparent)] dark:shadow-[inset_0_0_0_1px_color-mix(in_oklab,var(--night-foreground)_35%,transparent)]" +
                 (live
-                  ? "group-hover:ring-success group-focus-visible:ring-success"
+                  ? "group-hover:bg-night/10 group-hover:shadow-[inset_0_0_0_2px_var(--primary)] group-focus-visible:shadow-[inset_0_0_0_2px_var(--primary)] dark:group-hover:bg-night-foreground/18"
                   : "")
           )}
-        />
+        >
+          {shared && !range ? (
+            <span className="absolute inset-x-0 bottom-0 h-1/2 bg-night/45 dark:bg-night-foreground/45" />
+          ) : null}
+        </span>
       )}
       <span className="relative">
         {range ? (
@@ -196,13 +212,11 @@ export function SlotCell({
             )
           ) : null
         ) : free ? (
-          kind === "lane" ? (
-            <Swimmers count={info.swimmers ?? 0} />
-          ) : (
+          kind === "lane" ? null : (
             <span
               aria-hidden="true"
               className={cn(
-                "tabular font-medium opacity-0",
+                "tabular font-medium text-night opacity-0 dark:text-night-foreground",
                 live &&
                   "group-hover:opacity-100 group-focus-visible:opacity-100"
               )}
@@ -211,75 +225,10 @@ export function SlotCell({
             </span>
           )
         ) : info.status === "mine" ? (
-          <span className="font-medium text-accent-foreground">Yours</span>
+          <span className="font-medium text-primary-foreground">Yours</span>
         ) : info.status === "closed" ? (
           <span className="text-muted-foreground">Closed</span>
         ) : null}
-      </span>
-    </button>
-  )
-}
-
-/** The phone form of a slot: one chip with the court or lane name. It wraps in a row for each start time. */
-export function SlotChip({
-  kind,
-  row,
-  slot,
-  info,
-  selected,
-  disabled,
-  onSelect,
-  className,
-}: {
-  kind: "court" | "lane"
-  row: GridRow
-  slot: number
-  info: CellInfo
-  selected: boolean
-  disabled?: boolean
-  onSelect: (row: number, slot: number) => void
-  className?: string
-}) {
-  const free = info.status === "open"
-  const live = free && !disabled
-  const tone = slotTone(info, selected)
-  const sub =
-    info.status === "mine"
-      ? "Yours"
-      : kind === "lane" && free && info.swimmers === 1
-        ? "1 of 2"
-        : null
-  return (
-    // biome-ignore lint/a11y/useSemanticElements: slot picker with custom chips, a native radio input cannot hold this content
-    <button
-      type="button"
-      role="radio"
-      aria-checked={selected}
-      aria-disabled={!live || undefined}
-      aria-label={slotName(row, slot, info)}
-      onClick={() => {
-        if (live) onSelect(row.id, slot)
-      }}
-      className={cn(
-        "px-s corner-s relative grid min-h-11 min-w-20 place-items-center overflow-hidden text-body-m font-medium hairline ring-transparent",
-        tone === "taken" || tone === "idle"
-          ? "text-muted-foreground"
-          : tone === "past"
-            ? cn(TONE.past, "text-muted-foreground")
-            : TONE[tone],
-        live && !selected && "hover:ring-success",
-        className
-      )}
-    >
-      {tone === "taken" ? (
-        <span
-          aria-hidden="true"
-          className={cn("absolute inset-0", TONE.taken)}
-        />
-      ) : null}
-      <span className="relative flex flex-col items-center">
-        <span>{row.label}</span>
-        {sub ? <span className="text-body-xs font-regular">{sub}</span> : null}
       </span>
     </button>
   )
@@ -311,12 +260,14 @@ export function SlotLegend({
           <span
             aria-hidden="true"
             className={cn(
-              "grid h-3 w-5 shrink-0 place-items-center overflow-hidden corner-xs",
-              TONE[it.tone]
+              "relative h-3 w-5 shrink-0 overflow-hidden corner-xs",
+              it.swimmers === 1 ? TONE.free : TONE[it.tone],
+              (it.tone === "free" || it.swimmers === 1) &&
+                "shadow-[inset_0_0_0_1px_color-mix(in_oklab,var(--night)_40%,transparent)]"
             )}
           >
-            {it.swimmers !== undefined ? (
-              <Swimmers count={it.swimmers} className="scale-75" />
+            {it.swimmers === 1 ? (
+              <span className="absolute inset-x-0 bottom-0 h-1/2 bg-night/45 dark:bg-night-foreground/45" />
             ) : null}
           </span>
           {it.label}

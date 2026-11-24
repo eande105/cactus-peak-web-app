@@ -3,17 +3,22 @@ import Link from "next/link"
 import type { ReactNode } from "react"
 import { useEffect, useState } from "react"
 import { capital, IconPill, Section } from "@/components/account/parts"
-import { useApp } from "@/components/app/use-app"
-import { Check, Download, TriangleAlert } from "@/components/icons"
 import {
-  AppPage,
-  Card,
-  Facts,
-  Row,
-  Rows,
-  Stat,
-  Stats,
-} from "@/components/kit/app"
+  AccountScreen,
+  IconTile,
+  SummaryCard,
+} from "@/components/account/screen"
+import { useApp } from "@/components/app/use-app"
+import {
+  Check,
+  CreditCard,
+  Download,
+  Dumbbell,
+  Ticket,
+  TriangleAlert,
+  Wallet,
+} from "@/components/icons"
+import { Card, Facts, Rows } from "@/components/kit/app"
 import {
   Banner,
   EmptyState,
@@ -32,7 +37,7 @@ import {
   paymentDaysLate,
   ptCreditsLeft,
 } from "@/lib/engine"
-import { fmtDateFull, fmtDayShort, fmtMoney } from "@/lib/time"
+import { fmtDayShort, fmtMoney } from "@/lib/time"
 import { toast } from "@/lib/toast"
 import type { Invoice } from "@/lib/types"
 import { openDialog } from "@/lib/ui-state"
@@ -124,7 +129,7 @@ function EditableValue({
   )
 }
 
-/** One card on file as a row of the payment method block: the card, one fact, and the status and action at the right. */
+/** One card on file as a row of the cards block: an icon tile, the card, one fact, and the status and action at the right. */
 function CardOnFile({
   title,
   line,
@@ -143,9 +148,12 @@ function CardOnFile({
         className
       )}
     >
-      <div className="min-w-0 flex-1 basis-40">
-        <p className="truncate font-medium">{title}</p>
-        <p className="tabular text-muted-foreground">{line}</p>
+      <div className="gap-s flex min-w-0 flex-1 basis-40 items-center">
+        <IconTile icon={CreditCard} />
+        <div className="min-w-0 flex-1">
+          <p className="truncate font-medium">{title}</p>
+          <p className="tabular text-muted-foreground">{line}</p>
+        </div>
       </div>
       <div className="gap-xs flex flex-wrap items-center">{end}</div>
     </li>
@@ -153,13 +161,13 @@ function CardOnFile({
 }
 
 const TH =
-  "h-9 px-s text-body-xs font-medium whitespace-nowrap text-muted-foreground first:pl-zero last:pr-zero"
-const TD = "px-s py-xs first:pl-zero last:pr-zero"
+  "h-9 px-s text-body-xs font-medium whitespace-nowrap text-muted-foreground first:pl-m last:pr-m"
+const TD = "px-s py-xs first:pl-m last:pr-m"
 const PER_PAGE = 10
 
 /**
- * Billing: what the household pays next and what it has left as one block of numbers, the card that pays as one
- * bordered row, the monthly charges and the receipt details as facts, and every invoice in a bare table.
+ * Billing: what the household pays next, the card that pays and what it has left as summary cards, the cards on file
+ * as one raised card, the monthly charges and the receipt details as facts, and every invoice in a raised card.
  * A declined card shows first, with the retry.
  */
 export default function BillingPage() {
@@ -201,6 +209,7 @@ export default function BillingPage() {
   const pages = Math.max(1, Math.ceil(inv.length / PER_PAGE))
   const rows = inv.slice((page - 1) * PER_PAGE, page * PER_PAGE)
   const brand = capital(hh.card.brand)
+  const expires = `Expires ${String(hh.card.expMonth).padStart(2, "0")}/${hh.card.expYear}`
   const { left } = guestPassesLeft(s, hh.id, now)
   const dl = (i: Invoice) => (
     <Button
@@ -213,7 +222,7 @@ export default function BillingPage() {
     </Button>
   )
   return (
-    <AppPage title="Billing">
+    <AccountScreen width="wide">
       {late >= 0 ? (
         <Banner
           role="status"
@@ -242,23 +251,47 @@ export default function BillingPage() {
         />
       ) : null}
 
-      <Stats>
-        <Stat
-          label="Next charge"
+      <div className="gap-s grid grid-cols-2">
+        <SummaryCard
+          className="max-sm:col-span-2"
+          icon={Wallet}
+          label="Next bill"
           value={fmtMoney(money.total)}
-          hint={fmtDateFull(nextBillingDate(hh, now))}
+          meta={fmtDayShort(nextBillingDate(hh, now))}
         />
-        <Stat label="Training sessions left" value={ptCreditsLeft(hh)} />
-        <Stat
-          label="Guest passes left this cycle"
+        <SummaryCard
+          className="max-sm:col-span-2"
+          icon={CreditCard}
+          label="Payment method"
+          value={`${brand} ending ${hh.card.last4}`}
+          meta={expiring ? `${expires} · Expires soon` : expires}
+          tone={expiring ? "warning" : "default"}
+        />
+        <SummaryCard
+          icon={Dumbbell}
+          label="Training"
+          value={ptCreditsLeft(hh)}
+          meta="sessions left"
+        />
+        <SummaryCard
+          icon={Ticket}
+          label="Guests"
           value={left}
-          hint={`${hh.guestPassesBought} bought`}
+          meta={
+            <>
+              {left === 1 ? "pass left" : "passes left"}
+              <span className="sr-only">
+                {" "}
+                this cycle, {hh.guestPassesBought} bought
+              </span>
+            </>
+          }
         />
-      </Stats>
+      </div>
 
       <Section
         id="pm"
-        title="Payment method"
+        title="Cards on file"
         action={
           hh.backupCard ? undefined : (
             <Button
@@ -274,7 +307,7 @@ export default function BillingPage() {
         <ul className="flex flex-col corner-m raised [&>li+li]:rule-t">
           <CardOnFile
             title={`${brand} ending ${hh.card.last4}`}
-            line={`Expires ${String(hh.card.expMonth).padStart(2, "0")}/${hh.card.expYear}`}
+            line={expires}
             end={
               <>
                 {expiring ? (
@@ -318,45 +351,49 @@ export default function BillingPage() {
       </Section>
 
       <Section id="nc" title="Monthly charges">
-        <Facts
-          className="rule-t"
-          items={[
-            { label: capital(hh.plan), value: fmtMoney(money.base) },
-            ...(money.adults
-              ? [{ label: "Adult add-on", value: fmtMoney(money.adultTotal) }]
-              : []),
-            ...(money.kids
-              ? [
-                  {
-                    label: `Child add-ons, ${money.kids} × $19.00`,
-                    value: fmtMoney(money.kidTotal),
-                  },
-                ]
-              : []),
-            { label: "Annual facility fee", value: "$49, charged in March" },
-          ]}
-        />
+        <div className="px-m corner-m raised">
+          <Facts
+            items={[
+              { label: capital(hh.plan), value: fmtMoney(money.base) },
+              ...(money.adults
+                ? [{ label: "Adult add-on", value: fmtMoney(money.adultTotal) }]
+                : []),
+              ...(money.kids
+                ? [
+                    {
+                      label: `Child add-ons, ${money.kids} × $19.00`,
+                      value: fmtMoney(money.kidTotal),
+                    },
+                  ]
+                : []),
+              { label: "Annual facility fee", value: "$49, charged in March" },
+            ]}
+          />
+        </div>
       </Section>
 
       <Section id="bd" title="Billing details">
-        <Facts
-          className="rule-t"
-          items={(
-            [
-              ["Name", hh.billingName, "billingName"],
-              ["Billing address", hh.billingAddress, "billingAddress"],
-              ["Receipt email", hh.receiptEmail, "receiptEmail"],
-            ] as const
-          ).map(([label, value, field]) => ({
-            label,
-            value: <EditableValue label={label} value={value} field={field} />,
-          }))}
-        />
+        <div className="px-m corner-m raised">
+          <Facts
+            items={(
+              [
+                ["Name", hh.billingName, "billingName"],
+                ["Billing address", hh.billingAddress, "billingAddress"],
+                ["Receipt email", hh.receiptEmail, "receiptEmail"],
+              ] as const
+            ).map(([label, value, field]) => ({
+              label,
+              value: (
+                <EditableValue label={label} value={value} field={field} />
+              ),
+            }))}
+          />
+        </div>
       </Section>
 
       <Card
         id="invoices"
-        tone="bare"
+        flush
         title="Invoices"
         action={
           <SelectBox
@@ -417,8 +454,8 @@ export default function BillingPage() {
             <div className="overflow-x-auto max-sm:hidden">
               <table className="w-full text-left text-body-s">
                 <caption className="sr-only">Invoices</caption>
-                <thead>
-                  <tr className="rule-b">
+                <thead className="bg-muted/50">
+                  <tr className="rule-t">
                     <th scope="col" className={TH}>
                       Date
                     </th>
@@ -452,7 +489,7 @@ export default function BillingPage() {
                       <td className={`${TD} tabular text-right`}>
                         {fmtMoney(i.amount)}
                       </td>
-                      <td className="pl-s py-xxs whitespace-nowrap">
+                      <td className="pr-m pl-s py-xxs whitespace-nowrap">
                         <span className="gap-xs flex items-center justify-end">
                           <Link
                             href={`/billing/invoices/${i.id}`}
@@ -471,41 +508,64 @@ export default function BillingPage() {
             </div>
             {/* Rows below 640 px. */}
             <Rows label="Invoices" className="sm:hidden">
-              {rows.map((i) => (
-                <Row
-                  key={i.id}
-                  href={`/billing/invoices/${i.id}`}
-                  title={i.desc}
-                  line={
-                    <span className="tabular">
-                      {fmtDayShort(i.date)} · {fmtMoney(i.amount)}
+              {rows.map((i) => {
+                const state =
+                  i.status === "failed"
+                    ? "Failed"
+                    : i.status === "open"
+                      ? "Pending"
+                      : i.status === "refunded"
+                        ? "Refunded"
+                        : null
+                return (
+                  <li
+                    key={i.id}
+                    className="gap-xs px-m py-xs flex min-h-14 items-center text-body-m"
+                  >
+                    <Link
+                      href={`/billing/invoices/${i.id}`}
+                      className="min-w-0 flex-1 outline-none focus-visible:underline"
+                    >
+                      <span className="block truncate font-medium">
+                        {i.desc}
+                      </span>
+                      <span className="tabular block truncate text-muted-foreground">
+                        {fmtDayShort(i.date)}
+                      </span>
+                    </Link>
+                    <span className="flex shrink-0 flex-col items-end">
+                      <span className="tabular font-medium">
+                        {fmtMoney(i.amount)}
+                      </span>
+                      {state ? (
+                        <span className="text-body-s text-muted-foreground">
+                          {state}
+                        </span>
+                      ) : null}
                     </span>
-                  }
-                  end={
-                    <>
-                      {statusPill(i.status, true)}
-                      {dl(i)}
-                    </>
-                  }
-                />
-              ))}
+                    {dl(i)}
+                  </li>
+                )
+              })}
             </Rows>
           </>
         ) : (
-          <EmptyState
-            title={
-              hh.invoices.length
-                ? "No invoices of this type."
-                : "No invoices yet."
-            }
-            body={
-              hh.invoices.length
-                ? undefined
-                : "Your first invoice shows here after your first charge."
-            }
-          />
+          <div className="px-m pb-m">
+            <EmptyState
+              title={
+                hh.invoices.length
+                  ? "No invoices of this type."
+                  : "No invoices yet."
+              }
+              body={
+                hh.invoices.length
+                  ? undefined
+                  : "Your first invoice shows here after your first charge."
+              }
+            />
+          </div>
         )}
       </Card>
-    </AppPage>
+    </AccountScreen>
   )
 }

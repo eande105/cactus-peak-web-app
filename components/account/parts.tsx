@@ -52,31 +52,6 @@ export function Section({
   )
 }
 
-/**
- * Facts that read as one summary: a row of columns, each a label over its value. The columns follow the width of
- * the block. Use `Facts` from the kit for a list of label and value pairs.
- */
-export function FactRow({
-  items,
-  className,
-}: {
-  items: { label: string; value: ReactNode }[]
-  className?: string
-}) {
-  return (
-    <div className={cn("@container", className)}>
-      <dl className="gap-x-l gap-y-m grid grid-cols-2 text-body-m sm:text-body-s @lg:grid-cols-3 @3xl:auto-cols-fr @3xl:grid-flow-col @3xl:grid-cols-none">
-        {items.map((it) => (
-          <div key={it.label} className="gap-xxs flex min-w-0 flex-col">
-            <dt className="text-muted-foreground">{it.label}</dt>
-            <dd className="tabular font-medium">{it.value}</dd>
-          </div>
-        ))}
-      </dl>
-    </div>
-  )
-}
-
 /** A status pill with a leading icon. The icon side has the smaller padding, equal to the vertical padding. */
 export function IconPill({
   icon,

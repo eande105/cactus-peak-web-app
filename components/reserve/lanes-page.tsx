@@ -5,15 +5,8 @@ import { Suspense, useEffect, useState } from "react"
 import { useApp } from "@/components/app/use-app"
 import { BookPage } from "@/components/book/book-tabs"
 import { FilterBar } from "@/components/book/filter-bar"
-import { SuccessPanel } from "@/components/booking/success-panel"
 import { Card, Facts, Panel, PanelEmpty, Split } from "@/components/kit/app"
-import {
-  Banner,
-  FormField,
-  LoadingBlock,
-  SelectBox,
-  SwitchRow,
-} from "@/components/kit/ui"
+import { Banner, FormField, LoadingBlock, SwitchRow } from "@/components/kit/ui"
 import { BookingList } from "@/components/reserve/booking-list"
 import {
   NoticeCount,
@@ -21,6 +14,7 @@ import {
   ReserveNotice,
   soonerPlan,
 } from "@/components/reserve/empty"
+import { NoFacility } from "@/components/reserve/no-facility"
 import {
   CancelLine,
   PanelError,
@@ -36,14 +30,10 @@ import { DayStrip } from "@/components/schedule/day-strip"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { useMedia } from "@/hooks/use-media"
-import {
-  addRemind,
-  cancelBooking,
-  moveReservation,
-  reserveLane,
-} from "@/lib/actions"
+import { addRemind, moveReservation, reserveLane } from "@/lib/actions"
 import { announce } from "@/lib/announce"
-import { CLUB_BY_SLUG, CLUBS } from "@/lib/data/catalog"
+import { bookedToast } from "@/lib/booked-toast"
+import { CLUB_BY_SLUG } from "@/lib/data/catalog"
 import { useEmptyPreview } from "@/lib/empty-preview"
 import {
   cancelNote,
@@ -66,7 +56,6 @@ import {
   MIN,
 } from "@/lib/time"
 import { toast } from "@/lib/toast"
-import type { Booking } from "@/lib/types"
 import { openDialog, useOffline } from "@/lib/ui-state"
 
 function Inner() {
@@ -78,9 +67,8 @@ function Inner() {
   const wide = useMedia("(min-width: 1024px)")
   const offline = useOffline()
   const [loading, setLoading] = useState(false)
-  const pools = CLUBS.filter((c) => c.pool)
-  const clubSlug =
-    sp.get("club") ?? (CLUB_BY_SLUG[viewing].pool ? viewing : pools[0].slug)
+  // The current club (`prefs.viewingClub`). The wrapper below only renders this for a club that has a pool.
+  const clubSlug = viewing
   const club = CLUB_BY_SLUG[clubSlug]
   const today = dayStart(now)
   const date = sp.get("date") ? fromKey(sp.get("date")!) : today
@@ -89,7 +77,6 @@ function Inner() {
   const [any, setAny] = useState(true)
   const [sel, setSel] = useState<{ row: number; slot: number } | null>(null)
   const [partner, setPartner] = useState("")
-  const [done, setDone] = useState<Booking | null>(null)
   const [error, setError] = useState("")
   const [busy, setBusy] = useState(false)
   // biome-ignore lint/correctness/useExhaustiveDependencies: clubSlug restarts the fake load delay when the club changes
@@ -173,19 +160,13 @@ function Inner() {
     })
     setBusy(false)
     if (r.ok) {
-      setDone(r.booking)
-      announce(`Lane ${sel.row} is yours, ${fmtDowTime(sel.slot)}`)
-      toast({
-        title: `Lane ${sel.row} is yours, ${fmtDowTime(sel.slot)}`,
-        action: {
-          label: "Undo",
-          onClick: () => {
-            cancelBooking(r.booking.id, { undoWindow: true })
-            setDone(null)
-            setSel(null)
-          },
-        },
+      bookedToast({
+        ids: [r.booking.id],
+        what: `Lane ${sel.row}`,
+        time: fmtDowTime(sel.slot),
+        view: (url) => router.push(url),
       })
+      setSel(null)
     } else {
       setError(r.message)
       setSel(null)
@@ -219,41 +200,6 @@ function Inner() {
     announce(`Lane ${r} selected, ${fmtTime(sl)}`)
   }
   const clear = () => setSel(null)
-  if (done)
-    return (
-      <BookPage>
-        <div className="max-w-xl">
-          <SuccessPanel
-            pill="Reserved"
-            headline={done.resource ?? "Lap lane"}
-            summary={[
-              {
-                label: "When",
-                value: `${fmtDay(done.start)} · ${fmtRange(done.start, done.end)}`,
-              },
-              { label: "Where", value: `${club.name} · ${club.pool?.label}` },
-              { label: "Reference", value: done.ref },
-            ]}
-            event={{
-              title: `Lap lane, ${done.resource}`,
-              start: done.start,
-              end: done.end,
-              location: club.address,
-            }}
-            shareText="https://my.cactuspeakathletic.example/lane"
-            onDone={() => {
-              setDone(null)
-              setSel(null)
-            }}
-            extra={
-              <CancelLine
-                note={cancelNote(s, me.id, done.start, now, "lane")}
-              />
-            }
-          />
-        </div>
-      </BookPage>
-    )
   if (!club.pool) return null
   // The household's coming lane reservations, at every club.
   const upcoming = s.bookings.filter(
@@ -266,7 +212,7 @@ function Inner() {
   const note = sel ? cancelNote(s, me.id, sel.slot, now, "lane") : null
   const panel = sel ? (
     <Panel
-      title={moving ? "Move your lane" : "Reserve a lane"}
+      title={moving ? "Move your lap lane" : "Reserve a lap lane"}
       onClose={clear}
       footer={
         <>
@@ -326,7 +272,7 @@ function Inner() {
         </FormField>
       )}
       {needsParent ? (
-        <QuietLine>Lanes need {parentName}&apos;s OK.</QuietLine>
+        <QuietLine>Lap lanes need {parentName}&apos;s OK.</QuietLine>
       ) : note ? (
         <CancelLine note={note} />
       ) : null}
@@ -373,16 +319,6 @@ function Inner() {
           {/* The toolbar every Book tab shares (FilterBar). Lanes have no filters beyond the club, so there is no drawer;
               "Any lane" is a choice of how to pick, shown where the lane grid is. */}
           <FilterBar
-            club={(className) => (
-              <SelectBox
-                label="Club"
-                value={clubSlug}
-                onChange={(v) => setParam({ club: v })}
-                options={pools.map((c) => ({ value: c.slug, label: c.name }))}
-                hideLabel
-                className={className}
-              />
-            )}
             quick={
               wide ? (
                 <div className="px-xs flex min-h-9 items-center">
@@ -425,9 +361,9 @@ function Inner() {
                         ? [{ tone: "past" as const, label: "Past" }]
                         : []),
                     ]
-                  : // The phone chips say "1 of 2" in words, so their key needs only the two looks.
-                    [
-                      { tone: "free", label: "Open" },
+                  : [
+                      { tone: "free", label: "Open", swimmers: 0 },
+                      { tone: "free", label: "To share", swimmers: 1 },
                       { tone: "taken", label: "Full" },
                     ]
               }
@@ -521,17 +457,12 @@ function Inner() {
                 <SlotList
                   kind="lane"
                   rows={rows}
-                  slots={slots.filter(
-                    (sl) =>
-                      sl > now &&
-                      rows.some((r) => info(r.id, sl).status === "open")
-                  )}
+                  slots={slots}
                   info={info}
                   selected={sel}
-                  onSelect={(r, sl) => {
-                    setError("")
-                    setSel({ row: r, slot: sl })
-                  }}
+                  onSelect={pick}
+                  lengthMs={45 * MIN}
+                  now={now}
                   label="Choose a lane and start time"
                   disabled={offline || !!pu}
                   className="rule-b"
@@ -551,10 +482,20 @@ function Inner() {
     </BookPage>
   )
 }
+function ForClub() {
+  const { club } = useApp()
+  if (!CLUB_BY_SLUG[club].pool)
+    return (
+      <BookPage>
+        <NoFacility what="lap lanes" has={(c) => !!c.pool} />
+      </BookPage>
+    )
+  return <Inner />
+}
 export default function LanesPage() {
   return (
     <Suspense fallback={null}>
-      <Inner />
+      <ForClub />
     </Suspense>
   )
 }

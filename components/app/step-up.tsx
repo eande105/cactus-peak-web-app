@@ -1,7 +1,8 @@
 "use client"
-import Link from "next/link"
+import { useRouter } from "next/navigation"
 import type { ReactNode } from "react"
 import { useEffect, useState } from "react"
+import { Modal } from "@/components/kit/overlays"
 import { FormField } from "@/components/kit/ui"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -26,11 +27,14 @@ export function needsStepUp(path: string): boolean {
 
 /**
  * Sensitive pages ask the member for their password again if the last check is older than 30 minutes.
- * The gate draws the password form in place of the page, so the page content is not on screen and cannot be used
- * until the check passes. The password is checked with Supabase Auth. The gate is a browser-side check: row level
- * security in Supabase is the server-side limit on what the member can read and change.
+ * While the check is open, the page stays in place behind a centred dialog, blurred and `inert`: the member sees
+ * where they are, but cannot read, focus or use the page, and screen readers skip it. Esc and a click outside do
+ * not close the dialog; "Back to Account" leaves the page. The password is checked with Supabase Auth. The gate is
+ * a browser-side check: row level security in Supabase is the server-side limit on what the member can read and
+ * change.
  */
 export function StepUpGate({ children }: { children: ReactNode }) {
+  const router = useRouter()
   const [open, setOpen] = useState(() => {
     try {
       const at = Number(localStorage.getItem(KEY) ?? 0)
@@ -80,46 +84,50 @@ export function StepUpGate({ children }: { children: ReactNode }) {
       setBusy(false)
     }
   }
-  if (!open) return children
   return (
-    <section
-      aria-labelledby="page-title"
-      className="gap-m p-m flex w-full flex-col corner-m raised"
-    >
-      <div className="gap-xs flex flex-col">
-        <h1
-          id="page-title"
-          tabIndex={-1}
-          className="text-body-m font-heavy outline-none"
-        >
-          Confirm it&apos;s you
-        </h1>
-        <p className="text-body-m text-pretty text-muted-foreground sm:text-body-s">
-          Enter your password again to change billing or your membership.
-        </p>
+    <>
+      <div
+        inert={open}
+        className={
+          open
+            ? "pointer-events-none flex flex-1 flex-col blur-lg select-none"
+            : "contents"
+        }
+      >
+        {children}
       </div>
-      <form onSubmit={confirm} className="gap-m flex flex-col" noValidate>
-        <FormField label="Password" error={error}>
-          {(p) => (
-            <Input
-              {...p}
-              type="password"
-              name="password"
-              autoComplete="current-password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-            />
-          )}
-        </FormField>
-        <div className="gap-xs flex items-center justify-between">
-          <Button variant="ghost" render={<Link href="/account" />}>
-            Back to Account
-          </Button>
-          <Button type="submit" loading={busy}>
-            Confirm
-          </Button>
-        </div>
-      </form>
-    </section>
+      <Modal
+        open={open}
+        // The check is required to see the page, so only "Back to Account" or a correct password ends it.
+        onOpenChange={() => {}}
+        hideClose
+        title="Confirm it's you"
+        description="Enter your password again to see billing or change your membership."
+      >
+        <form onSubmit={confirm} className="gap-m flex flex-col" noValidate>
+          <FormField label="Password" error={error}>
+            {(p) => (
+              <Input
+                {...p}
+                type="password"
+                name="password"
+                autoComplete="current-password"
+                autoFocus
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+              />
+            )}
+          </FormField>
+          <div className="gap-xs flex items-center justify-end">
+            <Button variant="outline" onClick={() => router.push("/account")}>
+              Back to Account
+            </Button>
+            <Button type="submit" loading={busy}>
+              Confirm
+            </Button>
+          </div>
+        </form>
+      </Modal>
+    </>
   )
 }

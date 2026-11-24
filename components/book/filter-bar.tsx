@@ -1,5 +1,6 @@
 "use client"
 import type { ReactNode } from "react"
+import { BookTypeChip } from "@/components/book/book-tabs"
 import { Collapsible } from "@/components/graphical"
 import { ChevronDown, ListFilter } from "@/components/icons"
 import { Panel } from "@/components/kit/app"
@@ -21,11 +22,81 @@ export const FILL_SELECT =
   "min-w-0 flex-1 [&_.themed-select]:w-full [&_.themed-select]:min-w-0 [&_.themed-select>span:first-child]:min-w-0 [&_.themed-select>span:first-child]:truncate [&_.themed-select>span:first-child]:text-left"
 
 /**
+ * One filter chip, with one on and off style on every Book tab. Off is a quiet outline chip; on is filled with the
+ * primary accent and its on-accent text. `aria-pressed` carries the state for assistive technology.
+ */
+export function FilterChip({
+  on,
+  onClick,
+  disabled,
+  children,
+  className,
+}: {
+  on: boolean
+  onClick: () => void
+  disabled?: boolean
+  children: ReactNode
+  className?: string
+}) {
+  return (
+    <button
+      type="button"
+      aria-pressed={on}
+      disabled={disabled}
+      onClick={onClick}
+      className={cn(
+        "px-m inline-flex min-h-9 shrink-0 items-center justify-center corner-full text-body-s font-medium whitespace-nowrap disabled:opacity-50 max-md:min-h-11",
+        on
+          ? "bg-primary font-heavy text-primary-foreground"
+          : "bg-transparent text-foreground hairline ring-border hover:bg-muted/50",
+        className
+      )}
+    >
+      {children}
+    </button>
+  )
+}
+
+/** A single choice shown as a row of chips: the chosen one is on. Pressing the chosen chip keeps it on. */
+export function ChipGroup<T extends string | number>({
+  label,
+  value,
+  onChange,
+  options,
+  className,
+}: {
+  label: string
+  value: T
+  onChange: (v: T) => void
+  options: { value: T; label: ReactNode }[]
+  className?: string
+}) {
+  return (
+    // biome-ignore lint/a11y/useSemanticElements: a labelled row of toggle chips; a fieldset would add a legend and a border
+    <div
+      role="group"
+      aria-label={label}
+      className={cn("gap-xs flex flex-wrap", className)}
+    >
+      {options.map((o) => (
+        <FilterChip
+          key={String(o.value)}
+          on={o.value === value}
+          onClick={() => onChange(o.value)}
+        >
+          {o.label}
+        </FilterChip>
+      ))}
+    </div>
+  )
+}
+
+/**
  * The toolbar. Wide (@xl): the club, the tab's quick filters (`quick`), "More filters" with the number of filters that
  * only the drawer shows (`more`), and Clear while any filter is on (`active`). Narrow: one row that never wraps, the club
  * and one Filters button with the number of filters on besides the club (`count`); the quick filters are in the
  * drawer there. A tab without a drawer leaves out `onFilters`, so its narrow row is the club alone.
- * `club` is a render function, so the narrow row can make the select fill and truncate.
+ * `club` is optional: the club is chosen once in the Book header (`ClubSwitcher`), so a tab leaves it out.
  */
 export function FilterBar({
   club,
@@ -38,7 +109,7 @@ export function FilterBar({
   wideSheet = true,
   day,
 }: {
-  club: (className: string) => ReactNode
+  club?: (className: string) => ReactNode
   quick?: ReactNode
   onFilters?: () => void
   count?: number
@@ -55,9 +126,16 @@ export function FilterBar({
 }) {
   return (
     <div className="@container">
-      {/* Narrow: the club and the Filters button. */}
-      <div className="gap-xs p-xs flex items-center corner-m bg-muted/50 @xl:hidden">
-        {club(FILL_SELECT)}
+      {/* Narrow: the type chip (phone), the club and the Filters button, in one row that scrolls sideways. Without a type chip
+          (lg and up) and with neither, the well is hidden, so there is no empty bar above the day picker. */}
+      <div
+        className={cn(
+          "gap-xs p-xs flex scrollbar-none items-center overflow-x-auto corner-m bg-muted/50 @xl:hidden",
+          !(club || onFilters) && "lg:hidden"
+        )}
+      >
+        <BookTypeChip />
+        {club?.(FILL_SELECT)}
         {onFilters ? (
           <Button
             variant="outline"
@@ -78,7 +156,8 @@ export function FilterBar({
 
       {/* Wide: the club, the quick filters, the drawer and the reset. */}
       <div className="gap-xs p-xs flex flex-wrap items-center corner-m bg-muted/50 @max-xl:hidden">
-        {club("min-w-0 flex-none")}
+        <BookTypeChip />
+        {club?.("min-w-0 flex-none")}
         {quick}
         {onFilters && wideSheet ? (
           <Button variant="outline" onClick={onFilters}>

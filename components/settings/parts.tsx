@@ -1,7 +1,8 @@
 "use client"
 import { type ReactNode, useId } from "react"
-import { Section } from "@/components/account/parts"
+import { IconTile } from "@/components/account/screen"
 import { Switch } from "@/components/graphical"
+import type { IconComponent } from "@/components/icons"
 import { cn } from "@/lib/utils"
 
 /** The ARIA links from a setting row to its control. Spread them on the control. */
@@ -12,14 +13,17 @@ export type SettingIds = {
 }
 
 /**
- * One group of settings: a heading with one line, then the setting rows with hairlines between them.
- * A child that is not a `SettingRow` (a table, a set of toggles) is one more block in the same stack.
+ * One group of settings: a heading with an optional line and action, then a raised card that holds the setting
+ * rows with a rule between them. From xl the heading sits at the left of its card (the settings frame is wide
+ * enough there). A child that is not a `SettingRow` (a table, a set of toggles) is one more block in the card.
+ * `tone="danger"` is for an action that cannot be undone: the card takes a destructive edge.
  */
 export function SettingsSection({
   id,
   title,
   line,
   action,
+  tone = "default",
   children,
   className,
 }: {
@@ -27,19 +31,50 @@ export function SettingsSection({
   title: ReactNode
   line?: ReactNode
   action?: ReactNode
+  tone?: "default" | "danger"
   children: ReactNode
   className?: string
 }) {
+  const headId = useId()
   return (
-    <Section
+    <section
       id={id}
-      title={title}
-      line={line}
-      action={action}
-      className={className}
+      aria-labelledby={headId}
+      className={cn(
+        "gap-s xl:gap-l grid min-w-0 xl:grid-cols-[15rem_minmax(0,1fr)] xl:items-start",
+        className
+      )}
     >
-      <div className="flex flex-col rule-t [&>*+*]:rule-t">{children}</div>
-    </Section>
+      <div className="gap-x-m gap-y-xs xl:pt-s flex flex-wrap items-end justify-between xl:flex-col xl:items-start">
+        <div className="min-w-0 flex-1 basis-48 xl:flex-none xl:basis-auto">
+          <h2
+            id={headId}
+            className={cn(
+              "text-body-m font-heavy sm:text-body-s",
+              tone === "danger" && "text-destructive"
+            )}
+          >
+            {title}
+          </h2>
+          {line ? (
+            <p className="text-body-m text-pretty text-muted-foreground sm:text-body-s">
+              {line}
+            </p>
+          ) : null}
+        </div>
+        {action ? (
+          <div className="gap-xs flex shrink-0 items-center">{action}</div>
+        ) : null}
+      </div>
+      <div
+        className={cn(
+          "px-m flex min-w-0 flex-col corner-m [&>*+*]:rule-t",
+          tone === "danger" ? "bg-card hairline ring-destructive/40" : "raised"
+        )}
+      >
+        {children}
+      </div>
+    </section>
   )
 }
 
@@ -54,6 +89,7 @@ export function SettingRow({
   error,
   lead,
   wide,
+  icon,
   as: T = "div",
   children,
   className,
@@ -62,6 +98,8 @@ export function SettingRow({
   line?: ReactNode
   error?: string
   lead?: ReactNode
+  /** An icon tile before the label (a span, so it is valid inside `as="label"`). */
+  icon?: IconComponent
   wide?: boolean
   as?: "div" | "label"
   children?: ReactNode | ((ids: SettingIds) => ReactNode)
@@ -85,8 +123,11 @@ export function SettingRow({
         className
       )}
     >
+      {icon ? (
+        <IconTile icon={icon} className="self-start sm:self-center" />
+      ) : null}
       {lead}
-      <B className="flex min-w-0 flex-1 basis-48 flex-col">
+      <B className="flex min-w-0 flex-1 basis-40 flex-col">
         <B id={`${id}-l`} className="font-medium">
           {label}
         </B>
@@ -119,6 +160,7 @@ export function SettingRow({
 export function SettingSwitch({
   label,
   line,
+  icon,
   checked,
   onChange,
   disabled,
@@ -126,13 +168,21 @@ export function SettingSwitch({
 }: {
   label: ReactNode
   line?: ReactNode
+  /** Passed to `SettingRow` `icon`. */
+  icon?: IconComponent
   checked: boolean
   onChange: (c: boolean) => void
   disabled?: boolean
   className?: string
 }) {
   return (
-    <SettingRow as="label" label={label} line={line} className={className}>
+    <SettingRow
+      as="label"
+      label={label}
+      line={line}
+      icon={icon}
+      className={className}
+    >
       {(ids) => (
         <Switch.Root
           {...ids}

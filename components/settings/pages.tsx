@@ -2,9 +2,33 @@
 import { useRouter } from "next/navigation"
 import { useTheme } from "next-themes"
 import { useState } from "react"
+import { IconTile } from "@/components/account/screen"
 import { useApp } from "@/components/app/use-app"
 import { Switch, Toggle } from "@/components/graphical"
-import { Copy, Eye } from "@/components/icons"
+import {
+  Accessibility,
+  Activity,
+  CalendarDays,
+  CalendarPlus,
+  ChildHead,
+  Clock,
+  Copy,
+  Download,
+  Eye,
+  Inbox,
+  KeyRound,
+  Laptop,
+  ListFilter,
+  Lock,
+  MapPin,
+  MessageSquare,
+  MonitorSmartphone,
+  Moon,
+  Smartphone,
+  Sparkles,
+  SunMedium,
+  TrendingUp,
+} from "@/components/icons"
 import { CategoryIcon } from "@/components/kit/icons"
 import { Confirm } from "@/components/kit/overlays"
 import {
@@ -65,6 +89,7 @@ export function ProfileSettings() {
           lead={
             <PersonAvatar
               name={`${me.firstName} ${me.lastName}`}
+              hue={me.hue}
               size={48}
               className="shrink-0"
             />
@@ -221,6 +246,7 @@ export function PreferencesSettings() {
       >
         <SettingRow
           label="Home club"
+          icon={MapPin}
           line={
             hh.plan === "trailhead"
               ? "Trailhead members change it once per billing cycle."
@@ -277,7 +303,7 @@ export function PreferencesSettings() {
         title="Goal"
         action={<Saved show={k === "g" || k === "w"} />}
       >
-        <SettingRow label="Goal" wide>
+        <SettingRow label="Goal" icon={TrendingUp} wide>
           <SelectBox
             label="Goal"
             hideLabel
@@ -289,7 +315,7 @@ export function PreferencesSettings() {
             options={[...GOALS]}
           />
         </SettingRow>
-        <SettingRow label="Visits per week">
+        <SettingRow label="Visits per week" icon={CalendarDays}>
           <Segmented
             label="Visits per week"
             value={prefs.weeklyTarget}
@@ -311,13 +337,14 @@ export function PreferencesSettings() {
       >
         <SettingSwitch
           label="Show first-timer classes first"
+          icon={Sparkles}
           checked={prefs.firstTimersFirst}
           onChange={(c) => {
             setPrefs(me.id, { firstTimersFirst: c })
             mark("ft")
           }}
         />
-        <SettingRow label="Saved schedule filters">
+        <SettingRow label="Saved schedule filters" icon={ListFilter}>
           {prefs.savedFilters ? null : <StatusPill>None</StatusPill>}
           <Button
             variant="outline"
@@ -369,93 +396,13 @@ export function NotificationSettings() {
   return (
     <>
       <SettingsSection
-        id="set-topics"
-        title="Topics"
-        action={<Saved show={k === "n" || k === "r"} />}
-      >
-        <table className="w-full text-left text-body-m sm:text-body-s">
-          <caption className="sr-only">
-            Notification topics and channels
-          </caption>
-          <thead>
-            <tr className="rule-b">
-              <th scope="col" className={TH}>
-                Topic
-              </th>
-              {["Push", "Email", "Text"].map((c) => (
-                <th
-                  key={c}
-                  scope="col"
-                  className={`${TH} w-14 text-center sm:w-20`}
-                >
-                  {c}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody className="[&>tr+tr]:rule-t">
-            {TOPICS.map(([t, label]) => (
-              <tr key={t}>
-                <th scope="row" className="py-s pr-s font-medium">
-                  {label}
-                  {t === "reminders" ? (
-                    <SelectBox
-                      label="Time before"
-                      hideLabel
-                      value={String(prefs.reminderMin)}
-                      onChange={(v) => {
-                        setPrefs(me.id, { reminderMin: Number(v) as 60 })
-                        mark("r")
-                      }}
-                      options={[
-                        { value: "30", label: "30 min before" },
-                        { value: "60", label: "60 min before" },
-                        { value: "120", label: "120 min before" },
-                      ]}
-                      className="mt-xs w-36 font-regular"
-                    />
-                  ) : null}
-                  {t === "billing" ? (
-                    <span className="block font-regular text-muted-foreground">
-                      Email is always on.
-                    </span>
-                  ) : null}
-                </th>
-                {(["push", "email", "text"] as const).map((c) => (
-                  <td key={c} className="text-center">
-                    <Switch.Root
-                      aria-label={`${label}, ${c}`}
-                      checked={
-                        t === "billing" && c === "email"
-                          ? true
-                          : prefs.notif[t][c]
-                      }
-                      disabled={t === "billing" && c === "email"}
-                      onCheckedChange={(on) => {
-                        if (c === "push") {
-                          void ask(t, !!on)
-                          return
-                        }
-                        setNotifCell(me.id, t, c, !!on)
-                        mark("n")
-                      }}
-                    >
-                      <Switch.Thumb />
-                    </Switch.Root>
-                  </td>
-                ))}
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </SettingsSection>
-      <SettingsSection
         id="set-quiet"
         title="Delivery"
         action={<Saved show={k === "q"} />}
       >
         <SettingSwitch
           label="Quiet hours 9 pm – 5 am"
+          icon={Moon}
           line="Held-spot alerts still come through."
           checked={prefs.quietHours}
           onChange={(c) => {
@@ -465,6 +412,7 @@ export function NotificationSettings() {
         />
         <SettingRow
           label="Push in this browser"
+          icon={MonitorSmartphone}
           line={
             push === "denied"
               ? "Use email or text."
@@ -503,6 +451,94 @@ export function NotificationSettings() {
           </Button>
         </SettingRow>
       </SettingsSection>
+      <SettingsSection
+        id="set-topics"
+        title="Topics"
+        action={<Saved show={k === "n" || k === "r"} />}
+      >
+        <div className="-mx-m overflow-hidden corner-m">
+          <table className="w-full text-left text-body-m sm:text-body-s">
+            <caption className="sr-only">
+              Notification topics and channels
+            </caption>
+            <thead>
+              <tr className="bg-muted/50 rule-b">
+                <th scope="col" className={`${TH} pl-m`}>
+                  Topic
+                </th>
+                {["Push", "Email", "Text"].map((c) => (
+                  <th
+                    key={c}
+                    scope="col"
+                    className={`${TH} w-14 text-center sm:w-20 ${c === "Text" ? "pr-s" : ""}`}
+                  >
+                    {c}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody className="[&>tr+tr]:rule-t">
+              {TOPICS.map(([t, label]) => (
+                <tr key={t}>
+                  <th scope="row" className="py-s pr-s pl-m font-medium">
+                    {label}
+                    {t === "reminders" ? (
+                      <SelectBox
+                        label="Time before"
+                        hideLabel
+                        value={String(prefs.reminderMin)}
+                        onChange={(v) => {
+                          setPrefs(me.id, { reminderMin: Number(v) as 60 })
+                          mark("r")
+                        }}
+                        options={[
+                          { value: "30", label: "30 min before" },
+                          { value: "60", label: "60 min before" },
+                          { value: "120", label: "120 min before" },
+                        ]}
+                        className="mt-xs w-36 font-regular"
+                      />
+                    ) : null}
+                    {t === "billing" ? (
+                      <span className="block font-regular text-muted-foreground">
+                        Email is always on.
+                      </span>
+                    ) : null}
+                  </th>
+                  {(["push", "email", "text"] as const).map((c) => (
+                    <td
+                      key={c}
+                      className={
+                        c === "text" ? "pr-s text-center" : "text-center"
+                      }
+                    >
+                      <Switch.Root
+                        aria-label={`${label}, ${c}`}
+                        checked={
+                          t === "billing" && c === "email"
+                            ? true
+                            : prefs.notif[t][c]
+                        }
+                        disabled={t === "billing" && c === "email"}
+                        onCheckedChange={(on) => {
+                          if (c === "push") {
+                            void ask(t, !!on)
+                            return
+                          }
+                          setNotifCell(me.id, t, c, !!on)
+                          mark("n")
+                        }}
+                      >
+                        <Switch.Thumb />
+                      </Switch.Root>
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </SettingsSection>
     </>
   )
 }
@@ -522,7 +558,8 @@ export function CalendarSettings() {
           </Button>
         }
       >
-        <SettingBlock className="gap-xs flex">
+        <SettingBlock className="gap-xs flex flex-wrap items-center">
+          <IconTile icon={CalendarPlus} className="mr-xs" />
           <Input
             aria-label="Feed URL"
             readOnly
@@ -531,7 +568,7 @@ export function CalendarSettings() {
                 ? url
                 : "webcal://my.cactuspeakathletic.example/api/calendar/••••••••••.ics"
             }
-            className="tabular min-w-0 flex-1"
+            className="tabular min-w-0 flex-1 basis-40"
           />
           <Button
             variant="outline"
@@ -583,6 +620,7 @@ export function CalendarSettings() {
         />
         <SettingSwitch
           label="Include kids club"
+          icon={ChildHead}
           checked={prefs.calIncludeKids}
           onChange={(c) => setPrefs(me.id, { calIncludeKids: c })}
         />
@@ -596,28 +634,28 @@ export function SecuritySettings() {
   const router = useRouter()
   const [all, setAll] = useState(false)
   const [pw, setPw] = useState(false)
+  const addPasskeyButton = (
+    <Button
+      size="sm"
+      variant="outline"
+      onClick={() => {
+        addPasskey(`This device, ${new Date().getFullYear()}`)
+        toast({ title: "Passkey added" })
+      }}
+    >
+      Add a passkey
+    </Button>
+  )
   return (
     <>
       <SettingsSection
         id="set-passkeys"
         title="Passkeys"
-        line="A passkey signs you in with your fingerprint or face."
-        action={
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => {
-              addPasskey(`This device, ${new Date().getFullYear()}`)
-              toast({ title: "Passkey added" })
-            }}
-          >
-            Add a passkey
-          </Button>
-        }
+        action={prefs.passkeys.length ? addPasskeyButton : undefined}
       >
         {prefs.passkeys.length ? (
           prefs.passkeys.map((p) => (
-            <SettingRow key={p} label={p}>
+            <SettingRow key={p} label={p} icon={KeyRound}>
               <Button
                 variant="ghost"
                 size="sm"
@@ -632,11 +670,9 @@ export function SecuritySettings() {
             </SettingRow>
           ))
         ) : (
-          <SettingBlock>
-            <p className="text-body-m text-muted-foreground sm:text-body-s">
-              No passkeys yet.
-            </p>
-          </SettingBlock>
+          <SettingRow label="No passkeys yet" icon={KeyRound}>
+            {addPasskeyButton}
+          </SettingRow>
         )}
       </SettingsSection>
       <SettingsSection
@@ -646,11 +682,7 @@ export function SecuritySettings() {
       >
         {pw ? (
           <>
-            <SettingRow
-              label="New password"
-              line="Paste is fine. A password manager works."
-              wide
-            >
+            <SettingRow label="New password" icon={Lock} wide>
               {(p) => (
                 <Input {...p} type="password" autoComplete="new-password" />
               )}
@@ -671,7 +703,7 @@ export function SecuritySettings() {
             </SettingBlock>
           </>
         ) : (
-          <SettingRow label="Password">
+          <SettingRow label="Password" icon={Lock}>
             <Button size="sm" variant="outline" onClick={() => setPw(true)}>
               Set a password
             </Button>
@@ -691,7 +723,12 @@ export function SecuritySettings() {
           ["This browser", "Chrome on Mac · Mesa, AZ · now"],
           ["iPhone", "Cactus Peak app · Gilbert, AZ · 2 hours ago"],
         ].map(([a, b]) => (
-          <SettingRow key={a} label={a} line={b}>
+          <SettingRow
+            key={a}
+            label={a}
+            line={b}
+            icon={a === "This browser" ? Laptop : Smartphone}
+          >
             {a !== "This browser" ? (
               <Button
                 variant="ghost"
@@ -744,7 +781,7 @@ export function DisplaySettings() {
   return (
     <>
       <SettingsSection id="set-theme" title="Appearance">
-        <SettingRow label="Theme" wide>
+        <SettingRow label="Theme" icon={SunMedium} wide>
           <SelectBox
             label="Theme"
             hideLabel
@@ -760,7 +797,7 @@ export function DisplaySettings() {
             ]}
           />
         </SettingRow>
-        <SettingRow label="Motion" wide>
+        <SettingRow label="Motion" icon={Activity} wide>
           <SelectBox
             label="Motion"
             hideLabel
@@ -778,6 +815,7 @@ export function DisplaySettings() {
         </SettingRow>
         <SettingRow
           label="Text size"
+          icon={Accessibility}
           line="Large sets the base text to 18 px."
           wide
         >
@@ -798,10 +836,10 @@ export function DisplaySettings() {
         </SettingRow>
       </SettingsSection>
       <SettingsSection id="set-region" title="Time and language">
-        <SettingRow label="Time format">
+        <SettingRow label="Time format" icon={Clock}>
           <p className="text-muted-foreground">12-hour</p>
         </SettingRow>
-        <SettingRow label="Language">
+        <SettingRow label="Language" icon={MessageSquare}>
           <p className="text-muted-foreground">English</p>
         </SettingRow>
       </SettingsSection>
@@ -823,6 +861,7 @@ export function PrivacySettings() {
       <SettingsSection id="set-email" title="Email">
         <SettingSwitch
           label="Send me offers and club news by email"
+          icon={Inbox}
           checked={prefs.marketing}
           onChange={(c) => {
             setPrefs(me.id, { marketing: c })
@@ -833,6 +872,7 @@ export function PrivacySettings() {
       <SettingsSection id="set-data" title="Your data">
         <SettingRow
           label="Download my data (ZIP)"
+          icon={Download}
           line="We email a link within 24 hours."
         >
           <Button
@@ -848,7 +888,16 @@ export function PrivacySettings() {
             Request
           </Button>
         </SettingRow>
-        <SettingRow label="Delete account">
+      </SettingsSection>
+      <SettingsSection id="set-delete" title="Delete account" tone="danger">
+        <SettingRow
+          label={
+            me.role === "primary"
+              ? "Cancel your membership first"
+              : "Removes your profile and bookings"
+          }
+          line="This can't be undone."
+        >
           <Button
             size="sm"
             variant="outline"

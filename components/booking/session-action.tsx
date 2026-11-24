@@ -14,7 +14,6 @@ import { Button } from "@/components/ui/button"
 import {
   addRemind,
   bookClass,
-  cancelBooking,
   confirmHold,
   joinWaitlist,
   leaveWaitlist,
@@ -23,6 +22,7 @@ import {
   releaseHold,
 } from "@/lib/actions"
 import { announce } from "@/lib/announce"
+import { bookedToast } from "@/lib/booked-toast"
 import { CLUB_BY_SLUG, INSTRUCTOR_BY_ID } from "@/lib/data/catalog"
 import { bookingState, waitCount } from "@/lib/engine"
 import { downloadIcs, googleUrl } from "@/lib/ics"
@@ -85,7 +85,7 @@ export function WaitlistDialog({
           Change
         </Link>
       </p>
-      <div className="flex flex-wrap items-center justify-between gap-s pt-xs">
+      <div className="gap-s pt-xs flex flex-wrap items-center justify-between">
         <button
           type="button"
           className="min-h-11 text-body-s font-heavy text-link underline-offset-4 hover:underline"
@@ -143,7 +143,7 @@ function ConflictDialog({
         Replacing cancels the first booking with no strike if it is more than 2
         hours away.
       </p>
-      <div className="flex flex-wrap justify-end gap-xs">
+      <div className="gap-xs flex flex-wrap justify-end">
         <Button variant="outline" onClick={() => onOpenChange(false)}>
           Keep {clash.title.split(" ").pop()}
         </Button>
@@ -184,7 +184,7 @@ export function SessionAction({
   const name = `${se.name}, ${fmtTime(se.start)}`
   const btn = cn(
     "min-w-[8.5rem] justify-center",
-    size === "lg" && "min-h-12 px-xl",
+    size === "lg" && "px-xl min-h-12",
     className
   )
 
@@ -195,17 +195,12 @@ export function SessionAction({
     setPending(false)
     setClash(undefined)
     if (r.ok) {
-      toast({
-        title: `Booked: ${se.name}, ${fmtDowTime(se.start)}`,
-        action: {
-          label: "Undo",
-          onClick: () => {
-            cancelBooking(r.booking.id, { undoWindow: true })
-            announce("Booking undone.")
-          },
-        },
+      bookedToast({
+        ids: [r.booking.id],
+        what: se.name,
+        time: fmtDowTime(se.start),
+        view: (url) => router.push(url),
       })
-      announce(`Booked ${se.name}, ${fmtDowTime(se.start)}`)
       onBooked?.(r.booking)
     } else if (r.code === "CONFLICT_OVERLAP") setClash(r.conflict)
     else if (r.code === "CLASS_FULL") {
@@ -278,7 +273,7 @@ export function SessionAction({
   const wrapReason = (btnEl: React.ReactNode) => (
     <div
       className={cn(
-        "flex flex-col gap-xxs",
+        "gap-xxs flex flex-col",
         bar ? "items-end text-right" : "items-stretch"
       )}
     >
@@ -336,7 +331,7 @@ export function SessionAction({
     case "hold": {
       const left = (st.booking?.holdExpiresAt ?? 0) - now
       return wrapReason(
-        <div className="flex flex-col gap-xxs">
+        <div className="gap-xxs flex flex-col">
           <Button
             className={btn}
             aria-label={`Confirm spot, ${Math.ceil(left / 60000)} minutes left`}
@@ -369,8 +364,8 @@ export function SessionAction({
       const late = st.state === "late-cancel"
       if (bar)
         return (
-          <div className="flex items-center gap-s">
-            <span className="inline-flex items-center gap-xs text-body-s font-heavy">
+          <div className="gap-s flex items-center">
+            <span className="gap-xs inline-flex items-center text-body-s font-heavy">
               <Check className="size-5 text-success" aria-hidden="true" />
               Booked
             </span>
@@ -389,7 +384,7 @@ export function SessionAction({
           <Menu.Trigger
             aria-label={`Booked. ${name}. Manage booking`}
             className={cn(
-              "inline-flex min-h-11 items-center justify-center gap-xs hairline",
+              "gap-xs inline-flex min-h-11 items-center justify-center hairline",
               "corner-s px-m",
               "text-body-s font-heavy",
               "bg-card ring-input",
